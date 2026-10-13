@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+
+{% block title %}Financial Assistant — MoneyLeak{% endblock %}
+
+{% block content %}
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-greeting">
+    <div class="greeting-sup">
+      <span>AI Finance Workspace</span>
+      <span class="badge-pill badge-lime" style="display:inline-flex;align-items:center;gap:4px;">
+        <i data-lucide="bot" style="width:13px;height:13px;"></i> Active Intelligence
+      </span>
+    </div>
+    <h1 style="font-size:22px;font-weight:800;letter-spacing:-0.4px;margin:2px 0 3px 0;color:var(--text-primary);">
+      Your Financial Assistant
+    </h1>
+    <div class="greeting-sub">Get help managing your finances and using your dashboard.</div>
+  </div>
+
+  <div class="topbar-actions">
+    <button type="button" class="btn btn-primary" onclick="openFinanceChat('Can you summarize my financial health for this month?')" style="display:inline-flex;align-items:center;gap:6px;">
+      <i data-lucide="message-square" style="width:16px;height:16px;"></i>
+      <span>Start Chat</span>
+    </button>
+  </div>
+</div>
+
+<!-- SECTION A: ASSISTANT OVERVIEW & PROMINENT SEARCH -->
+<div class="card" style="margin-bottom:20px;background:linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-subtle) 100%);border:1px solid var(--border-subtle);padding:24px 28px;">
+  <div style="max-width:760px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <div style="width:32px;height:32px;border-radius:8px;background:rgba(203,244,50,0.18);color:var(--brand-lime,#65a30d);display:flex;align-items:center;justify-content:center;">
+        <i data-lucide="sparkles" style="width:18px;height:18px;"></i>
+      </div>
+      <h2 style="font-size:16px;font-weight:800;margin:0;color:var(--text-primary);">Ask About Your Finances & MoneyLeak Features</h2>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin:0 0 16px 0;line-height:1.5;">
+      Ask questions about your 50/30/20 budget, analyze spending leaks, receive step-by-step feature guidance, or troubleshoot application settings.
+    </p>
+
+    <!-- Prominent Ask Input -->
+    <form id="assistant-ask-form" onsubmit="handleAssistantHeroSubmit(event)" style="display:flex;gap:10px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:280px;position:relative;">
+        <i data-lucide="search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text-muted);"></i>
+        <input type="text" id="assistant-hero-query" class="form-control" placeholder="e.g. How much did I spend this month? Or: How do I create a budget?" style="padding-left:38px;height:44px;font-size:14px;border-radius:var(--radius-md);" required>
+      </div>
+      <button type="submit" class="btn btn-primary" style="height:44px;padding:0 22px;display:inline-flex;align-items:center;gap:6px;font-weight:700;">
+        <i data-lucide="send" style="width:15px;height:15px;"></i>
+        <span>Ask Assistant</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- SECTION C: QUICK ACTIONS SHORTCUTS -->
+<div style="margin-bottom:24px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div style="font-size:13px;font-weight:800;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">
+      Quick Actions & Workflows
+    </div>
+    <span style="font-size:12px;color:var(--text-muted);">Instant conversational guidance</span>
+  </div>
+
+  <div class="assistant-quick-actions-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));gap:12px;">
+    {% for qa in quick_actions %}
+      <div class="quick-action-card card" onclick="openFinanceChat('{{ qa.prompt|escape }}')" style="cursor:pointer;padding:14px 16px;transition:all var(--duration-fast) var(--ease-standard);border:1px solid var(--border-subtle);margin:0;">
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <div style="width:34px;height:34px;border-radius:8px;background:var(--bg-subtle);color:var(--brand-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--border-subtle);">
+            <i data-lucide="{{ qa.icon }}" style="width:17px;height:17px;"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:800;color:var(--text-primary);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              {{ qa.title }}
+            </div>
+            <div style="font-size:11px;color:var(--text-secondary);line-height:1.4;">
+              {{ qa.description }}
+            </div>
+          </div>
+          <i data-lucide="chevron-right" style="width:14px;height:14px;color:var(--text-muted);margin-top:2px;"></i>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- SECTION B: AVAILABLE ASSISTANT MODULES (GROUPED) -->
+<div style="margin-bottom:30px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div>
+      <h2 style="font-size:16px;font-weight:800;color:var(--text-primary);margin:0 0 2px 0;">Available Assistant Modules</h2>
+      <p style="font-size:12px;color:var(--text-muted);margin:0;">Intelligent analytical tools powered by your authenticated ledger data</p>
+    </div>
+    <span class="badge-pill badge-blue" style="font-size:11px;">{{ modules|length }} Modules Ready</span>
+  </div>
+
+  {% for group_name, group_mods in grouped_modules.items() %}
+    <div style="margin-bottom:22px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span style="font-size:12px;font-weight:800;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.4px;">{{ group_name }}</span>
+        <span style="font-size:11px;color:var(--text-muted);">({{ group_mods|length }})</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));gap:14px;">
+        {% for mod in group_mods %}
+          <div class="card assistant-module-card" id="mod-card-{{ mod.id }}" style="margin:0;display:flex;flex-direction:column;justify-content:space-between;border:1px solid var(--border-subtle);padding:18px;">
+            <div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="width:36px;height:36px;border-radius:8px;background:rgba(56,189,248,0.12);color:#0284c7;display:flex;align-items:center;justify-content:center;">
+                    <i data-lucide="{{ mod.icon }}" style="width:18px;height:18px;"></i>
+                  </div>
+                  <div>
+                    <h3 style="font-size:14px;font-weight:800;color:var(--text-primary);margin:0;">{{ mod.title }}</h3>
+                    <span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;font-weight:700;">{{ group_name }}</span>
+                  </div>
+                </div>
+                <span class="badge-pill badge-lime" style="font-size:9px;padding:2px 6px;">Live</span>
+              </div>
+
+              <p style="font-size:12px;color:var(--text-secondary);line-height:1.45;margin:0 0 14px 0;">
+                {{ mod.description }}
+              </p>
+            </div>
+
+            <div style="border-top:1px solid var(--border-subtle);padding-top:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="runAssistantModule('{{ mod.id }}')" style="font-size:11px;padding:5px 10px;display:inline-flex;align-items:center;gap:4px;">
+                <i data-lucide="play" style="width:12px;height:12px;"></i>
+                <span>{{ mod.action_label }}</span>
+              </button>
+              <a href="{{ mod.related_url }}" class="btn btn-secondary btn-sm" style="font-size:11px;padding:5px 8px;color:var(--text-muted);display:inline-flex;align-items:center;gap:3px;" title="Go to module page">
+                <span>View Full Page</span>
+                <i data-lucide="arrow-up-right" style="width:12px;height:12px;"></i>
+              </a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+<!-- INTERACTIVE MODULE RESULT MODAL -->
+<div id="module-result-modal" class="modal-backdrop">
+  <div class="modal-card" style="max-width:540px;">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div id="modal-mod-icon" style="width:34px;height:34px;border-radius:8px;background:rgba(203,244,50,0.18);color:var(--brand-primary);display:flex;align-items:center;justify-content:center;">
+          <i data-lucide="bot" style="width:18px;height:18px;"></i>
+        </div>
+        <div>
+          <h3 id="modal-mod-title" style="font-weight:800;font-size:17px;color:var(--text-primary);margin:0 0 2px 0;">Module Results</h3>
+          <p id="modal-mod-subtitle" style="font-size:12px;color:var(--text-muted);margin:0;">Actual account intelligence</p>
+        </div>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeModal('module-result-modal')" aria-label="Close">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div id="modal-mod-loading" style="display:none;text-align:center;padding:36px 20px;">
+      <div class="spinner" style="width:28px;height:28px;border:3px solid var(--border-subtle);border-top-color:var(--brand-primary);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px auto;"></div>
+      <div style="font-size:13px;font-weight:700;color:var(--text-primary);">Analyzing Verified Financial Records...</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Retrieving transactions, 50/30/20 buckets, and leak logs</div>
+    </div>
+
+    <!-- Content State -->
+    <div id="modal-mod-body" style="margin-top:16px;">
+      <div id="modal-mod-highlight-box" style="padding:14px 18px;background:var(--bg-subtle);border-radius:var(--radius-lg);border:1px solid var(--border-subtle);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);font-weight:700;letter-spacing:0.5px;">Key Metric Highlight</div>
+          <div id="modal-mod-metric" style="font-size:18px;font-weight:800;color:var(--text-primary);margin-top:2px;">—</div>
+        </div>
+        <span id="modal-mod-status-badge" class="badge-pill badge-lime" style="font-size:11px;">Active</span>
+      </div>
+
+      <div style="font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px;">
+        Detailed Observations
+      </div>
+      <div id="modal-mod-details-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:14px;border-top:1px solid var(--border-subtle);">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('module-result-modal')">Close</button>
+        <a id="modal-mod-page-link" href="#" class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;gap:5px;">
+          <span>Open Full Tool</span>
+          <i data-lucide="arrow-right" style="width:13px;height:13px;"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function handleAssistantHeroSubmit(e) {
+    e.preventDefault();
+    const query = document.getElementById('assistant-hero-query').value.trim();
+    if (!query) return;
+    openFinanceChat(query);
+  }
+
+  async function runAssistantModule(moduleId) {
+    const modal = document.getElementById('module-result-modal');
+    const loading = document.getElementById('modal-mod-loading');
+    const body = document.getElementById('modal-mod-body');
+    const title = document.getElementById('modal-mod-title');
+    const metric = document.getElementById('modal-mod-metric');
+    const badge = document.getElementById('modal-mod-status-badge');
+    const list = document.getElementById('modal-mod-details-list');
+    const pageLink = document.getElementById('modal-mod-page-link');
+
+    openModal('module-result-modal');
+    loading.style.display = 'block';
+    body.style.display = 'none';
+
+    try {
+      const res = await secureFetch(`/api/assistant/module/${moduleId}/run`, { method: 'POST' });
+      if (!res.success) throw new Error(res.error || 'Execution failed');
+
+      const data = res.result;
+      title.textContent = data.title;
+      metric.textContent = data.metric_highlight;
+
+      badge.className = 'badge-pill ' + (data.status === 'warning' ? 'badge-peach' : (data.status === 'danger' ? 'badge-peach' : 'badge-lime'));
+      badge.textContent = data.status === 'warning' ? 'Attention' : 'Optimized';
+
+      list.innerHTML = '';
+      (data.details || []).forEach(d => {
+        const item = document.createElement('div');
+        item.style.cssText = 'padding:10px 14px;background:var(--bg-subtle);border-radius:var(--radius-md);border:1px solid var(--border-subtle);';
+        item.innerHTML = `<strong style="font-size:13px;color:var(--text-primary);display:block;margin-bottom:2px;">${d.title}</strong>
+                          <span style="font-size:12px;color:var(--text-secondary);line-height:1.4;">${d.description}</span>`;
+        list.appendChild(item);
+      });
+
+      pageLink.href = data.action_url || '/dashboard';
+      pageLink.querySelector('span').textContent = data.action_text || 'Open Page';
+
+      loading.style.display = 'none';
+      body.style.display = 'block';
+      if (window.lucide) lucide.createIcons();
+    } catch (err) {
+      loading.style.display = 'none';
+      body.style.display = 'block';
+      title.textContent = 'Module Audit';
+      metric.textContent = 'Unable to Load';
+      list.innerHTML = `<div style="padding:14px;color:var(--accent-danger);font-size:12px;">Failed to execute module: ${err.message}</div>`;
+    }
+  }
+</script>
+<style>
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  .quick-action-card:hover {
+    border-color: var(--brand-primary) !important;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+  }
+  .assistant-module-card:hover {
+    border-color: var(--brand-primary) !important;
+    box-shadow: var(--shadow-sm);
+  }
+</style>
+{% endblock %}

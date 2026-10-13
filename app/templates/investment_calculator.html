@@ -7,69 +7,71 @@
 /* Scheme Explorer Text-Only Tabs */
 .scheme-explorer-tabs {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 .explorer-tab-btn {
-  padding: 10px 20px;
-  font-size: 13px;
+  padding: 8px 16px;
+  font-size: 12px;
   font-weight: 700;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(0,0,0,0.1);
-  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast);
   line-height: 1.4;
   text-align: center;
-}
-.explorer-tab-btn:hover {
-  background: #f8faf6;
-  color: var(--text-primary);
-  border-color: rgba(0,0,0,0.2);
-}
-.explorer-tab-btn.active {
-  background: var(--bg-dark-card);
-  color: var(--brand-lime);
-  border-color: var(--bg-dark-card);
-  box-shadow: 0 4px 12px rgba(22,25,23,0.15);
-}
-
-/* Active Removable Filter Text Chips (strictly NO logos/icons) */
-.active-filter-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
+}
+.explorer-tab-btn:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  border-color: var(--border-focus);
+}
+.explorer-tab-btn.active {
+  background: var(--brand-primary);
+  color: var(--text-on-dark);
+  border-color: var(--brand-primary);
+}
+
+/* Active Removable Filter Text Chips */
+.active-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   border-radius: var(--radius-pill);
-  background: #f1f5ee;
-  color: #1e293b;
-  border: 1px solid rgba(0,0,0,0.1);
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--transition-fast);
 }
 .active-filter-chip:hover {
-  background: #e2e8de;
-  border-color: rgba(0,0,0,0.2);
+  background: var(--bg-card-subtle);
+  border-color: var(--border-focus);
 }
 .active-filter-chip-remove {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
-  color: #64748b;
+  color: var(--text-muted);
   margin-left: 2px;
 }
 .active-filter-chip:hover .active-filter-chip-remove {
-  color: #b91c1c;
+  color: var(--accent-danger);
 }
 
 .scheme-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 .scheme-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+  box-shadow: var(--shadow-sm);
 }
 </style>
 {% endblock %}
@@ -77,11 +79,11 @@
 {% block content %}
 <div class="topbar">
   <div class="topbar-greeting">
-    <div class="greeting-sup">
-      <span>🇮🇳</span>
+    <div class="greeting-sup" style="display:inline-flex;align-items:center;gap:6px;">
+      <i data-lucide="landmark" style="width:14px;height:14px;color:var(--brand-primary);"></i>
       <span>Indian Financial Markets Suite • SEBI & AMFI Compliant</span>
     </div>
-    <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.5px;margin-top:4px;">
+    <h1 style="font-size:20px;font-weight:800;letter-spacing:-0.4px;margin:2px 0 2px 0;">
       Investment Scheme Explorer & Future Wealth Projection
     </h1>
     <div class="greeting-sub">
@@ -91,62 +93,58 @@
 </div>
 
 <!-- TOP NAVIGATION TABS -->
-<div class="calc-tabs-bar" style="margin-bottom:24px;">
-  <button type="button" class="calc-tab-btn active" data-tab="tab-future">
-    <span>🔮</span>
+<div class="calc-tabs-bar" style="margin-bottom:18px;">
+  <button type="button" class="calc-tab-btn active" data-tab="tab-future" style="display:inline-flex;align-items:center;">
+    <i data-lucide="chart-no-axes-combined" style="width:16px;height:16px;margin-right:6px;"></i>
     <span>Future Wealth Projection & Explorer</span>
   </button>
-  <button type="button" class="calc-tab-btn" data-tab="tab-what-if">
-    <span>⏳</span>
+  <button type="button" class="calc-tab-btn" data-tab="tab-what-if" style="display:inline-flex;align-items:center;">
+    <i data-lucide="calendar-clock" style="width:16px;height:16px;margin-right:6px;"></i>
     <span>What If I Invested Earlier?</span>
   </button>
 </div>
 
-<!-- ========================================================================= -->
-<!-- TAB 1: FUTURE WEALTH PROJECTION & EXPLORER SUITE                          -->
-<!-- Contains:                                                                 -->
-<!-- 1. Explore Investment Options (4 Main Tabs)                               -->
-<!-- 2. Personalize Your Investment                                            -->
-<!-- 3. Recommended for You                                                    -->
-<!-- 4. Compare Investments                                                    -->
-<!-- 5. Future Wealth Projection (Calculator + Scenarios + Portfolio Builder)  -->
-<!-- ========================================================================= -->
+<!-- TAB 1: FUTURE WEALTH PROJECTION & EXPLORER SUITE -->
 <div id="tab-future" class="calc-tab-content active">
 
-  <!-- ======================================================================= -->
-  <!-- 1. SCHEME EXPLORER                                                      -->
-  <!-- Text-only Tab Navigation & Functional Filter Bar                        -->
-  <!-- ======================================================================= -->
-  <section class="calc-section card" id="scheme-explorer-section" style="margin-bottom:28px;padding:24px;">
-    <div class="card-header-flex" style="margin-bottom:16px;">
+  <!-- 1. SCHEME EXPLORER -->
+  <section class="calc-section card" id="scheme-explorer-section" style="margin-bottom:20px;padding:18px 20px;">
+    <div class="card-header-flex" style="margin-bottom:14px;">
       <div>
-        <h2 class="card-title" style="font-size:19px;font-weight:800;margin:0;letter-spacing:-0.3px;">Scheme Explorer</h2>
-        <div class="card-subtitle" style="margin-top:4px;">
+        <h2 class="card-title" style="font-size:17px;font-weight:800;margin:0;letter-spacing:-0.3px;display:flex;align-items:center;gap:8px;">
+          <i data-lucide="search" style="width:16px;height:16px;"></i>
+          <span>Scheme Explorer</span>
+        </h2>
+        <div class="card-subtitle" style="margin-top:2px;">
           Filter vetted Indian investments across approved asset classes. Refine by risk level, duration horizon, minimum contribution, and expense ratio.
         </div>
       </div>
-      <div id="explorer-results-count-badge" class="badge-pill badge-dark" style="font-size:12px;padding:6px 14px;font-weight:700;">
+      <div id="explorer-results-count-badge" class="badge-pill badge-dark" style="font-size:11px;padding:5px 12px;font-weight:700;">
         Showing {{ schemes|length }} investments
       </div>
     </div>
 
-    <!-- 1. TEXT-ONLY MAIN TABS -->
-    <!-- All Schemes | Stocks & Equity | Equity Mutual Funds | SIP Investments | Gold -->
+    <!-- 1. MAIN ASSET CLASS TABS WITH CONSISTENT OUTLINE ICONS -->
     <div class="scheme-explorer-tabs" id="scheme-explorer-tabs" style="border-bottom:2px solid rgba(0,0,0,0.06);padding-bottom:12px;margin-bottom:20px;">
       <button type="button" class="explorer-tab-btn active" data-tab="ALL" id="tab-all-schemes">
-        All Schemes
+        <i data-lucide="chart-no-axes-combined"></i>
+        <span>All Schemes</span>
       </button>
       <button type="button" class="explorer-tab-btn" data-tab="STOCKS_EQUITY" id="tab-stocks">
-        Stocks & Equity
+        <i data-lucide="chart-candlestick"></i>
+        <span>Stocks & Equity</span>
       </button>
       <button type="button" class="explorer-tab-btn" data-tab="EQUITY_MUTUAL_FUNDS" id="tab-mutual-funds">
-        Equity Mutual Funds
+        <i data-lucide="chart-pie"></i>
+        <span>Equity Mutual Funds</span>
       </button>
       <button type="button" class="explorer-tab-btn" data-tab="SIP_INVESTMENTS" id="tab-sip">
-        SIP Investments
+        <i data-lucide="calendar-clock"></i>
+        <span>SIP Investments</span>
       </button>
       <button type="button" class="explorer-tab-btn" data-tab="GOLD" id="tab-gold">
-        Gold
+        <i data-lucide="coins"></i>
+        <span>Gold</span>
       </button>
     </div>
 
@@ -265,7 +263,7 @@
       </button>
     </div>
 
-  </section>  </section>
+  </section>
 
   <!-- ======================================================================= -->
   <!-- 2. PERSONALIZE YOUR INVESTMENT                                          -->
@@ -274,15 +272,15 @@
     <div class="card-header-flex" style="margin-bottom:18px;">
       <div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:20px;">🎯</span>
+          <span style="display:inline-flex;align-items:center;"><i data-lucide="target" style="width:20px;height:20px;"></i></span>
           <h2 class="card-title" style="font-size:18px;margin:0;">Personalize Your Investment</h2>
         </div>
         <div class="card-subtitle" style="margin-top:4px;">
           Configure your financial profile to receive tailored, verified recommendations matching your goals, horizon, risk tolerance, and liquidity constraints.
         </div>
       </div>
-      <button type="button" id="btn-trigger-recs" class="btn btn-dark btn-sm">
-        <span>✨</span> Refresh Recommendations
+      <button type="button" id="btn-trigger-recs" class="btn btn-dark btn-sm" style="display:inline-flex;align-items:center;">
+        <i data-lucide="refresh-cw" style="width:14px;height:14px;margin-right:6px;"></i> Refresh Recommendations
       </button>
     </div>
 
@@ -361,7 +359,7 @@
     <div class="card-header-flex" style="margin-bottom:16px;">
       <div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:20px;">🏆</span>
+          <span style="display:inline-flex;align-items:center;"><i data-lucide="trophy" style="width:20px;height:20px;"></i></span>
           <h2 class="card-title" style="font-size:18px;margin:0;">Recommended for You</h2>
         </div>
         <div class="card-subtitle" style="margin-top:4px;">
@@ -380,8 +378,8 @@
           <div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
               <span class="badge-pill badge-mint" style="font-size:10px;">{{ r.category_label }}</span>
-              <span class="badge-pill" style="background:#eef8ed;color:#166534;font-size:10px;font-weight:700;">
-                ★ {{ r.match_score }}% Match
+              <span class="badge-pill badge-mint" style="font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">
+                <i data-lucide="star" style="width:12px;height:12px;fill:currentColor;"></i> {{ r.match_score }}% Match
               </span>
             </div>
 
@@ -415,8 +413,12 @@
 
           <div class="scheme-card-actions" style="margin-top:12px;">
             <button type="button" class="btn btn-secondary btn-sm action-view-details" data-id="{{ r.id }}">Details</button>
-            <button type="button" class="btn btn-primary btn-sm action-project-scheme" data-id="{{ r.id }}" data-rate="{{ r.cagr_5y or r.expected_annual_return }}" data-name="{{ r.name }}" data-method="{% if r.category == 'SIP_INVESTMENTS' %}SIP{% else %}LUMPSUM{% endif %}" data-amount="10000">🔮 Project</button>
-            <button type="button" class="btn btn-dark btn-sm action-add-portfolio" data-id="{{ r.id }}" data-category="{{ r.category }}" data-underlying="{{ r.underlying_scheme_id or '' }}" data-rate="{{ r.cagr_5y or r.expected_annual_return }}" data-name="{{ r.name }}" data-method="{% if r.category == 'SIP_INVESTMENTS' %}SIP{% else %}LUMPSUM{% endif %}" data-amount="10000">➕ Portfolio</button>
+            <button type="button" class="btn btn-primary btn-sm action-project-scheme" data-id="{{ r.id }}" data-rate="{{ r.cagr_5y or r.expected_annual_return }}" data-name="{{ r.name }}" data-method="{% if r.category == 'SIP_INVESTMENTS' %}SIP{% else %}LUMPSUM{% endif %}" data-amount="10000" style="display:inline-flex;align-items:center;">
+              <i data-lucide="chart-no-axes-combined" style="width:13px;height:13px;margin-right:4px;"></i> Project
+            </button>
+            <button type="button" class="btn btn-dark btn-sm action-add-portfolio" data-id="{{ r.id }}" data-category="{{ r.category }}" data-underlying="{{ r.underlying_scheme_id or '' }}" data-rate="{{ r.cagr_5y or r.expected_annual_return }}" data-name="{{ r.name }}" data-method="{% if r.category == 'SIP_INVESTMENTS' %}SIP{% else %}LUMPSUM{% endif %}" data-amount="10000" style="display:inline-flex;align-items:center;">
+              <i data-lucide="plus" style="width:13px;height:13px;margin-right:4px;"></i> Portfolio
+            </button>
           </div>
         </div>
       {% endfor %}
@@ -430,7 +432,7 @@
     <div class="card-header-flex" style="margin-bottom:18px;">
       <div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:20px;">⚖️</span>
+          <span style="display:inline-flex;align-items:center;"><i data-lucide="scale" style="width:20px;height:20px;"></i></span>
           <h2 class="card-title" style="font-size:18px;margin:0;">Compare Investments</h2>
         </div>
         <div class="card-subtitle" style="margin-top:4px;">
@@ -514,7 +516,7 @@
       </div>
 
       <button type="button" id="btn-run-compare" class="btn btn-primary" style="height:44px;">
-        <span>⚡</span> Run Side-by-Side Comparison
+        <i data-lucide="zap"></i> Run Side-by-Side Comparison
       </button>
     </div>
 
@@ -535,7 +537,7 @@
       <div class="card-header-flex">
         <div>
           <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:22px;">🔮</span>
+            <i data-lucide="chart-no-axes-combined" style="width:22px;height:22px;"></i>
             <h2 class="card-title" style="font-size:18px;margin:0;">Future Wealth Projection</h2>
           </div>
           <div class="card-subtitle" style="margin-top:4px;">
@@ -554,7 +556,7 @@
       <div class="quick-stat-card card-dark">
         <div>
           <div class="stat-card-top" style="color:var(--brand-lime);">
-            <span>💰</span>
+            <i data-lucide="wallet"></i>
             <span>Future Value (FV)</span>
           </div>
           <div id="calc-fv-display" class="stat-card-value" style="color:#ffffff;">
@@ -567,7 +569,7 @@
       <div class="quick-stat-card card-pastel-blue">
         <div>
           <div class="stat-card-top" style="color:var(--pastel-blue-accent);">
-            <span>📥</span>
+            <i data-lucide="piggy-bank"></i>
             <span>Total Capital Invested</span>
           </div>
           <div id="calc-invested-display" class="stat-card-value" style="color:var(--pastel-blue-accent);">
@@ -580,7 +582,7 @@
       <div class="quick-stat-card card-pastel-mint">
         <div>
           <div class="stat-card-top" style="color:var(--pastel-mint-accent);">
-            <span>🚀</span>
+            <i data-lucide="trending-up"></i>
             <span>Estimated Returns (Gain)</span>
           </div>
           <div id="calc-returns-display" class="stat-card-value" style="color:var(--pastel-mint-accent);">
@@ -593,7 +595,7 @@
       <div class="quick-stat-card card-pastel-lavender">
         <div>
           <div class="stat-card-top" style="color:var(--pastel-lavender-accent);">
-            <span>📈</span>
+            <i data-lucide="chart-column"></i>
             <span>Wealth Gain Ratio</span>
           </div>
           <div id="calc-gain-ratio-display" class="stat-card-value" style="color:var(--pastel-lavender-accent);">
@@ -608,7 +610,7 @@
     <div class="card" style="margin-bottom:24px;padding:18px 24px;background:var(--bg-card);">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
         <div style="font-weight:800;font-size:13px;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
-          <span>📊</span>
+          <i data-lucide="chart-no-axes-combined"></i>
           <span>Three-Scenario Projection Analysis</span>
         </div>
         <span style="font-size:11px;color:var(--text-muted);">
@@ -618,43 +620,43 @@
 
       <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:14px;">
         <!-- Conservative -->
-        <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:var(--radius-sm);padding:14px;">
+        <div style="background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.22);border-radius:var(--radius-sm);padding:14px;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:11px;font-weight:800;color:#c2410c;text-transform:uppercase;">Conservative</span>
-            <span id="scenario-rate-cons" class="badge-pill" style="background:#fed7aa;color:#7c2d12;font-size:10px;">9.5%</span>
+            <span style="font-size:11px;font-weight:800;color:#ea580c;text-transform:uppercase;letter-spacing:0.3px;">Conservative</span>
+            <span id="scenario-rate-cons" class="badge-pill" style="background:rgba(249,115,22,0.15);color:#ea580c;font-size:10px;font-weight:700;">9.5%</span>
           </div>
-          <div id="scenario-fv-cons" style="font-size:18px;font-weight:800;color:#9a3412;margin-top:6px;">
+          <div id="scenario-fv-cons" style="font-size:18px;font-weight:800;color:var(--text-primary);margin-top:6px;font-variant-numeric:tabular-nums;">
             ₹9,80,000
           </div>
-          <div id="scenario-gain-cons" style="font-size:11px;color:#c2410c;margin-top:2px;">
+          <div id="scenario-gain-cons" style="font-size:11px;color:#ea580c;margin-top:2px;font-variant-numeric:tabular-nums;">
             Gains: +₹3,80,000
           </div>
         </div>
 
         <!-- Moderate -->
-        <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:var(--radius-sm);padding:14px;">
+        <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.22);border-radius:var(--radius-sm);padding:14px;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:11px;font-weight:800;color:#047857;text-transform:uppercase;">Moderate (Baseline)</span>
-            <span id="scenario-rate-mod" class="badge-pill" style="background:#a7f3d0;color:#065f46;font-size:10px;">12.0%</span>
+            <span style="font-size:11px;font-weight:800;color:#059669;text-transform:uppercase;letter-spacing:0.3px;">Moderate (Baseline)</span>
+            <span id="scenario-rate-mod" class="badge-pill" style="background:rgba(16,185,129,0.15);color:#059669;font-size:10px;font-weight:700;">12.0%</span>
           </div>
-          <div id="scenario-fv-mod" style="font-size:18px;font-weight:800;color:#065f46;margin-top:6px;">
+          <div id="scenario-fv-mod" style="font-size:18px;font-weight:800;color:var(--text-primary);margin-top:6px;font-variant-numeric:tabular-nums;">
             {{ default_calc.summary.future_value_formatted }}
           </div>
-          <div id="scenario-gain-mod" style="font-size:11px;color:#047857;margin-top:2px;">
+          <div id="scenario-gain-mod" style="font-size:11px;color:#059669;margin-top:2px;font-variant-numeric:tabular-nums;">
             Gains: +{{ default_calc.summary.estimated_returns_formatted }}
           </div>
         </div>
 
         <!-- Optimistic -->
-        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--radius-sm);padding:14px;">
+        <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.22);border-radius:var(--radius-sm);padding:14px;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:11px;font-weight:800;color:#1d4ed8;text-transform:uppercase;">Optimistic</span>
-            <span id="scenario-rate-opt" class="badge-pill" style="background:#bfdbfe;color:#1e40af;font-size:10px;">14.5%</span>
+            <span style="font-size:11px;font-weight:800;color:#2563eb;text-transform:uppercase;letter-spacing:0.3px;">Optimistic</span>
+            <span id="scenario-rate-opt" class="badge-pill" style="background:rgba(59,130,246,0.15);color:#2563eb;font-size:10px;font-weight:700;">14.5%</span>
           </div>
-          <div id="scenario-fv-opt" style="font-size:18px;font-weight:800;color:#1e40af;margin-top:6px;">
+          <div id="scenario-fv-opt" style="font-size:18px;font-weight:800;color:var(--text-primary);margin-top:6px;font-variant-numeric:tabular-nums;">
             ₹13,20,000
           </div>
-          <div id="scenario-gain-opt" style="font-size:11px;color:#1d4ed8;margin-top:2px;">
+          <div id="scenario-gain-opt" style="font-size:11px;color:#2563eb;margin-top:2px;font-variant-numeric:tabular-nums;">
             Gains: +₹7,20,000
           </div>
         </div>
@@ -745,14 +747,17 @@
             </div>
 
             <button type="button" id="btn-add-current-to-portfolio" class="btn btn-dark" style="width:100%;margin-top:10px;">
-              <span>➕</span> Add Current Projection to Portfolio
+              <i data-lucide="plus"></i> Add Current Projection to Portfolio
             </button>
           </form>
 
           <!-- DISCLOSURES -->
-          <div style="background:#fef3e8;border:1px solid #fedcc7;border-radius:var(--radius-sm);padding:14px;margin-top:20px;">
-            <div style="font-weight:700;font-size:12px;color:#c2410c;margin-bottom:4px;">⚠️ Important Regulatory Disclosures</div>
-            <ul style="padding-left:18px;font-size:11px;color:#7c2d12;line-height:1.5;margin:0;">
+          <div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.22);border-radius:var(--radius-sm);padding:14px;margin-top:20px;">
+            <div style="font-weight:700;font-size:12px;color:#d97706;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+              <i data-lucide="alert-triangle" style="width:15px;height:15px;"></i>
+              <span>Important Regulatory Disclosures</span>
+            </div>
+            <ul style="padding-left:18px;font-size:11px;color:var(--text-secondary);line-height:1.5;margin:0;">
               <li>Projections are mathematical estimates and do not guarantee future returns.</li>
               <li>Stocks, equity funds, and gold prices fluctuate; past CAGR is not a guarantee of future gains.</li>
               <li>Taxes and inflation are not deducted in this baseline accumulation model.</li>
@@ -816,7 +821,7 @@
       <div class="card-header-flex" style="margin-bottom:18px;">
         <div>
           <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:20px;">💼</span>
+            <i data-lucide="briefcase" style="width:20px;height:20px;"></i>
             <h3 class="card-title" style="font-size:18px;margin:0;">Combined Multi-Asset Portfolio Projection</h3>
           </div>
           <div class="card-subtitle" style="margin-top:4px;">
@@ -880,7 +885,7 @@
           <tbody id="portfolio-tbody">
             <tr>
               <td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;">
-                No investments added yet. Click "➕ Portfolio" on any card above or "Add Current Projection to Portfolio".
+                No investments added yet. Click "+ Portfolio" on any card above or "Add Current Projection to Portfolio".
               </td>
             </tr>
           </tbody>
@@ -888,22 +893,22 @@
       </div>
 
       <!-- Consolidated Portfolio Summary Stats -->
-      <div id="portfolio-summary-bar" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px;background:#161917;color:#fff;border-radius:var(--radius-sm);padding:18px;">
+      <div id="portfolio-summary-bar" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px;background:var(--bg-surface-elevated, #161917);border:1px solid var(--border-subtle);color:#fff;border-radius:var(--radius-sm);padding:18px;">
         <div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.6);text-transform:uppercase;font-weight:700;">Combined Invested</div>
-          <div id="port-total-invested" style="font-size:18px;font-weight:800;color:#ffffff;margin-top:2px;">₹0</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.6);text-transform:uppercase;font-weight:700;letter-spacing:0.3px;">Combined Invested</div>
+          <div id="port-total-invested" style="font-size:18px;font-weight:800;color:#ffffff;margin-top:2px;font-variant-numeric:tabular-nums;">₹0</div>
         </div>
         <div>
-          <div style="font-size:11px;color:var(--brand-lime);text-transform:uppercase;font-weight:700;">Combined Projected Corpus</div>
-          <div id="port-total-fv" style="font-size:18px;font-weight:800;color:var(--brand-lime);margin-top:2px;">₹0</div>
+          <div style="font-size:11px;color:var(--brand-lime);text-transform:uppercase;font-weight:700;letter-spacing:0.3px;">Combined Projected Corpus</div>
+          <div id="port-total-fv" style="font-size:18px;font-weight:800;color:var(--brand-lime);margin-top:2px;font-variant-numeric:tabular-nums;">₹0</div>
         </div>
         <div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.6);text-transform:uppercase;font-weight:700;">Total Net Gain</div>
-          <div id="port-total-gains" style="font-size:18px;font-weight:800;color:#4ade80;margin-top:2px;">+₹0</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.6);text-transform:uppercase;font-weight:700;letter-spacing:0.3px;">Total Net Gain</div>
+          <div id="port-total-gains" style="font-size:18px;font-weight:800;color:#4ade80;margin-top:2px;font-variant-numeric:tabular-nums;">+₹0</div>
         </div>
         <div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.6);text-transform:uppercase;font-weight:700;">Conservative / Optimistic</div>
-          <div id="port-scenarios" style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.85);margin-top:4px;">₹0 / ₹0</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.6);text-transform:uppercase;font-weight:700;letter-spacing:0.3px;">Conservative / Optimistic</div>
+          <div id="port-scenarios" style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.85);margin-top:4px;font-variant-numeric:tabular-nums;">₹0 / ₹0</div>
         </div>
       </div>
     </div>
@@ -919,7 +924,7 @@
     <div class="quick-stat-card card-pastel-blue">
       <div>
         <div class="stat-card-top" style="color:var(--pastel-blue-accent);">
-          <span>📥</span>
+          <i data-lucide="piggy-bank"></i>
           <span>Original Amount Invested</span>
         </div>
         <div id="whatif-invested-display" class="stat-card-value" style="color:var(--pastel-blue-accent);">
@@ -932,7 +937,7 @@
     <div class="quick-stat-card card-dark">
       <div>
         <div class="stat-card-top" style="color:var(--brand-lime);">
-          <span>💎</span>
+          <i data-lucide="gem"></i>
           <span>Current Valuation Today</span>
         </div>
         <div id="whatif-current-display" class="stat-card-value" style="color:#ffffff;">
@@ -945,7 +950,7 @@
     <div class="quick-stat-card card-pastel-mint">
       <div>
         <div class="stat-card-top" style="color:var(--pastel-mint-accent);">
-          <span>🚀</span>
+          <i data-lucide="trending-up"></i>
           <span>Total Profit / Loss</span>
         </div>
         <div id="whatif-profit-display" class="stat-card-value" style="color:var(--pastel-mint-accent);">
@@ -960,7 +965,7 @@
     <div class="quick-stat-card card-pastel-lavender">
       <div>
         <div class="stat-card-top" style="color:var(--pastel-lavender-accent);">
-          <span>⚡</span>
+          <i data-lucide="zap"></i>
           <span>Annualized Return (CAGR)</span>
         </div>
         <div id="whatif-cagr-display" class="stat-card-value" style="color:var(--pastel-lavender-accent);">
@@ -1117,7 +1122,7 @@
         <h2 id="modal-title" style="font-size:20px;font-weight:800;letter-spacing:-0.4px;">Scheme Name</h2>
         <div id="modal-provider" style="font-size:13px;color:var(--text-muted);font-weight:600;">Provider / Entity</div>
       </div>
-      <button type="button" class="modal-close-btn" id="btn-close-scheme-modal">&times;</button>
+      <button type="button" class="modal-close-btn" id="btn-close-scheme-modal"><i data-lucide="x" style="width:18px;height:18px;"></i></button>
     </div>
 
     <!-- Purpose & How it Works -->
@@ -1182,16 +1187,18 @@
     <!-- Pros & Cons -->
     <div class="pros-cons-grid">
       <div class="pro-box">
-        <div style="font-weight:800;font-size:12px;color:var(--pastel-mint-accent);margin-bottom:6px;">
-          ✓ Key Advantages
+        <div style="font-weight:800;font-size:12px;color:var(--pastel-mint-accent);margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+          <i data-lucide="check" style="width:14px;height:14px;"></i>
+          <span>Key Advantages</span>
         </div>
-        <ul id="modal-pros" style="font-size:12px;line-height:1.5;padding-left:16px;color:#14532d;"></ul>
+        <ul id="modal-pros" style="font-size:12px;line-height:1.5;padding-left:16px;color:var(--text-primary);"></ul>
       </div>
       <div class="con-box">
-        <div style="font-weight:800;font-size:12px;color:var(--pastel-peach-accent);margin-bottom:6px;">
-          ⚠️ Limitations & Risks
+        <div style="font-weight:800;font-size:12px;color:var(--pastel-peach-accent);margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+          <i data-lucide="alert-triangle" style="width:14px;height:14px;"></i>
+          <span>Limitations & Risks</span>
         </div>
-        <ul id="modal-cons" style="font-size:12px;line-height:1.5;padding-left:16px;color:#7c2d12;"></ul>
+        <ul id="modal-cons" style="font-size:12px;line-height:1.5;padding-left:16px;color:var(--text-primary);"></ul>
       </div>
     </div>
 
@@ -1203,9 +1210,9 @@
 
     <!-- Modal Action Buttons -->
     <div style="display:flex;gap:10px;justify-content:flex-end;">
-      <button type="button" class="btn btn-secondary" id="modal-act-compare">⚖️ Add to Compare</button>
-      <button type="button" class="btn btn-dark" id="modal-act-future">🔮 Project Future</button>
-      <button type="button" class="btn btn-primary" id="modal-act-whatif">⏳ What-If Earlier</button>
+      <button type="button" class="btn btn-secondary" id="modal-act-compare"><i data-lucide="scale"></i> Add to Compare</button>
+      <button type="button" class="btn btn-dark" id="modal-act-future"><i data-lucide="chart-no-axes-combined"></i> Project Future</button>
+      <button type="button" class="btn btn-primary" id="modal-act-whatif"><i data-lucide="calendar-clock"></i> What-If Earlier</button>
     </div>
   </div>
 </div>

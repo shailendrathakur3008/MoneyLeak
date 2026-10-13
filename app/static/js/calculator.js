@@ -566,9 +566,10 @@ function renderActiveFilterChips() {
   container.innerHTML = chips.map(c => `
     <button type="button" class="active-filter-chip" data-chip-key="${c.key}">
       <span>${c.label}</span>
-      <span class="active-filter-chip-remove" title="Remove filter">✕</span>
+      <span class="active-filter-chip-remove" title="Remove filter"><i data-lucide="x" style="width:12px;height:12px;"></i></span>
     </button>
   `).join('');
+  if (window.refreshIcons) window.refreshIcons(container);
 
   // Add click listeners to remove filter chip
   container.querySelectorAll('.active-filter-chip').forEach(btn => {
@@ -783,8 +784,8 @@ function renderRecommendationsDOM(recommendations) {
       <div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <span class="badge-pill badge-mint" style="font-size:10px;">${r.category_label || r.category}</span>
-          <span class="badge-pill" style="background:#eef8ed;color:#166534;font-size:10px;font-weight:700;">
-            ★ ${r.match_score}% Match
+          <span class="badge-pill" style="background:#eef8ed;color:#166534;font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">
+            <i data-lucide="star" style="width:12px;height:12px;"></i> ${r.match_score}% Match
           </span>
         </div>
 
@@ -822,7 +823,7 @@ function renderRecommendationsDOM(recommendations) {
           data-rate="${r.cagr_5y || r.expected_annual_return}" 
           data-name="${r.name}" 
           data-method="${r.category === 'SIP_INVESTMENTS' ? 'SIP' : 'LUMPSUM'}" 
-          data-amount="10000">🔮 Project</button>
+          data-amount="10000"><i data-lucide="chart-no-axes-combined"></i> Project</button>
         <button type="button" class="btn btn-dark btn-sm action-add-portfolio" 
           data-id="${r.id}" 
           data-category="${r.category}" 
@@ -830,10 +831,11 @@ function renderRecommendationsDOM(recommendations) {
           data-rate="${r.cagr_5y || r.expected_annual_return}" 
           data-name="${r.name}" 
           data-method="${r.category === 'SIP_INVESTMENTS' ? 'SIP' : 'LUMPSUM'}" 
-          data-amount="10000">➕ Portfolio</button>
+          data-amount="10000"><i data-lucide="plus"></i> Portfolio</button>
       </div>
     </div>
   `).join('');
+  if (window.refreshIcons) window.refreshIcons(container);
 }
 
 // ============================================================================
@@ -961,7 +963,7 @@ function renderComparisonTable(comp) {
           <td style="font-weight:700;background:#f8faf6;">Key Advantages</td>
           ${schemes.map(s => `
             <td style="font-size:11px;color:#15803d;">
-              ${(s.advantages || []).slice(0, 2).map(a => `<div>✓ ${a}</div>`).join('')}
+              ${(s.advantages || []).slice(0, 2).map(a => `<div style="display:flex;align-items:flex-start;gap:4px;margin-bottom:2px;"><i data-lucide="check" style="width:12px;height:12px;flex-shrink:0;margin-top:2px;"></i><span>${a}</span></div>`).join('')}
             </td>
           `).join('')}
         </tr>
@@ -969,7 +971,7 @@ function renderComparisonTable(comp) {
           <td style="font-weight:700;background:#f8faf6;">Limitations & Risks</td>
           ${schemes.map(s => `
             <td style="font-size:11px;color:#b91c1c;">
-              ${(s.disadvantages || []).slice(0, 2).map(d => `<div>⚠️ ${d}</div>`).join('')}
+              ${(s.disadvantages || []).slice(0, 2).map(d => `<div style="display:flex;align-items:flex-start;gap:4px;margin-bottom:2px;"><i data-lucide="alert-triangle" style="width:12px;height:12px;flex-shrink:0;margin-top:2px;"></i><span>${d}</span></div>`).join('')}
             </td>
           `).join('')}
         </tr>
@@ -983,7 +985,7 @@ function renderComparisonTable(comp) {
                 data-name="${s.name}" 
                 data-method="${comp.parameters?.method || 'LUMPSUM'}" 
                 data-amount="${comp.parameters?.amount || 50000}">
-                🔮 Project
+                <i data-lucide="chart-no-axes-combined"></i> Project
               </button>
             </td>
           `).join('')}
@@ -993,6 +995,7 @@ function renderComparisonTable(comp) {
   `;
 
   wrapper.innerHTML = tableHtml;
+  if (window.refreshIcons) window.refreshIcons(wrapper);
 }
 
 // ============================================================================
@@ -1287,7 +1290,7 @@ async function updatePortfolioDOM() {
     tbody.innerHTML = `
       <tr>
         <td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;">
-          No investments added yet. Click "➕ Portfolio" on any card above or "Add Current Projection to Portfolio".
+          No investments added yet. Click "+ Portfolio" on any card above or "Add Current Projection to Portfolio".
         </td>
       </tr>
     `;
@@ -1329,8 +1332,8 @@ function renderPortfolioResults(port) {
       <td>${item.total_invested_formatted}</td>
       <td style="font-weight:800;color:var(--text-primary);">${item.future_value_formatted}</td>
       <td>
-        <button type="button" class="btn btn-danger btn-sm" onclick="removeInvestmentFromPortfolio(${idx})" style="padding:4px 8px;font-size:11px;">
-          Remove
+        <button type="button" class="btn btn-danger btn-sm" onclick="removeInvestmentFromPortfolio(${idx})" style="padding:4px 8px;font-size:11px;display:inline-flex;align-items:center;gap:4px;" title="Remove investment">
+          <i data-lucide="trash-2" style="width:13px;height:13px;"></i> Remove
         </button>
       </td>
     </tr>
@@ -1372,6 +1375,7 @@ function renderPortfolioResults(port) {
   if (scenEl) {
     scenEl.innerText = `${scen.conservative?.future_value_formatted || '₹0'} / ${scen.optimistic?.future_value_formatted || '₹0'}`;
   }
+  if (window.refreshIcons) window.refreshIcons(tbody);
 }
 
 function resetPortfolioSummary() {

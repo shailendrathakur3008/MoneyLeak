@@ -49,6 +49,15 @@ def create_app(config_name=None):
                 return jsonify({'success': False, 'error': 'CSRF token missing or invalid.'}), 400
         return e
 
+    # Ensure avatar upload folder exists
+    try:
+        os.makedirs(os.path.join(app.root_path, 'static', 'uploads', 'avatars'), exist_ok=True)
+    except OSError:
+        pass
+
+    # Import models for db.create_all()
+    from app.models.auth_otp import EmailOTP  # noqa: F401
+
     # Create tables automatically for local setup
     with app.app_context():
         db.create_all()
@@ -69,11 +78,44 @@ def create_app(config_name=None):
                     if col_name not in existing_cols:
                         conn.execute(db.text(f"ALTER TABLE categories ADD COLUMN {col_name} {col_def}"))
 
-                # Check users table for theme_preference
+                # Check users table columns
                 res_u = conn.execute(db.text("PRAGMA table_info(users)")).fetchall()
                 user_cols = {row[1] for row in res_u}
-                if 'theme_preference' not in user_cols:
-                    conn.execute(db.text("ALTER TABLE users ADD COLUMN theme_preference VARCHAR(20) DEFAULT 'system' NOT NULL"))
+                user_cols_to_add = [
+                    ('theme_preference', "VARCHAR(20) DEFAULT 'system' NOT NULL"),
+                    ('auth_provider', "VARCHAR(50) DEFAULT 'local' NOT NULL"),
+                    ('provider_user_id', "VARCHAR(255)"),
+                    ('profile_picture_url', "VARCHAR(500)"),
+                    ('email_verified', "BOOLEAN DEFAULT 0 NOT NULL"),
+                    ('phone_number', "VARCHAR(30)"),
+                    ('date_of_birth', "VARCHAR(30)"),
+                    ('country', "VARCHAR(80) DEFAULT 'India' NOT NULL"),
+                    ('state_id', "VARCHAR(20)"),
+                    ('state_name', "VARCHAR(100)"),
+                    ('district_id', "VARCHAR(50)"),
+                    ('district_name', "VARCHAR(100)"),
+                    ('city_id', "VARCHAR(80)"),
+                    ('city_name', "VARCHAR(120)"),
+                    ('is_custom_city', "BOOLEAN DEFAULT 0 NOT NULL"),
+                    ('pincode', "VARCHAR(10)"),
+                    ('location_tier', "VARCHAR(50) DEFAULT 'UNCLASSIFIED' NOT NULL"),
+                    ('budget_preset', "VARCHAR(50) DEFAULT 'standard' NOT NULL"),
+                    ('rent_or_emi_minor_units', "BIGINT DEFAULT 0 NOT NULL"),
+                    ('essential_expenses_minor_units', "BIGINT DEFAULT 0 NOT NULL"),
+                    ('debt_payments_minor_units', "BIGINT DEFAULT 0 NOT NULL"),
+                    ('dependants_count', "INTEGER DEFAULT 0 NOT NULL"),
+                    ('preferred_language', "VARCHAR(20) DEFAULT 'en' NOT NULL"),
+                    ('user_type', "VARCHAR(30)"),
+                    ('opening_balance_minor_units', "BIGINT DEFAULT 0 NOT NULL"),
+                    ('monthly_savings_target_minor_units', "BIGINT DEFAULT 0 NOT NULL"),
+                    ('primary_financial_goal', "VARCHAR(100)"),
+                    ('investment_experience', "VARCHAR(50)"),
+                    ('preferred_investment_categories', "TEXT"),
+                    ('onboarding_step', "INTEGER DEFAULT 1 NOT NULL")
+                ]
+                for col_name, col_def in user_cols_to_add:
+                    if col_name not in user_cols:
+                        conn.execute(db.text(f"ALTER TABLE users ADD COLUMN {col_name} {col_def}"))
 
                 conn.commit()
         except Exception:

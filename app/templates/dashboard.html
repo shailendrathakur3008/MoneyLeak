@@ -1,20 +1,41 @@
 {% extends 'base.html' %}
 
-{% block title %}Dashboard — MoneyLeak Intelligence{% endblock %}
+{% block title %}Dashboard — MoneyLeak{% endblock %}
 
 {% block content %}
 <!-- TOPBAR -->
 <div class="topbar">
   <div class="topbar-greeting">
     <div class="greeting-sup">
-      <span>Good day, {{ user.full_name }} 👋</span>
+      <span>Good day, {{ user.full_name }}</span>
+      {% if user.user_type == 'student' %}
+        <span class="badge-pill badge-blue" style="display:inline-flex;align-items:center;gap:4px;">
+          <i data-lucide="graduation-cap" style="width:13px;height:13px;"></i> Student
+        </span>
+      {% elif user.user_type == 'salaried' %}
+        <span class="badge-pill badge-lime" style="display:inline-flex;align-items:center;gap:4px;">
+          <i data-lucide="briefcase" style="width:13px;height:13px;"></i> Salaried Professional
+        </span>
+      {% endif %}
       {% if alerts|length > 0 %}
-        <span class="badge-pill badge-peach">⚠️ {{ alerts|length }} Leaks Detected</span>
+        <span class="badge-pill badge-peach" style="display:inline-flex;align-items:center;gap:4px;">
+          <i data-lucide="alert-triangle" style="width:13px;height:13px;"></i> {{ alerts|length }} Leaks Detected
+        </span>
       {% else %}
-        <span class="badge-pill badge-mint">✨ Finances Optimized</span>
+        <span class="badge-pill badge-mint" style="display:inline-flex;align-items:center;gap:4px;">
+          <i data-lucide="check-circle" style="width:13px;height:13px;"></i> Finances Optimized
+        </span>
       {% endif %}
     </div>
-    <div class="greeting-sub">Your 50/30/20 budget framework & leaks intelligence center.</div>
+    <div class="greeting-sub">
+      {% if user.user_type == 'student' %}
+        Education fees, study supplies, allowance & savings overview.
+      {% elif user.user_type == 'salaried' %}
+        Salary allocation, monthly household bills & wealth overview.
+      {% else %}
+        Your 50/30/20 budget framework & spending overview.
+      {% endif %}
+    </div>
   </div>
 
   <div class="topbar-actions">
@@ -37,8 +58,9 @@
     </div>
 
     <!-- Quick Add Button -->
-    <button type="button" class="btn btn-primary" onclick="openModal('quick-add-modal')">
-      <span>+ Add Transaction</span>
+    <button type="button" class="btn btn-primary" onclick="openModal('quick-add-modal')" style="display:inline-flex;align-items:center;">
+      <i data-lucide="plus" style="width:16px;height:16px;margin-right:6px;"></i>
+      <span>Add Transaction</span>
     </button>
   </div>
 </div>
@@ -47,11 +69,58 @@
 <div class="dashboard-grid">
   <!-- LEFT COLUMN -->
   <div class="dashboard-col">
+    {% if user.opening_balance_minor_units or user.monthly_savings_target_minor_units or user.primary_financial_goal %}
+    <!-- PERSONALIZED PREFERENCES & TARGETS BAR -->
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);margin-bottom:14px;gap:12px;">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        {% if user.opening_balance_minor_units %}
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:26px;height:26px;border-radius:50%;background:rgba(56,189,248,0.15);color:#0284c7;display:flex;align-items:center;justify-content:center;">
+              <i data-lucide="wallet" style="width:13px;height:13px;"></i>
+            </div>
+            <div>
+              <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);font-weight:700;letter-spacing:0.4px;">Opening Balance</div>
+              <div style="font-size:12px;font-weight:800;color:var(--text-primary);font-variant-numeric:tabular-nums;">{{ user.opening_balance_minor_units|format_money(user.currency) }}</div>
+            </div>
+          </div>
+        {% endif %}
+
+        {% if user.monthly_savings_target_minor_units %}
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:26px;height:26px;border-radius:50%;background:rgba(203,244,50,0.18);color:#65a30d;display:flex;align-items:center;justify-content:center;">
+              <i data-lucide="target" style="width:13px;height:13px;"></i>
+            </div>
+            <div>
+              <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);font-weight:700;letter-spacing:0.4px;">Savings Target</div>
+              <div style="font-size:12px;font-weight:800;color:var(--text-primary);font-variant-numeric:tabular-nums;">{{ user.monthly_savings_target_minor_units|format_money(user.currency) }}/mo</div>
+            </div>
+          </div>
+        {% endif %}
+
+        {% if user.primary_financial_goal %}
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:26px;height:26px;border-radius:50%;background:rgba(167,139,250,0.15);color:#7c3aed;display:flex;align-items:center;justify-content:center;">
+              <i data-lucide="flag" style="width:13px;height:13px;"></i>
+            </div>
+            <div>
+              <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);font-weight:700;letter-spacing:0.4px;">Primary Goal</div>
+              <div style="font-size:12px;font-weight:800;color:var(--text-primary);">{{ user.primary_financial_goal }}</div>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      <a href="{{ url_for('settings.view_settings') }}" style="font-size:11px;color:var(--brand-primary);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:2px;">
+        Settings <i data-lucide="chevron-right" style="width:12px;height:12px;"></i>
+      </a>
+    </div>
+    {% endif %}
+
     <!-- 1. HERO DARK OUTFLOW & 50/30/20 MACRO CARD -->
     <div class="hero-macro-card">
       <div class="hero-card-header">
-        <div class="hero-badge-flame">
-          <span>🔥</span>
+        <div class="hero-badge-flame" style="display:inline-flex;align-items:center;gap:6px;">
+          <i data-lucide="trending-down" style="width:16px;height:16px;"></i>
           <span>Monthly Outflow</span>
         </div>
         <span class="hero-percentage-pill">
@@ -122,8 +191,8 @@
       <!-- Surplus Card -->
       <div class="quick-stat-card card-pastel-mint">
         <div>
-          <div class="stat-card-top" style="color:var(--pastel-mint-accent);">
-            <span>📈</span>
+          <div class="stat-card-top" style="color:var(--pastel-mint-accent);display:inline-flex;align-items:center;gap:6px;">
+            <i data-lucide="trending-up" style="width:17px;height:17px;"></i>
             <span>Monthly Surplus</span>
           </div>
           <div class="stat-card-value" style="color:var(--pastel-mint-accent);">{{ summary.surplus.formatted }}</div>
@@ -141,8 +210,8 @@
       <!-- Leak Alerts Card -->
       <div class="quick-stat-card card-pastel-peach">
         <div>
-          <div class="stat-card-top" style="color:var(--pastel-peach-accent);">
-            <span>💧</span>
+          <div class="stat-card-top" style="color:var(--pastel-peach-accent);display:inline-flex;align-items:center;gap:6px;">
+            <i data-lucide="search" style="width:17px;height:17px;"></i>
             <span>MoneyLeak Alerts</span>
           </div>
           <div class="stat-card-value" style="color:var(--pastel-peach-accent);">{{ alerts|length }}</div>
@@ -162,8 +231,8 @@
       <!-- Recurring Subscriptions Card -->
       <div class="quick-stat-card card-pastel-blue">
         <div>
-          <div class="stat-card-top" style="color:var(--pastel-blue-accent);">
-            <span>🔄</span>
+          <div class="stat-card-top" style="color:var(--pastel-blue-accent);display:inline-flex;align-items:center;gap:6px;">
+            <i data-lucide="calendar-clock" style="width:17px;height:17px;"></i>
             <span>Recurring Bills</span>
           </div>
           <div class="stat-card-value" style="color:var(--pastel-blue-accent);">{{ recurring_monthly_formatted }}</div>
@@ -182,7 +251,10 @@
     <!-- 3. MOTIVATIONAL BANNER (Direct reference from Phone 1) -->
     <a href="{{ url_for('simulations.view_simulator') }}" class="motivational-banner">
       <div class="banner-content">
-        <div class="banner-headline">Small Leaks, Big Results 💸</div>
+        <div class="banner-headline" style="display:inline-flex;align-items:center;gap:6px;">
+          <span>Small Leaks, Big Results</span>
+          <i data-lucide="piggy-bank" style="width:18px;height:18px;"></i>
+        </div>
         <div class="banner-sub">Test trimming just 15% of your discretionary dining & subscriptions in the Savings Simulator.</div>
       </div>
       <div class="banner-circle-btn">→</div>
@@ -202,9 +274,13 @@
         {% for t in recent_txns %}
           <div class="txn-compact-item">
             <div class="txn-icon-box">
-              {% if t.transaction_type == 'SAVINGS_CONTRIBUTION' %}🌱
-              {% elif t.category and t.category.budget_group == 'NEEDS' %}🏠
-              {% else %}☕{% endif %}
+              {% if t.transaction_type == 'SAVINGS_CONTRIBUTION' %}
+                <i data-lucide="piggy-bank" style="width:18px;height:18px;color:#16a34a;"></i>
+              {% elif t.category and t.category.budget_group == 'NEEDS' %}
+                <i data-lucide="home" style="width:18px;height:18px;color:#2563eb;"></i>
+              {% else %}
+                <i data-lucide="coffee" style="width:18px;height:18px;color:#d97706;"></i>
+              {% endif %}
             </div>
             <div class="txn-meta">
               <div class="txn-desc">{{ t.description }}</div>
@@ -296,7 +372,7 @@
       <div class="card-header-flex">
         <div>
           <div class="card-title">Detected Spending Leaks</div>
-          <div class="card-subtitle">Deterministic rule-based intelligence</div>
+          <div class="card-subtitle">Spending patterns & detected anomalies</div>
         </div>
         <a href="{{ url_for('analysis.view_analysis') }}" class="btn btn-secondary btn-sm">Full Analysis</a>
       </div>
@@ -308,11 +384,14 @@
               <div class="alert-title-text">{{ alert.title }}</div>
               <div class="alert-desc-text">{{ alert.description }}</div>
             </div>
-            <button type="button" class="alert-dismiss-btn" onclick="dismissAlert({{ alert.id }}, this)" title="Dismiss">✕</button>
+            <button type="button" class="alert-dismiss-btn" onclick="dismissAlert({{ alert.id }}, this)" title="Dismiss" aria-label="Dismiss">
+              <i data-lucide="x" style="width:14px;height:14px;"></i>
+            </button>
           </div>
         {% else %}
-          <div style="text-align:center;padding:20px;color:var(--text-secondary);font-size:13px;">
-            🎉 <b>No active financial leaks!</b> Spending is aligned with your targets.
+          <div style="text-align:center;padding:20px;color:var(--text-secondary);font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;">
+            <i data-lucide="check-circle-2" style="width:18px;height:18px;color:#16a34a;"></i>
+            <span><b>No active financial leaks!</b> Spending is aligned with your targets.</span>
           </div>
         {% endfor %}
       </div>

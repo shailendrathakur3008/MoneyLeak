@@ -5,97 +5,103 @@
 {% block content %}
 <div class="topbar">
   <div class="topbar-greeting">
-    <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.5px;">50/30/20 Budgeting Framework</h1>
+    <h1 style="font-size:20px;font-weight:800;letter-spacing:-0.4px;margin:0 0 2px 0;">50/30/20 Budgeting Framework</h1>
     <div class="greeting-sub">Balance essential Needs, discretionary Wants, and future Savings & Investments.</div>
   </div>
 
   <div class="topbar-actions">
-    <button type="button" id="reset-budget-btn" class="btn btn-secondary">
-      <span>↺ Reset to Default 50/30/20</span>
+    <button type="button" id="reset-budget-btn" class="btn btn-secondary btn-sm">
+      <span style="display:inline-flex;align-items:center;gap:6px;"><i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i> Reset to 50/30/20</span>
     </button>
   </div>
 </div>
 
 <!-- 3 BUCKETS KPI COMPARISON CARDS -->
-<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:20px;margin-bottom:28px;">
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:16px;margin-bottom:20px;">
   <!-- NEEDS CARD -->
-  <div class="card" style="border-top:4px solid #161917;">
-    <div class="card-header-flex">
+  <div class="card" style="border-top:3px solid #3b82f6;padding:16px 18px;">
+    <div class="card-header-flex" style="margin-bottom:12px;">
       <div>
-        <div class="card-title">Needs (Essentials)</div>
-        <div class="card-subtitle">Rent, food, utilities, health, transit</div>
+        <div class="card-title" style="font-size:14px;display:inline-flex;align-items:center;gap:6px;">
+          <i data-lucide="home" style="width:15px;height:15px;color:#3b82f6;"></i> Needs (Essentials)
+        </div>
+        <div class="card-subtitle" style="font-size:11px;">Rent, groceries, utilities, transit</div>
       </div>
-      <span class="badge-pill badge-dark">{{ summary.distribution_targets.needs_pct|round(0)|int }}% Target</span>
+      <span class="badge-pill badge-blue" style="font-size:10px;">{{ summary.distribution_targets.needs_pct|round(0)|int }}% Target</span>
     </div>
 
-    <div style="font-size:28px;font-weight:800;margin-bottom:4px;">
+    <div style="font-size:24px;font-weight:800;margin-bottom:2px;font-variant-numeric:tabular-nums;color:var(--text-primary);">
       {{ summary.needs.actual_formatted }}
     </div>
-    <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">
-      Target Cap: <b>{{ summary.needs.target_formatted }}</b>
+    <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">
+      Cap: <b>{{ summary.needs.target_formatted }}</b>
       {% if summary.needs.is_over_budget %}
-        <span style="color:#ef4444;font-weight:700;">(+{{ summary.needs.variance_minor|format_money(user.currency) }} Over)</span>
+        <span style="color:var(--accent-danger);font-weight:700;">(+{{ summary.needs.variance_minor|format_money(user.currency) }} Over)</span>
       {% else %}
-        <span style="color:#16a34a;font-weight:700;">({{ summary.needs.remaining_formatted }} Remaining)</span>
+        <span style="color:#16a34a;font-weight:700;">({{ summary.needs.remaining_formatted }} Left)</span>
       {% endif %}
     </div>
 
-    <div class="hero-progress-track" style="background:var(--border-subtle);">
-      <div class="hero-progress-bar" style="background:var(--text-primary);width:{{ [summary.needs.actual_pct, 100]|min }}%;"></div>
+    <div class="hero-progress-track" style="height:6px;background:var(--bg-subtle);margin-bottom:0;">
+      <div class="hero-progress-bar" style="background:#3b82f6;width:{{ [summary.needs.actual_pct, 100]|min }}%;"></div>
     </div>
   </div>
 
   <!-- WANTS CARD -->
-  <div class="card" style="border-top:4px solid #38bdf8;">
-    <div class="card-header-flex">
+  <div class="card" style="border-top:3px solid #f59e0b;padding:16px 18px;">
+    <div class="card-header-flex" style="margin-bottom:12px;">
       <div>
-        <div class="card-title">Wants (Lifestyle)</div>
-        <div class="card-subtitle">Dining out, takeout, entertainment, shopping</div>
+        <div class="card-title" style="font-size:14px;display:inline-flex;align-items:center;gap:6px;">
+          <i data-lucide="coffee" style="width:15px;height:15px;color:#f59e0b;"></i> Wants (Lifestyle)
+        </div>
+        <div class="card-subtitle" style="font-size:11px;">Dining out, entertainment, shopping</div>
       </div>
-      <span class="badge-pill badge-blue">{{ summary.distribution_targets.wants_pct|round(0)|int }}% Target</span>
+      <span class="badge-pill badge-peach" style="font-size:10px;">{{ summary.distribution_targets.wants_pct|round(0)|int }}% Target</span>
     </div>
 
-    <div style="font-size:28px;font-weight:800;margin-bottom:4px;">
+    <div style="font-size:24px;font-weight:800;margin-bottom:2px;font-variant-numeric:tabular-nums;color:var(--text-primary);">
       {{ summary.wants.actual_formatted }}
     </div>
-    <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">
-      Target Cap: <b>{{ summary.wants.target_formatted }}</b>
+    <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">
+      Cap: <b>{{ summary.wants.target_formatted }}</b>
       {% if summary.wants.is_over_budget %}
-        <span style="color:#ef4444;font-weight:700;">(+{{ summary.wants.variance_minor|format_money(user.currency) }} Over)</span>
+        <span style="color:var(--accent-danger);font-weight:700;">(+{{ summary.wants.variance_minor|format_money(user.currency) }} Over)</span>
       {% else %}
-        <span style="color:#16a34a;font-weight:700;">({{ summary.wants.remaining_formatted }} Remaining)</span>
+        <span style="color:#16a34a;font-weight:700;">({{ summary.wants.remaining_formatted }} Left)</span>
       {% endif %}
     </div>
 
-    <div class="hero-progress-track" style="background:var(--border-subtle);">
-      <div class="hero-progress-bar" style="background:#38bdf8;width:{{ [summary.wants.actual_pct, 100]|min }}%;"></div>
+    <div class="hero-progress-track" style="height:6px;background:var(--bg-subtle);margin-bottom:0;">
+      <div class="hero-progress-bar" style="background:#f59e0b;width:{{ [summary.wants.actual_pct, 100]|min }}%;"></div>
     </div>
   </div>
 
   <!-- SAVINGS CARD -->
-  <div class="card" style="border-top:4px solid #cbf432;">
-    <div class="card-header-flex">
+  <div class="card" style="border-top:3px solid #16a34a;padding:16px 18px;">
+    <div class="card-header-flex" style="margin-bottom:12px;">
       <div>
-        <div class="card-title">Savings & Growth</div>
-        <div class="card-subtitle">Emergency funds, mutual funds, extra debt prepay</div>
+        <div class="card-title" style="font-size:14px;display:inline-flex;align-items:center;gap:6px;">
+          <i data-lucide="piggy-bank" style="width:15px;height:15px;color:#16a34a;"></i> Savings & Growth
+        </div>
+        <div class="card-subtitle" style="font-size:11px;">Investments, SIPs, emergency fund</div>
       </div>
-      <span class="badge-pill badge-lime">{{ summary.distribution_targets.savings_pct|round(0)|int }}% Target</span>
+      <span class="badge-pill badge-lime" style="font-size:10px;">{{ summary.distribution_targets.savings_pct|round(0)|int }}% Target</span>
     </div>
 
-    <div style="font-size:28px;font-weight:800;margin-bottom:4px;">
+    <div style="font-size:24px;font-weight:800;margin-bottom:2px;font-variant-numeric:tabular-nums;color:var(--text-primary);">
       {{ summary.savings.actual_formatted }}
     </div>
-    <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">
-      Target Goal: <b>{{ summary.savings.target_formatted }}</b>
+    <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">
+      Target: <b>{{ summary.savings.target_formatted }}</b>
       {% if summary.savings.is_met %}
-        <span style="color:#16a34a;font-weight:700;">(Target Achieved! 🎉)</span>
+        <span style="color:#16a34a;font-weight:700;display:inline-flex;align-items:center;gap:3px;">(Goal Met! <i data-lucide="check" style="width:13px;height:13px;"></i>)</span>
       {% else %}
         <span style="color:#f59e0b;font-weight:700;">({{ summary.savings.gap_formatted }} Gap)</span>
       {% endif %}
     </div>
 
-    <div class="hero-progress-track" style="background:var(--border-subtle);">
-      <div class="hero-progress-bar" style="background:#cbf432;width:{{ [summary.savings.actual_pct, 100]|min }}%;"></div>
+    <div class="hero-progress-track" style="height:6px;background:var(--bg-subtle);margin-bottom:0;">
+      <div class="hero-progress-bar" style="background:#16a34a;width:{{ [summary.savings.actual_pct, 100]|min }}%;"></div>
     </div>
   </div>
 </div>
@@ -106,42 +112,42 @@
     <div class="card">
       <div class="card-header-flex">
         <div>
-          <div class="card-title">Customize Percentage Distribution</div>
-          <div class="card-subtitle">Adjust allocations to reflect your current life stage</div>
+          <div class="card-title">Customize Framework Distribution</div>
+          <div class="card-subtitle">Calibrate target percentages to match current goals</div>
         </div>
-        <span id="budget-sum-preview" class="badge-pill badge-lime" style="font-size:13px;">100%</span>
+        <span id="budget-sum-preview" class="badge-pill badge-lime" style="font-size:12px;font-weight:800;">100%</span>
       </div>
 
-      <form id="budget-config-form">
-        <div class="form-group" style="margin-bottom:20px;">
-          <div style="display:flex;justify-content:space-between;font-weight:700;margin-bottom:6px;">
-            <span>Needs Allocation</span>
-            <span id="needs-val-preview">{{ summary.distribution_targets.needs_pct }}%</span>
+      <form id="budget-config-form" style="margin-top:14px;">
+        <div class="form-group" style="margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;font-weight:700;font-size:13px;margin-bottom:6px;color:var(--text-primary);">
+            <span style="display:inline-flex;align-items:center;gap:6px;"><i data-lucide="home" style="width:14px;height:14px;color:#3b82f6;"></i> Needs</span>
+            <span id="needs-val-preview" style="font-variant-numeric:tabular-nums;">{{ summary.distribution_targets.needs_pct }}%</span>
           </div>
-          <input type="range" min="10" max="80" step="1" id="budget-needs-range" value="{{ summary.distribution_targets.needs_pct }}" style="width:100%;accent-color:#161917;">
-          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Standard recommended: 50%</div>
+          <input type="range" min="10" max="80" step="1" id="budget-needs-range" value="{{ summary.distribution_targets.needs_pct }}" style="width:100%;accent-color:#3b82f6;">
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Standard baseline: 50%</div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;font-weight:700;font-size:13px;margin-bottom:6px;color:var(--text-primary);">
+            <span style="display:inline-flex;align-items:center;gap:6px;"><i data-lucide="coffee" style="width:14px;height:14px;color:#f59e0b;"></i> Wants</span>
+            <span id="wants-val-preview" style="font-variant-numeric:tabular-nums;">{{ summary.distribution_targets.wants_pct }}%</span>
+          </div>
+          <input type="range" min="5" max="60" step="1" id="budget-wants-range" value="{{ summary.distribution_targets.wants_pct }}" style="width:100%;accent-color:#f59e0b;">
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Standard baseline: 30%</div>
         </div>
 
         <div class="form-group" style="margin-bottom:20px;">
-          <div style="display:flex;justify-content:space-between;font-weight:700;margin-bottom:6px;">
-            <span>Wants Allocation</span>
-            <span id="wants-val-preview">{{ summary.distribution_targets.wants_pct }}%</span>
-          </div>
-          <input type="range" min="5" max="60" step="1" id="budget-wants-range" value="{{ summary.distribution_targets.wants_pct }}" style="width:100%;accent-color:#38bdf8;">
-          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Standard recommended: 30%</div>
-        </div>
-
-        <div class="form-group" style="margin-bottom:24px;">
-          <div style="display:flex;justify-content:space-between;font-weight:700;margin-bottom:6px;">
-            <span>Savings & Investments Allocation</span>
-            <span id="savings-val-preview">{{ summary.distribution_targets.savings_pct }}%</span>
+          <div style="display:flex;justify-content:space-between;font-weight:700;font-size:13px;margin-bottom:6px;color:var(--text-primary);">
+            <span style="display:inline-flex;align-items:center;gap:6px;"><i data-lucide="piggy-bank" style="width:14px;height:14px;color:#16a34a;"></i> Savings & Investments</span>
+            <span id="savings-val-preview" style="font-variant-numeric:tabular-nums;">{{ summary.distribution_targets.savings_pct }}%</span>
           </div>
           <input type="range" min="5" max="60" step="1" id="budget-savings-range" value="{{ summary.distribution_targets.savings_pct }}" style="width:100%;accent-color:#16a34a;">
-          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Standard recommended: 20%</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Standard baseline: 20%</div>
         </div>
 
-        <button type="submit" id="save-budget-btn" class="btn btn-primary" style="width:100%;">
-          Save Custom Allocations
+        <button type="submit" id="save-budget-btn" class="btn btn-primary btn-sm" style="width:100%;height:38px;">
+          <i data-lucide="check" style="width:14px;height:14px;"></i> Save Custom Allocations
         </button>
       </form>
     </div>
@@ -152,27 +158,28 @@
     <div class="card">
       <div class="card-header-flex">
         <div>
-          <div class="card-title">Category Spending vs Income</div>
+          <div class="card-title">Category Spending vs Inflow</div>
           <div class="card-subtitle">Highest category outflows in current statement period</div>
         </div>
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
         {% for cat in summary.category_breakdown %}
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#fcfdfa;border-radius:var(--radius-sm);border:1px solid rgba(0,0,0,0.04);">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg-subtle);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
             <div>
-              <div style="font-weight:700;font-size:13px;">{{ cat.name }}</div>
-              <span class="badge-pill {% if cat.group=='NEEDS' %}badge-dark{% elif cat.group=='WANTS' %}badge-peach{% else %}badge-lime{% endif %}" style="font-size:9px;margin-top:2px;">
+              <div style="font-weight:700;font-size:13px;color:var(--text-primary);">{{ cat.name }}</div>
+              <span class="badge-pill {% if cat.group=='NEEDS' %}badge-blue{% elif cat.group=='WANTS' %}badge-peach{% else %}badge-lime{% endif %}" style="font-size:9px;padding:1px 6px;margin-top:2px;">
                 {{ cat.group }}
               </span>
             </div>
             <div style="text-align:right;">
-              <div style="font-weight:800;font-size:14px;">{{ cat.formatted_amount }}</div>
-              <div style="font-size:11px;color:var(--text-muted);">{{ cat.share_of_income_pct }}% of Income</div>
+              <div style="font-weight:800;font-size:13px;font-variant-numeric:tabular-nums;color:var(--text-primary);">{{ cat.formatted_amount }}</div>
+              <div style="font-size:11px;color:var(--text-muted);">{{ cat.share_of_income_pct }}% of Inflow</div>
             </div>
           </div>
         {% else %}
-          <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;">
+          <div style="text-align:center;padding:28px;color:var(--text-muted);font-size:13px;">
+            <i data-lucide="tags" style="width:28px;height:28px;margin-bottom:6px;opacity:0.5;"></i><br>
             No transactions categorized for this period.
           </div>
         {% endfor %}

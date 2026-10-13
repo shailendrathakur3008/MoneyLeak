@@ -4,6 +4,45 @@
  * bidirectional Category synchronization, and Custom Category Management.
  */
 
+// Shared Standard Icon Mapping (Lucide)
+const ICON_MAP = {
+  dashboard: 'layout-dashboard',
+  transactions: 'arrow-left-right',
+  income: 'trending-up',
+  expenses: 'trending-down',
+  budgets: 'wallet',
+  savings: 'piggy-bank',
+  investments: 'chart-no-axes-combined',
+  stocks: 'chart-candlestick',
+  mutualFunds: 'chart-pie',
+  sip: 'calendar-clock',
+  gold: 'coins',
+  categories: 'tags',
+  reports: 'chart-column',
+  settings: 'settings',
+  appearance: 'palette',
+  search: 'search',
+  filters: 'sliders-horizontal',
+  add: 'plus',
+  edit: 'pencil',
+  delete: 'trash-2',
+  lightTheme: 'sun',
+  darkTheme: 'moon',
+  systemTheme: 'monitor'
+};
+
+// Global helper to refresh/render Lucide icons anywhere in DOM
+window.refreshIcons = function(root) {
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons({
+      root: root || document,
+      attrs: {
+        'stroke-width': 2
+      }
+    });
+  }
+};
+
 // Helper to get CSRF token from meta tag
 function getCsrfToken() {
   const meta = document.querySelector('meta[name="csrf-token"]');
@@ -278,7 +317,10 @@ function toggleAddCategoryForm() {
   if (!form) return;
   isAddCategoryFormOpen = !isAddCategoryFormOpen;
   form.style.display = isAddCategoryFormOpen ? 'block' : 'none';
-  if (icon) icon.textContent = isAddCategoryFormOpen ? '▴' : '▾';
+  if (icon) {
+    icon.innerHTML = `<i data-lucide="${isAddCategoryFormOpen ? 'chevron-up' : 'chevron-down'}" style="width:14px;height:14px;"></i>`;
+    refreshIcons(icon);
+  }
 }
 
 async function loadManageCategories() {
@@ -330,8 +372,8 @@ function renderManageCategoriesList() {
 
     const pinnedIdx = pinnedList.findIndex(p => p.id === cat.id);
     const reorderButtons = (!cat.is_archived && cat.is_pinned) ? `
-      <button type="button" class="cat-action-btn" title="Move Up" onclick="moveCategoryOrder(${cat.id}, -1)" ${pinnedIdx === 0 ? 'disabled style="opacity:0.4;cursor:default;"' : ''}>↑</button>
-      <button type="button" class="cat-action-btn" title="Move Down" onclick="moveCategoryOrder(${cat.id}, 1)" ${pinnedIdx === pinnedList.length - 1 ? 'disabled style="opacity:0.4;cursor:default;"' : ''}>↓</button>
+      <button type="button" class="cat-action-btn" title="Move Up" aria-label="Move Up" onclick="moveCategoryOrder(${cat.id}, -1)" ${pinnedIdx === 0 ? 'disabled style="opacity:0.4;cursor:default;"' : ''}><i data-lucide="chevron-up" style="width:13px;height:13px;"></i></button>
+      <button type="button" class="cat-action-btn" title="Move Down" aria-label="Move Down" onclick="moveCategoryOrder(${cat.id}, 1)" ${pinnedIdx === pinnedList.length - 1 ? 'disabled style="opacity:0.4;cursor:default;"' : ''}><i data-lucide="chevron-down" style="width:13px;height:13px;"></i></button>
     ` : '';
 
     item.innerHTML = `
@@ -350,21 +392,21 @@ function renderManageCategoriesList() {
       <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
         ${reorderButtons}
         ${!cat.is_archived ? `
-          <button type="button" class="cat-action-btn ${cat.is_pinned ? 'pinned' : ''}" title="${cat.is_pinned ? 'Unpin from Quick Access' : 'Pin to Quick Access'}" onclick="toggleCategoryPin(${cat.id}, ${!cat.is_pinned})">
-            📌 ${cat.is_pinned ? 'Pinned' : 'Pin'}
+          <button type="button" class="cat-action-btn ${cat.is_pinned ? 'pinned' : ''}" title="${cat.is_pinned ? 'Unpin from Quick Access' : 'Pin to Quick Access'}" onclick="toggleCategoryPin(${cat.id}, ${!cat.is_pinned})" style="display:inline-flex;align-items:center;gap:4px;">
+            <i data-lucide="pin" style="width:12px;height:12px;"></i> ${cat.is_pinned ? 'Pinned' : 'Pin'}
           </button>
-          <button type="button" class="cat-action-btn ${cat.is_default ? 'active' : ''}" title="Toggle Default for ${cat.transaction_type}" onclick="toggleCategoryDefault(${cat.id}, '${cat.transaction_type}', ${!cat.is_default})">
-            ⭐ ${cat.is_default ? 'Default' : 'Set Default'}
+          <button type="button" class="cat-action-btn ${cat.is_default ? 'active' : ''}" title="Toggle Default for ${cat.transaction_type}" onclick="toggleCategoryDefault(${cat.id}, '${cat.transaction_type}', ${!cat.is_default})" style="display:inline-flex;align-items:center;gap:4px;">
+            <i data-lucide="star" style="width:12px;height:12px;${cat.is_default ? 'fill:currentColor;' : ''}"></i> ${cat.is_default ? 'Default' : 'Set Default'}
           </button>
-          <button type="button" class="cat-action-btn" title="Edit Category" onclick="startEditCategory(${cat.id})">
-            ✏️
+          <button type="button" class="cat-action-btn" title="Edit Category" aria-label="Edit Category" onclick="startEditCategory(${cat.id})">
+            <i data-lucide="pencil" style="width:12px;height:12px;"></i>
           </button>
-          <button type="button" class="cat-action-btn danger" title="Archive Category" onclick="archiveCategory(${cat.id})">
-            Archive
+          <button type="button" class="cat-action-btn danger" title="Archive Category" onclick="archiveCategory(${cat.id})" style="display:inline-flex;align-items:center;gap:4px;">
+            <i data-lucide="archive" style="width:12px;height:12px;"></i> Archive
           </button>
         ` : `
-          <button type="button" class="cat-action-btn" title="Restore Category" onclick="unarchiveCategory(${cat.id})">
-            Restore
+          <button type="button" class="cat-action-btn" title="Restore Category" onclick="unarchiveCategory(${cat.id})" style="display:inline-flex;align-items:center;gap:4px;">
+            <i data-lucide="rotate-ccw" style="width:12px;height:12px;"></i> Restore
           </button>
         `}
       </div>
@@ -372,6 +414,8 @@ function renderManageCategoriesList() {
 
     listEl.appendChild(item);
   });
+
+  refreshIcons(listEl);
 }
 
 // Reorder Pinned categories

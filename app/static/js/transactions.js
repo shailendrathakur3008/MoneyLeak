@@ -94,49 +94,89 @@ async function loadTransactions(page = 1) {
       tbody.innerHTML = `
         <tr>
           <td colspan="7" style="text-align:center;padding:36px;color:#959e93;">
-            <div style="font-size:24px;margin-bottom:6px;">🧾</div>
+            <div class="empty-state-icon" style="margin-bottom:8px;">
+              <i data-lucide="receipt" style="width:32px;height:32px;color:var(--text-muted);"></i>
+            </div>
             <strong>No transactions found.</strong><br>
             <span style="font-size:12px;">Try adjusting filters or record a new transaction above.</span>
           </td>
         </tr>`;
       renderPagination(0, 1);
+      if (window.refreshIcons) window.refreshIcons(tbody);
       return;
     }
 
     tbody.innerHTML = items.map(t => {
       let badgeClass = 'badge-dark';
-      if (t.transaction_type === 'SAVINGS_CONTRIBUTION') badgeClass = 'badge-lime';
-      else if (t.transaction_type === 'REFUND') badgeClass = 'badge-blue';
-      else if (t.transaction_type === 'DEBT_REPAYMENT') badgeClass = 'badge-peach';
+      let amountColor = 'var(--text-primary)';
+      let sign = '-';
+      if (t.transaction_type === 'SAVINGS_CONTRIBUTION') {
+        badgeClass = 'badge-lime';
+        amountColor = '#16a34a';
+        sign = '+';
+      } else if (t.transaction_type === 'REFUND') {
+        badgeClass = 'badge-blue';
+        amountColor = '#0284c7';
+        sign = '+';
+      } else if (t.transaction_type === 'DEBT_REPAYMENT') {
+        badgeClass = 'badge-peach';
+      }
 
-      const typeLabel = t.transaction_type.replace('_', ' ');
+      const typeLabel = t.transaction_type.replace(/_/g, ' ');
 
       return `
         <tr>
-          <td><span style="font-weight:700;">${t.transaction_date}</span></td>
+          <td><span style="font-weight:600;font-size:12px;color:var(--text-secondary);">${t.transaction_date}</span></td>
           <td>
-            <div style="font-weight:700;color:var(--text-primary);">${escapeHtml(t.description)}</div>
-            ${t.merchant ? `<div style="font-size:11px;color:var(--text-muted);">${escapeHtml(t.merchant)}</div>` : ''}
+            <div style="font-weight:700;font-size:13px;color:var(--text-primary);">${escapeHtml(t.description)}</div>
+            ${t.merchant ? `<div style="font-size:11px;color:var(--text-muted);margin-top:1px;">${escapeHtml(t.merchant)}</div>` : ''}
           </td>
           <td>
-            <span class="badge-pill badge-dark" style="font-size:10px;">${escapeHtml(t.category_name)}</span>
-            <span style="font-size:10px;color:var(--text-muted);margin-left:4px;">(${t.budget_group})</span>
+            <span class="badge-pill badge-dark" style="font-size:10px;padding:2px 8px;">${escapeHtml(t.category_name)}</span>
+            <span style="font-size:10px;color:var(--text-muted);margin-left:3px;">${t.budget_group}</span>
           </td>
-          <td><span class="badge-pill ${badgeClass}" style="font-size:10px;">${typeLabel}</span></td>
-          <td style="font-weight:800;font-size:14px;text-align:right;">${t.formatted_amount}</td>
-          <td><span style="font-size:12px;color:var(--text-secondary);">${escapeHtml(t.notes || '-')}</span></td>
+          <td><span class="badge-pill ${badgeClass}" style="font-size:10px;padding:2px 8px;">${typeLabel}</span></td>
+          <td style="font-weight:800;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;color:${amountColor};">
+            ${t.formatted_amount}
+          </td>
+          <td><span style="font-size:11px;color:var(--text-muted);">${escapeHtml(t.notes || '—')}</span></td>
           <td style="text-align:right;">
-            <button class="btn btn-secondary btn-sm" onclick="openEditModal(${t.id})">Edit</button>
-            <button class="btn btn-secondary btn-sm" style="color:#ef4444;" onclick="deleteTransaction(${t.id})">Delete</button>
+            <div style="display:inline-flex;gap:4px;align-items:center;">
+              <button class="btn btn-secondary btn-sm" onclick="openEditModal(${t.id})" title="Edit Transaction" aria-label="Edit Transaction" style="padding:4px 8px;font-size:11px;">
+                <i data-lucide="pencil" style="width:12px;height:12px;"></i>
+              </button>
+              <button class="btn btn-secondary btn-sm" style="color:var(--accent-danger);padding:4px 8px;font-size:11px;" onclick="deleteTransaction(${t.id})" title="Delete Transaction" aria-label="Delete Transaction">
+                <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
+              </button>
+            </div>
           </td>
         </tr>
       `;
     }).join('');
 
     renderPagination(res.pages, res.page);
+    if (window.refreshIcons) window.refreshIcons(tbody);
   } catch (err) {
     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:#ef4444;">${err.message}</td></tr>`;
   }
+}
+
+function clearFilters() {
+  const search = document.getElementById('txn-search');
+  const cat = document.getElementById('txn-filter-category');
+  const type = document.getElementById('txn-filter-type');
+  const start = document.getElementById('txn-filter-start');
+  const end = document.getElementById('txn-filter-end');
+  const sort = document.getElementById('txn-filter-sort');
+
+  if (search) search.value = '';
+  if (cat) cat.value = '';
+  if (type) type.value = '';
+  if (start) start.value = '';
+  if (end) end.value = '';
+  if (sort) sort.value = 'date_desc';
+
+  loadTransactions(1);
 }
 
 function renderPagination(totalPages, activePage) {
@@ -148,10 +188,13 @@ function renderPagination(totalPages, activePage) {
     return;
   }
 
-  let html = `<div style="display:flex;align-items:center;gap:6px;justify-content:center;margin-top:20px;">`;
+  let html = `<div style="display:flex;align-items:center;gap:6px;justify-content:center;">`;
   for (let i = 1; i <= totalPages; i++) {
-    const active = i === activePage ? 'background:var(--brand-lime);font-weight:800;' : 'background:#fff;';
-    html += `<button class="btn btn-secondary btn-sm" style="${active}" onclick="loadTransactions(${i})">${i}</button>`;
+    const isAct = i === activePage;
+    const activeStyle = isAct 
+      ? 'background:var(--brand-primary);color:var(--text-on-dark);font-weight:800;border-color:var(--brand-primary);' 
+      : 'background:var(--bg-surface);color:var(--text-secondary);';
+    html += `<button type="button" class="btn btn-secondary btn-sm" style="${activeStyle}min-width:32px;height:32px;padding:0 8px;" onclick="loadTransactions(${i})">${i}</button>`;
   }
   html += `</div>`;
   container.innerHTML = html;

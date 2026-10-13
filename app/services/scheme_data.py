@@ -16,28 +16,28 @@ SCHEME_CATEGORIES = {
     'STOCKS_EQUITY': {
         'id': 'STOCKS_EQUITY',
         'name': 'Stocks & Equity',
-        'icon': '📊',
+        'icon': 'chart-candlestick',
         'description': 'Direct equity shares listed on NSE/BSE across Large-Cap, Growth, Dividend, Fundamental and Sector opportunities.',
         'regulator': 'SEBI / NSE / BSE'
     },
     'EQUITY_MUTUAL_FUNDS': {
         'id': 'EQUITY_MUTUAL_FUNDS',
         'name': 'Equity Mutual Funds',
-        'icon': '📈',
+        'icon': 'chart-pie',
         'description': 'Professionally managed pooled equity portfolios: Large-Cap, Flexi-Cap, Mid-Cap, Small-Cap, Index, and ELSS funds via SIP or Lump Sum.',
         'regulator': 'SEBI / AMFI'
     },
     'SIP_INVESTMENTS': {
         'id': 'SIP_INVESTMENTS',
         'name': 'SIP Investments',
-        'icon': '📅',
+        'icon': 'calendar-clock',
         'description': 'Dedicated systematic monthly investment planning in verified equity mutual funds. (An investment method linked to equity funds).',
         'regulator': 'SEBI / AMFI'
     },
     'GOLD': {
         'id': 'GOLD',
         'name': 'Gold',
-        'icon': '🪙',
+        'icon': 'coins',
         'description': 'Strategic hedge against inflation and currency depreciation via Gold ETFs and Gold Mutual Funds.',
         'regulator': 'SEBI / AMFI'
     }
@@ -99,7 +99,7 @@ SCHEMES_DATABASE: List[Dict[str, Any]] = [
         'tax_treatment': 'Equity taxation: LTCG @ 12.5% (> ₹1.25 Lakh); STCG @ 20%. ~1.6% dividend yield taxed as income.',
         'tax_benefit': 'None',
         'liquidity': 'Instant intraday liquidity on NSE and BSE (T+1 settlement).',
-        'objective': 'Ownership in Asia’s largest IT software enterprise powering global digital transformation and enterprise AI.',
+        'objective': 'Ownership in Asia’s largest IT software enterprise powering global digital transformation and enterprise software solutions.',
         'how_it_works': 'Global software delivery with zero net debt, industry-leading margins (>24%), and generous share buybacks.',
         'eligibility': 'Demat account holders.',
         'advantages': ['Tata Group corporate governance gold standard', 'High return on equity (ROE > 45%)', 'Resilient free cash flow conversion'],
@@ -159,10 +159,10 @@ SCHEMES_DATABASE: List[Dict[str, Any]] = [
         'tax_treatment': 'Equity taxation: LTCG @ 12.5% (> ₹1.25 Lakh); STCG @ 20%.',
         'tax_benefit': 'None',
         'liquidity': 'T+1 market settlement on NSE/BSE.',
-        'objective': 'Participation in enterprise AI architecture, cloud engineering, and global software engineering growth.',
+        'objective': 'Participation in digital architecture, cloud engineering, and global software engineering growth.',
         'how_it_works': 'Delivers high-margin technology consulting and digital solutions across 50+ countries.',
         'eligibility': 'Demat account holders.',
-        'advantages': ['High capital return policy (85% free cash flow returned to shareholders)', 'Debt-free balance sheet', 'Substantial generative AI contract pipeline'],
+        'advantages': ['High capital return policy (85% free cash flow returned to shareholders)', 'Debt-free balance sheet', 'Substantial enterprise digital contract pipeline'],
         'disadvantages': ['Sensitivity to global tech enterprise spending sentiment'],
         'best_for_tags': ['large-cap', 'bluechip', 'it-tech', 'long-term'],
         'data_source': 'NSE Filings',
@@ -694,7 +694,7 @@ SCHEMES_DATABASE: List[Dict[str, Any]] = [
         'tax_treatment': 'Equity Taxation: LTCG @ 12.5% (> ₹1.25 Lakh); STCG @ 20%.',
         'tax_benefit': 'None',
         'liquidity': 'Exit load of 1% if redeemed within 1 year; high volatility.',
-        'objective': 'Aggressive capital compounding through predictive algorithmic momentum stock selection in emerging companies.',
+        'objective': 'Aggressive capital compounding through quantitative algorithmic momentum stock selection in emerging companies.',
         'how_it_works': 'Dynamic VLRT framework (Valuation, Liquidity, Risk appetite, Timing) rotating dynamically across small-cap sectors.',
         'eligibility': 'Investors with high risk appetite and 7+ year horizon.',
         'advantages': ['Industry-leading multi-year return CAGR', 'Agile sector allocation model', 'High compounding potential'],
@@ -822,7 +822,7 @@ SCHEMES_DATABASE: List[Dict[str, Any]] = [
         'tax_treatment': 'Section 80C deduction up to ₹1.5 Lakh. LTCG taxed @ 12.5% above ₹1.25 Lakh.',
         'tax_benefit': 'Section 80C Tax Deduction',
         'liquidity': 'Mandatory 36-month statutory lock-in period.',
-        'objective': 'Generate alpha and optimize Section 80C tax efficiency through predictive macroeconomic momentum models.',
+        'objective': 'Generate alpha and optimize Section 80C tax efficiency through quantitative macroeconomic momentum models.',
         'how_it_works': 'Active VLRT model dynamically adjusting sector weights across high-performing Indian equities.',
         'eligibility': 'Indian taxpayers.',
         'advantages': ['Category-leading 5Y CAGR (>31%)', 'Statutory tax savings under Section 80C', 'Aggressive compounding'],

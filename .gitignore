@@ -28,3 +28,7 @@ htmlcov/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# User uploads
+app/static/uploads/
+

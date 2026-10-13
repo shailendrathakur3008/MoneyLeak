@@ -58,6 +58,41 @@ DEFAULT_SYSTEM_CATEGORIES = [
     {'name': 'Refund & Cashbacks', 'group': 'NEEDS', 'type': 'REFUND', 'icon': 'corner-down-left', 'desc': 'Merchant refunds and corporate expense claims'},
 ]
 
+# Student Specific Suggested Categories
+STUDENT_DEFAULT_CATEGORIES = [
+    {'name': 'Education Fees', 'group': 'NEEDS', 'type': 'EXPENSE', 'icon': 'book-open', 'desc': 'Tuition fees, semester charges, exam fees'},
+    {'name': 'Books and Stationery', 'group': 'NEEDS', 'type': 'EXPENSE', 'icon': 'book', 'desc': 'Textbooks, notebooks, study material'},
+    {'name': 'Food', 'group': 'NEEDS', 'type': 'EXPENSE', 'icon': 'utensils', 'desc': 'Hostel mess, canteen, daily meals'},
+    {'name': 'Transport', 'group': 'NEEDS', 'type': 'EXPENSE', 'icon': 'bus', 'desc': 'Bus pass, metro, campus commute'},
+    {'name': 'Accommodation', 'group': 'NEEDS', 'type': 'EXPENSE', 'icon': 'home', 'desc': 'Hostel rent, PG, student housing'},
+    {'name': 'Shopping', 'group': 'WANTS', 'type': 'EXPENSE', 'icon': 'shopping-bag', 'desc': 'Apparel, shoes, personal items'},
+    {'name': 'Entertainment', 'group': 'WANTS', 'type': 'EXPENSE', 'icon': 'film', 'desc': 'Movies, gaming, outings, campus events'},
+    {'name': 'Subscriptions', 'group': 'WANTS', 'type': 'EXPENSE', 'icon': 'tv', 'desc': 'Streaming, student Spotify, cloud tools'},
+    {'name': 'Part-Time Income', 'group': 'SAVINGS', 'type': 'INCOME', 'icon': 'briefcase', 'desc': 'Tutoring, internships, campus jobs'},
+    {'name': 'Scholarship Income', 'group': 'SAVINGS', 'type': 'INCOME', 'icon': 'award', 'desc': 'Academic merit grants, stipends'},
+    {'name': 'Family Allowance', 'group': 'SAVINGS', 'type': 'INCOME', 'icon': 'gift', 'desc': 'Pocket money, parent allowance'},
+    {'name': 'Savings', 'group': 'SAVINGS', 'type': 'SAVINGS_CONTRIBUTION', 'icon': 'shield', 'desc': 'Emergency cushion, student deposit'},
+    {'name': 'Investments', 'group': 'SAVINGS', 'type': 'SAVINGS_CONTRIBUTION', 'icon': 'trending-up', 'desc': 'Micro-SIPs, index funds, gold'},
+]
+
+# Salaried Employee Suggested Categories
+SALARIED_DEFAULT_CATEGORIES = [
+    {'name': 'Salary', 'group': 'SAVINGS', 'type': 'INCOME', 'icon': 'briefcase', 'desc': 'Monthly salary and employer paycheck'},
+    {'name': 'Bonuses', 'group': 'SAVINGS', 'type': 'INCOME', 'icon': 'award', 'desc': 'Annual bonus and performance incentives'},
+    {'name': 'Other Income', 'group': 'SAVINGS', 'type': 'INCOME', 'icon': 'plus-circle', 'desc': 'Dividends, freelance, consulting'},
+    {'name': 'Rent', 'group': 'NEEDS', 'type': 'EXPENSE', 'icon': 'home', 'desc': 'Apartment rent, maintenance, home EMI'},
+    {'name': 'Groceries', 'group': 'NEEDS', 'type': 'EXPENSE', 'icon': 'shopping-cart', 'desc': 'Supermarket, vegetables, household staples'},
+    {'name': 'Utilities', 'group': 'NEEDS', 'type': 'EXPENSE', 'icon': 'zap', 'desc': 'Power, piped gas, water bill, broadband'},
+    {'name': 'Transport', 'group': 'NEEDS', 'type': 'EXPENSE', 'icon': 'navigation', 'desc': 'Vehicle fuel, cab rides, metro pass'},
+    {'name': 'Insurance', 'group': 'NEEDS', 'type': 'EXPENSE', 'icon': 'shield-check', 'desc': 'Life cover, medical and motor insurance'},
+    {'name': 'Healthcare', 'group': 'NEEDS', 'type': 'EXPENSE', 'icon': 'activity', 'desc': 'Doctor checkups, pharmacy, diagnostics'},
+    {'name': 'Subscriptions', 'group': 'WANTS', 'type': 'EXPENSE', 'icon': 'tv', 'desc': 'OTT streaming, gym, digital services'},
+    {'name': 'Shopping', 'group': 'WANTS', 'type': 'EXPENSE', 'icon': 'shopping-bag', 'desc': 'Clothing, accessories, electronics'},
+    {'name': 'Entertainment', 'group': 'WANTS', 'type': 'EXPENSE', 'icon': 'film', 'desc': 'Dining out, weekend trips, recreation'},
+    {'name': 'Savings', 'group': 'SAVINGS', 'type': 'SAVINGS_CONTRIBUTION', 'icon': 'piggy-bank', 'desc': 'Emergency fund, recurring deposits'},
+    {'name': 'Investments', 'group': 'SAVINGS', 'type': 'SAVINGS_CONTRIBUTION', 'icon': 'trending-up', 'desc': 'Mutual funds, SIPs, stocks, gold'},
+]
+
 
 def seed_default_categories(user: User):
     """Seed baseline categories for a user if they do not exist."""
@@ -80,6 +115,47 @@ def seed_default_categories(user: User):
         )
         db.session.add(cat)
         order += 1
+    db.session.commit()
+
+
+def seed_categories_for_user_type(user: User, user_type: str, selected_names: List[str] = None):
+    """
+    Seed or activate recommended categories based on employment status (Student vs Salaried).
+    Avoids duplicate categories if they already exist, respecting existing user categories.
+    """
+    source_list = STUDENT_DEFAULT_CATEGORIES if user_type == 'student' else SALARIED_DEFAULT_CATEGORIES
+    existing_cats = {c.name.strip().lower(): c for c in Category.query.filter_by(user_id=user.id).all()}
+    
+    # Filter by selected_names if user customized them in onboarding Step 4
+    selected_set = {s.strip().lower() for s in selected_names} if selected_names else None
+
+    order = len(existing_cats) + 1
+    for item in source_list:
+        name_lower = item['name'].strip().lower()
+        if selected_set is not None and name_lower not in selected_set:
+            continue
+        
+        if name_lower in existing_cats:
+            # Re-activate if archived or inactive
+            existing = existing_cats[name_lower]
+            existing.is_active = True
+            existing.is_archived = False
+        else:
+            cat = Category(
+                user_id=user.id,
+                name=item['name'],
+                budget_group=item['group'],
+                transaction_type=item.get('type', 'EXPENSE'),
+                description=item['desc'],
+                icon=item['icon'],
+                display_order=order,
+                is_active=True,
+                is_archived=False
+            )
+            db.session.add(cat)
+            existing_cats[name_lower] = cat
+            order += 1
+            
     db.session.commit()
 
 

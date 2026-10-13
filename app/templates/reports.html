@@ -5,7 +5,7 @@
 {% block content %}
 <div class="topbar">
   <div class="topbar-greeting">
-    <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.5px;">Financial Reports & Statements</h1>
+    <h1 style="font-size:20px;font-weight:800;letter-spacing:-0.4px;margin:0 0 2px 0;">Financial Reports & Statements</h1>
     <div class="greeting-sub">Audit statements, monthly summaries, and downloadable CSV/PDF exports.</div>
   </div>
 
@@ -29,159 +29,161 @@
     </div>
 
     <!-- Download Buttons -->
-    <a href="{{ url_for('reports.export_csv', year=current_year, month=current_month) }}" class="btn btn-secondary">
-      <span>📥 Download CSV</span>
+    <a href="{{ url_for('reports.export_csv', year=current_year, month=current_month) }}" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:5px;">
+      <i data-lucide="download" style="width:14px;height:14px;"></i>
+      <span>CSV</span>
     </a>
-    <a href="{{ url_for('reports.export_pdf', year=current_year, month=current_month) }}" class="btn btn-primary">
-      <span>📄 Download PDF Report</span>
+    <a href="{{ url_for('reports.export_pdf', year=current_year, month=current_month) }}" class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;gap:5px;">
+      <i data-lucide="file-text" style="width:14px;height:14px;"></i>
+      <span>PDF Report</span>
     </a>
   </div>
 </div>
 
 <!-- EXECUTIVE STATEMENT CARD -->
-<div class="card" style="margin-bottom:24px;">
-  <div class="card-header-flex">
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-header-flex" style="margin-bottom:14px;">
     <div>
       <div class="card-title">Statement Summary: {{ summary.period.start_date }} to {{ summary.period.end_date }}</div>
       <div class="card-subtitle">Audited numbers derived from authoritative integer minor ledger</div>
     </div>
-    <span class="badge-pill badge-dark">{{ user.currency }} Standard</span>
+    <span class="badge-pill badge-dark" style="font-size:10px;">{{ user.currency }} Standard</span>
   </div>
 
-  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;">
-    <div style="background:var(--bg-card-subtle);padding:16px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
-      <div style="font-size:11px;color:var(--text-muted);font-weight:700;">RECOGNIZED INFLOW</div>
-      <div style="font-size:22px;font-weight:800;color:var(--text-primary);margin-top:2px;">{{ summary.income.formatted }}</div>
-      <div style="font-size:11px;color:var(--text-secondary);">Salary & deposits</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));gap:10px;">
+    <div style="background:var(--bg-subtle);padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+      <div style="font-size:10px;color:var(--text-muted);font-weight:700;letter-spacing:0.5px;">RECOGNIZED INFLOW</div>
+      <div style="font-size:18px;font-weight:800;color:var(--text-primary);margin-top:2px;font-variant-numeric:tabular-nums;">{{ summary.income.formatted }}</div>
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Salary & deposits</div>
     </div>
 
-    <div style="background:var(--bg-card-subtle);padding:16px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
-      <div style="font-size:11px;color:var(--text-muted);font-weight:700;">TOTAL OUTFLOWS</div>
-      <div style="font-size:22px;font-weight:800;color:var(--text-primary);margin-top:2px;">{{ summary.total_outflow.formatted }}</div>
-      <div style="font-size:11px;color:var(--text-secondary);">Consumption + Savings</div>
+    <div style="background:var(--bg-subtle);padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+      <div style="font-size:10px;color:var(--text-muted);font-weight:700;letter-spacing:0.5px;">TOTAL OUTFLOWS</div>
+      <div style="font-size:18px;font-weight:800;color:var(--text-primary);margin-top:2px;font-variant-numeric:tabular-nums;">{{ summary.total_outflow.formatted }}</div>
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Consumption + Savings</div>
     </div>
 
-    <div style="background:var(--bg-card-subtle);padding:16px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
-      <div style="font-size:11px;color:var(--text-muted);font-weight:700;">CONSUMPTION EXPENSES</div>
-      <div style="font-size:22px;font-weight:800;color:#ef4444;margin-top:2px;">{{ summary.expenses.formatted }}</div>
-      <div style="font-size:11px;color:var(--text-secondary);">Needs & Wants</div>
+    <div style="background:var(--bg-subtle);padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+      <div style="font-size:10px;color:var(--text-muted);font-weight:700;letter-spacing:0.5px;">CONSUMPTION</div>
+      <div style="font-size:18px;font-weight:800;color:var(--accent-danger);margin-top:2px;font-variant-numeric:tabular-nums;">{{ summary.expenses.formatted }}</div>
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Needs & Wants</div>
     </div>
 
-    <div style="background:var(--bg-card-subtle);padding:16px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
-      <div style="font-size:11px;color:var(--text-muted);font-weight:700;">ACTUAL SAVINGS</div>
-      <div style="font-size:22px;font-weight:800;color:#16a34a;margin-top:2px;">{{ summary.actual_savings.formatted }}</div>
-      <div style="font-size:11px;color:var(--text-secondary);">Rate: {{ summary.savings_rate }}%</div>
+    <div style="background:var(--bg-subtle);padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+      <div style="font-size:10px;color:var(--text-muted);font-weight:700;letter-spacing:0.5px;">ACTUAL SAVINGS</div>
+      <div style="font-size:18px;font-weight:800;color:#16a34a;margin-top:2px;font-variant-numeric:tabular-nums;">{{ summary.actual_savings.formatted }}</div>
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Rate: {{ summary.savings_rate }}%</div>
     </div>
 
-    <div style="background:var(--bg-card-subtle);padding:16px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
-      <div style="font-size:11px;color:var(--text-muted);font-weight:700;">NET MONTHLY SURPLUS</div>
-      <div style="font-size:22px;font-weight:800;color:var(--text-primary);margin-top:2px;">{{ summary.surplus.formatted }}</div>
-      <div style="font-size:11px;color:var(--text-secondary);">Unallocated cash</div>
+    <div style="background:var(--bg-subtle);padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+      <div style="font-size:10px;color:var(--text-muted);font-weight:700;letter-spacing:0.5px;">NET SURPLUS</div>
+      <div style="font-size:18px;font-weight:800;color:var(--brand-primary);margin-top:2px;font-variant-numeric:tabular-nums;">{{ summary.surplus.formatted }}</div>
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Unallocated cash</div>
     </div>
   </div>
 </div>
 
 <!-- 50/30/20 DETAILED AUDIT TABLE -->
-<div class="card" style="margin-bottom:24px;">
-  <div class="card-header-flex">
-    <div>
-      <div class="card-title">50/30/20 Framework Compliance</div>
-      <div class="card-subtitle">Variance analysis against target allocations</div>
-    </div>
+<div class="card" style="margin-bottom:16px;padding:0;overflow:hidden;">
+  <div style="padding:14px 18px 10px 18px;">
+    <div class="card-title">50/30/20 Framework Compliance</div>
+    <div class="card-subtitle">Variance analysis against target allocations</div>
   </div>
 
-  <table class="custom-table">
-    <thead>
-      <tr>
-        <th>Framework Bucket</th>
-        <th>Target Share</th>
-        <th>Target Budget</th>
-        <th>Actual Outflow</th>
-        <th>Variance</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td style="font-weight:700;">Needs (Essentials)</td>
-        <td>{{ summary.distribution_targets.needs_pct }}%</td>
-        <td>{{ summary.needs.target_formatted }}</td>
-        <td>{{ summary.needs.actual_formatted }}</td>
-        <td style="font-weight:700;color:{% if summary.needs.is_over_budget %}#ef4444{% else %}#16a34a{% endif %};">
-          {{ '+ ' if summary.needs.is_over_budget else '- ' }}{{ summary.needs.variance_minor|abs|format_money(user.currency) }}
-        </td>
-        <td>
-          <span class="badge-pill {% if summary.needs.is_over_budget %}badge-danger{% else %}badge-mint{% endif %}">
-            {% if summary.needs.is_over_budget %}Over Budget{% else %}Under Budget{% endif %}
-          </span>
-        </td>
-      </tr>
+  <div class="table-responsive-wrapper">
+    <table class="custom-table" style="margin:0;">
+      <thead>
+        <tr>
+          <th>Framework Bucket</th>
+          <th>Target Share</th>
+          <th style="text-align:right;">Target Budget</th>
+          <th style="text-align:right;">Actual Outflow</th>
+          <th style="text-align:right;">Variance</th>
+          <th style="text-align:right;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="font-weight:700;">Needs (Essentials)</td>
+          <td>{{ summary.distribution_targets.needs_pct }}%</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums;">{{ summary.needs.target_formatted }}</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:700;">{{ summary.needs.actual_formatted }}</td>
+          <td style="text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:{% if summary.needs.is_over_budget %}var(--accent-danger){% else %}#16a34a{% endif %};">
+            {{ '+ ' if summary.needs.is_over_budget else '- ' }}{{ summary.needs.variance_minor|abs|format_money(user.currency) }}
+          </td>
+          <td style="text-align:right;">
+            <span class="badge-pill {% if summary.needs.is_over_budget %}badge-peach{% else %}badge-lime{% endif %}" style="font-size:10px;">
+              {% if summary.needs.is_over_budget %}Over Budget{% else %}Under Budget{% endif %}
+            </span>
+          </td>
+        </tr>
 
-      <tr>
-        <td style="font-weight:700;">Wants (Discretionary)</td>
-        <td>{{ summary.distribution_targets.wants_pct }}%</td>
-        <td>{{ summary.wants.target_formatted }}</td>
-        <td>{{ summary.wants.actual_formatted }}</td>
-        <td style="font-weight:700;color:{% if summary.wants.is_over_budget %}#ef4444{% else %}#16a34a{% endif %};">
-          {{ '+ ' if summary.wants.is_over_budget else '- ' }}{{ summary.wants.variance_minor|abs|format_money(user.currency) }}
-        </td>
-        <td>
-          <span class="badge-pill {% if summary.wants.is_over_budget %}badge-danger{% else %}badge-mint{% endif %}">
-            {% if summary.wants.is_over_budget %}Over Budget{% else %}Under Budget{% endif %}
-          </span>
-        </td>
-      </tr>
+        <tr>
+          <td style="font-weight:700;">Wants (Discretionary)</td>
+          <td>{{ summary.distribution_targets.wants_pct }}%</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums;">{{ summary.wants.target_formatted }}</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:700;">{{ summary.wants.actual_formatted }}</td>
+          <td style="text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:{% if summary.wants.is_over_budget %}var(--accent-danger){% else %}#16a34a{% endif %};">
+            {{ '+ ' if summary.wants.is_over_budget else '- ' }}{{ summary.wants.variance_minor|abs|format_money(user.currency) }}
+          </td>
+          <td style="text-align:right;">
+            <span class="badge-pill {% if summary.wants.is_over_budget %}badge-peach{% else %}badge-lime{% endif %}" style="font-size:10px;">
+              {% if summary.wants.is_over_budget %}Over Budget{% else %}Under Budget{% endif %}
+            </span>
+          </td>
+        </tr>
 
-      <tr>
-        <td style="font-weight:700;">Savings & Growth</td>
-        <td>{{ summary.distribution_targets.savings_pct }}%</td>
-        <td>{{ summary.savings.target_formatted }}</td>
-        <td>{{ summary.savings.actual_formatted }}</td>
-        <td style="font-weight:700;color:{% if summary.savings.is_met %}#16a34a{% else %}#f59e0b{% endif %};">
-          Gap: {{ summary.savings.gap_formatted }}
-        </td>
-        <td>
-          <span class="badge-pill {% if summary.savings.is_met %}badge-lime{% else %}badge-peach{% endif %}">
-            {% if summary.savings.is_met %}Goal Met{% else %}Shortfall{% endif %}
-          </span>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+        <tr>
+          <td style="font-weight:700;">Savings & Growth</td>
+          <td>{{ summary.distribution_targets.savings_pct }}%</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums;">{{ summary.savings.target_formatted }}</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:700;">{{ summary.savings.actual_formatted }}</td>
+          <td style="text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:{% if summary.savings.is_met %}#16a34a{% else %}#f59e0b{% endif %};">
+            Gap: {{ summary.savings.gap_formatted }}
+          </td>
+          <td style="text-align:right;">
+            <span class="badge-pill {% if summary.savings.is_met %}badge-lime{% else %}badge-peach{% endif %}" style="font-size:10px;">
+              {% if summary.savings.is_met %}Goal Met{% else %}Shortfall{% endif %}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <!-- CATEGORY EXPENDITURE TABLE -->
-<div class="card">
-  <div class="card-header-flex">
-    <div>
-      <div class="card-title">Category Outflows</div>
-      <div class="card-subtitle">Ranked by volume of spending in period</div>
-    </div>
+<div class="card" style="padding:0;overflow:hidden;">
+  <div style="padding:14px 18px 10px 18px;">
+    <div class="card-title">Category Outflows</div>
+    <div class="card-subtitle">Ranked by volume of spending in period</div>
   </div>
 
-  <table class="custom-table">
-    <thead>
-      <tr>
-        <th>Category</th>
-        <th>Budget Group</th>
-        <th>Total Amount</th>
-        <th>Share of Income</th>
-        <th>Transactions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for cat in summary.category_breakdown %}
+  <div class="table-responsive-wrapper">
+    <table class="custom-table" style="margin:0;">
+      <thead>
         <tr>
-          <td style="font-weight:700;">{{ cat.name }}</td>
-          <td><span class="badge-pill badge-dark" style="font-size:10px;">{{ cat.group }}</span></td>
-          <td style="font-weight:800;">{{ cat.formatted_amount }}</td>
-          <td>{{ cat.share_of_income_pct }}%</td>
-          <td>{{ cat.tx_count }}</td>
+          <th>Category</th>
+          <th>Budget Group</th>
+          <th style="text-align:right;">Total Amount</th>
+          <th style="text-align:right;">Share of Inflow</th>
+          <th style="text-align:right;">Tx Count</th>
         </tr>
-      {% else %}
-        <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">No transactions recorded for this period.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for cat in summary.category_breakdown %}
+          <tr>
+            <td style="font-weight:700;">{{ cat.name }}</td>
+            <td><span class="badge-pill badge-dark" style="font-size:10px;padding:2px 8px;">{{ cat.group }}</span></td>
+            <td style="font-weight:800;text-align:right;font-variant-numeric:tabular-nums;">{{ cat.formatted_amount }}</td>
+            <td style="text-align:right;font-variant-numeric:tabular-nums;">{{ cat.share_of_income_pct }}%</td>
+            <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--text-muted);">{{ cat.tx_count }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">No transactions recorded for this period.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}

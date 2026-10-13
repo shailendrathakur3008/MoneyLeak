@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}MoneyLeak — Personal Finance & Budget Intelligence{% endblock %}</title>
+  <title>{% block title %}MoneyLeak — Personal Finance & Budget Management{% endblock %}</title>
   
   <!-- CSRF Token Meta -->
   <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -15,6 +15,9 @@
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="{{ url_for('static', filename='js/lucide.min.js') }}"></script>
 
   <!-- Anti-Theme-Flash Script: Executes synchronously before paint -->
   <script>
@@ -41,6 +44,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/chat_assistant.css') }}">
   {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -50,65 +54,74 @@
   <!-- DESKTOP SIDEBAR -->
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <div class="brand-icon-box">💸</div>
+      <div class="brand-icon-box">
+        <i data-lucide="wallet"></i>
+      </div>
       <div>
         <div class="brand-title">MoneyLeak</div>
-        <div class="brand-subtitle">Smart Budget AI</div>
+        <div class="brand-subtitle">Financial Manager</div>
       </div>
     </div>
 
     <ul class="sidebar-menu">
       <li>
         <a href="{{ url_for('dashboard.view_dashboard') }}" class="nav-item-link {% if request.endpoint == 'dashboard.view_dashboard' %}active{% endif %}">
-          <span class="nav-icon">📊</span>
+          <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span>
           <span>Dashboard</span>
         </a>
       </li>
       <li>
         <a href="{{ url_for('transactions.view_transactions') }}" class="nav-item-link {% if request.endpoint == 'transactions.view_transactions' %}active{% endif %}">
-          <span class="nav-icon">💳</span>
+          <span class="nav-icon"><i data-lucide="arrow-left-right"></i></span>
           <span>Transactions</span>
         </a>
       </li>
       <li>
         <a href="{{ url_for('budget.view_budget') }}" class="nav-item-link {% if request.endpoint == 'budget.view_budget' %}active{% endif %}">
-          <span class="nav-icon">⚖️</span>
+          <span class="nav-icon"><i data-lucide="wallet"></i></span>
           <span>50/30/20 Budget</span>
         </a>
       </li>
       <li>
-        <a href="{{ url_for('analysis.view_analysis') }}" class="nav-item-link {% if request.endpoint == 'analysis.view_analysis' %}active{% endif %}">
-          <span class="nav-icon">🔍</span>
-          <span>Leak Detector</span>
+        <a href="{{ url_for('analysis.view_analysis') }}" class="nav-item-link {% if request.endpoint in ('analysis.view_analysis', 'analysis.view_spendsense') or request.path in ('/analysis', '/spendsense') %}active{% endif %}">
+          <span class="nav-icon"><i data-lucide="shield-alert"></i></span>
+          <span>SpendSense</span>
+          <span class="badge-pill badge-lime" style="font-size:9px;padding:1px 5px;margin-left:auto;">Leaks</span>
         </a>
       </li>
       <li>
         <a href="{{ url_for('simulations.view_simulator') }}" class="nav-item-link {% if request.endpoint == 'simulations.view_simulator' %}active{% endif %}">
-          <span class="nav-icon">🔮</span>
+          <span class="nav-icon"><i data-lucide="piggy-bank"></i></span>
           <span>Savings Simulator</span>
         </a>
       </li>
       <li>
         <a href="{{ url_for('goals.view_goals') }}" class="nav-item-link {% if request.endpoint == 'goals.view_goals' %}active{% endif %}">
-          <span class="nav-icon">🎯</span>
+          <span class="nav-icon"><i data-lucide="target"></i></span>
           <span>Goals Planner</span>
         </a>
       </li>
       <li>
         <a href="{{ url_for('tools.view_calculator') }}" class="nav-item-link {% if request.endpoint == 'tools.view_calculator' %}active{% endif %}">
-          <span class="nav-icon">📈</span>
+          <span class="nav-icon"><i data-lucide="chart-no-axes-combined"></i></span>
           <span>Investment Calc</span>
         </a>
       </li>
       <li>
         <a href="{{ url_for('reports.view_reports') }}" class="nav-item-link {% if request.endpoint == 'reports.view_reports' %}active{% endif %}">
-          <span class="nav-icon">📑</span>
+          <span class="nav-icon"><i data-lucide="chart-column"></i></span>
           <span>Reports & PDF</span>
         </a>
       </li>
       <li>
+        <a href="{{ url_for('assistant.view_assistant') }}" class="nav-item-link {% if request.endpoint == 'assistant.view_assistant' %}active{% endif %}">
+          <span class="nav-icon"><i data-lucide="bot"></i></span>
+          <span>Assistant</span>
+        </a>
+      </li>
+      <li>
         <a href="{{ url_for('settings.view_settings') }}" class="nav-item-link {% if request.endpoint == 'settings.view_settings' %}active{% endif %}">
-          <span class="nav-icon">⚙️</span>
+          <span class="nav-icon"><i data-lucide="settings"></i></span>
           <span>Settings</span>
         </a>
       </li>
@@ -116,19 +129,56 @@
 
     <div class="sidebar-footer">
       <div class="user-snippet">
-        <div class="user-avatar">{{ g.current_user.full_name[:1] }}</div>
+        <div class="user-avatar" style="overflow:hidden;display:flex;align-items:center;justify-content:center;">
+          {% if g.current_user.profile_picture_url %}
+            <img src="{{ g.current_user.get_avatar_url() }}" alt="{{ g.current_user.full_name }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+          {% else %}
+            {{ g.current_user.full_name[:1] }}
+          {% endif %}
+        </div>
         <div class="user-info-text">
           <div class="user-name">{{ g.current_user.full_name }}</div>
-          <div class="user-email">{{ g.current_user.currency }} • Active</div>
+          <div class="user-email">
+            {% if g.current_user.user_type == 'student' %}Student{% elif g.current_user.user_type == 'salaried' %}Salaried{% else %}{{ g.current_user.currency }}{% endif %} • Active
+          </div>
         </div>
       </div>
-      <a href="{{ url_for('auth.logout') }}" title="Logout" style="color:var(--text-muted);font-size:16px;">🚪</a>
+      <a href="{{ url_for('auth.logout') }}" title="Logout" aria-label="Logout" style="color:var(--text-muted);display:inline-flex;align-items:center;">
+        <i data-lucide="log-out" style="width:18px;height:18px;"></i>
+      </a>
     </div>
   </aside>
   {% endif %}
 
   <!-- MAIN VIEWPORT -->
   <main class="main-content">
+    {% if session.get('user_id') and g.current_user %}
+    <!-- Mobile Top Bar (<992px) -->
+    <header class="mobile-top-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="brand-icon-box" style="width:32px;height:32px;">
+          <i data-lucide="wallet" style="width:16px;height:16px;"></i>
+        </div>
+        <div>
+          <div style="font-weight:800;font-size:15px;line-height:1.2;color:var(--text-primary);">MoneyLeak</div>
+          <div style="font-size:11px;color:var(--text-muted);line-height:1;">{{ g.current_user.currency }} • Active Budget</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button type="button" class="btn btn-primary btn-sm" onclick="openModal('quick-add-modal')" style="padding:6px 12px;font-size:12px;">
+          <i data-lucide="plus" style="width:14px;height:14px;"></i> Add
+        </button>
+        <a href="{{ url_for('settings.view_settings') }}" style="width:32px;height:32px;border-radius:50%;overflow:hidden;background:var(--bg-subtle);display:inline-flex;align-items:center;justify-content:center;color:var(--text-primary);border:1px solid var(--border-subtle);font-size:12px;font-weight:700;text-decoration:none;">
+          {% if g.current_user.profile_picture_url %}
+            <img src="{{ g.current_user.get_avatar_url() }}" alt="{{ g.current_user.full_name }}" style="width:100%;height:100%;object-fit:cover;">
+          {% else %}
+            {{ g.current_user.full_name[:1] }}
+          {% endif %}
+        </a>
+      </div>
+    </header>
+    {% endif %}
+
     <!-- Toast Notifications Container -->
     <div id="toast-container" class="flash-messages">
       {% with messages = get_flashed_messages(with_categories=true) %}
@@ -136,7 +186,7 @@
           {% for category, message in messages %}
             <div class="flash-alert {{ category }}">
               <span>{{ message }}</span>
-              <button type="button" style="background:none;border:none;cursor:pointer;font-weight:bold;margin-left:12px;" onclick="this.parentElement.remove()">×</button>
+              <button type="button" style="background:none;border:none;cursor:pointer;font-weight:bold;margin-left:12px;color:currentColor;" onclick="this.parentElement.remove()">×</button>
             </div>
           {% endfor %}
         {% endif %}
@@ -151,55 +201,63 @@
 <!-- MOBILE BOTTOM DOCK -->
 <nav class="mobile-bottom-dock">
   <a href="{{ url_for('dashboard.view_dashboard') }}" class="dock-item {% if request.endpoint == 'dashboard.view_dashboard' %}active{% endif %}">
-    <span class="dock-icon">📊</span>
+    <span class="dock-icon"><i data-lucide="layout-dashboard"></i></span>
     <span>Home</span>
   </a>
-  <a href="{{ url_for('budget.view_budget') }}" class="dock-item {% if request.endpoint == 'budget.view_budget' %}active{% endif %}">
-    <span class="dock-icon">⚖️</span>
-    <span>Budget</span>
+  <a href="{{ url_for('transactions.view_transactions') }}" class="dock-item {% if request.endpoint == 'transactions.view_transactions' %}active{% endif %}">
+    <span class="dock-icon"><i data-lucide="arrow-left-right"></i></span>
+    <span>Ledger</span>
   </a>
 
   <!-- Floating Quick Add Button -->
-  <button type="button" class="dock-floating-btn" onclick="openModal('quick-add-modal')" title="Quick Add Transaction">
-    +
+  <button type="button" class="dock-floating-btn" onclick="openModal('quick-add-modal')" title="Quick Add Transaction" aria-label="Quick Add Transaction">
+    <i data-lucide="plus" style="width:20px;height:20px;"></i>
   </button>
 
-  <a href="{{ url_for('analysis.view_analysis') }}" class="dock-item {% if request.endpoint == 'analysis.view_analysis' %}active{% endif %}">
-    <span class="dock-icon">🔍</span>
-    <span>Leaks</span>
+  <a href="{{ url_for('budget.view_budget') }}" class="dock-item {% if request.endpoint == 'budget.view_budget' %}active{% endif %}">
+    <span class="dock-icon"><i data-lucide="wallet"></i></span>
+    <span>Budget</span>
   </a>
   <a href="{{ url_for('settings.view_settings') }}" class="dock-item {% if request.endpoint == 'settings.view_settings' %}active{% endif %}">
-    <span class="dock-icon">⚙️</span>
-    <span>Profile</span>
+    <span class="dock-icon"><i data-lucide="settings"></i></span>
+    <span>More</span>
   </a>
 </nav>
 
 <!-- QUICK ADD TRANSACTION MODAL -->
 <div id="quick-add-modal" class="modal-backdrop">
-  <div class="modal-card" style="max-width:520px;">
+  <div class="modal-card" style="max-width:540px;">
     <div class="modal-header">
       <div>
-        <h3 style="font-weight:800;font-size:18px;">Add Transaction</h3>
-        <p style="font-size:12px;color:var(--text-muted);">Record spending, income, or transfers seamlessly</p>
+        <h3 style="font-weight:800;font-size:17px;color:var(--text-primary);margin:0 0 2px 0;">Add Transaction</h3>
+        <p style="font-size:12px;color:var(--text-muted);margin:0;">Record spending, income, or investments effortlessly</p>
       </div>
-      <button type="button" class="modal-close-btn" onclick="closeModal('quick-add-modal')">×</button>
+      <button type="button" class="modal-close-btn" onclick="closeModal('quick-add-modal')" aria-label="Close">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      </button>
     </div>
 
-    <form id="quick-add-txn-form">
-      <!-- 1. Transaction Type -->
-      <div class="form-group">
-        <label class="form-label" for="quick-txn-type">Transaction Type</label>
-        <select id="quick-txn-type" class="form-control" required>
-          <option value="EXPENSE">Expense</option>
-          <option value="INCOME">Income</option>
-          <option value="SAVINGS_CONTRIBUTION">Investment & Savings</option>
-          <option value="TRANSFER">Account Transfer</option>
-          <option value="DEBT_REPAYMENT">Loan EMI / Debt Repayment</option>
-          <option value="REFUND">Refund & Cashback</option>
-        </select>
+    <form id="quick-add-txn-form" style="margin-top:14px;">
+      <!-- Row 1: Type & Amount side-by-side -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label" for="quick-txn-type">Type</label>
+          <select id="quick-txn-type" class="form-control" required>
+            <option value="EXPENSE">Expense</option>
+            <option value="INCOME">Income</option>
+            <option value="SAVINGS_CONTRIBUTION">Savings & Investment</option>
+            <option value="TRANSFER">Account Transfer</option>
+            <option value="DEBT_REPAYMENT">Loan EMI / Debt</option>
+            <option value="REFUND">Refund & Cashback</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="quick-txn-amount">Amount ({{ g.current_user.currency }})</label>
+          <input type="number" step="0.01" id="quick-txn-amount" class="form-control" placeholder="0.00" required>
+        </div>
       </div>
 
-      <!-- 2. Quick Access Categories -->
+      <!-- Row 2: Quick Access Categories -->
       <div class="quick-access-section" id="quick-access-section">
         <div class="quick-access-header">
           <span class="quick-access-title">Quick Access</span>
@@ -210,54 +268,50 @@
         </div>
       </div>
 
-      <!-- 3. Category Dropdown & Manage Categories Link -->
-      <div class="form-group">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <label class="form-label" style="margin-bottom:0;" for="quick-txn-category">Category</label>
-          <button type="button" class="btn-text-link" onclick="openManageCategoriesModal()" style="font-size:12px;font-weight:600;color:var(--text-primary);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;">
-            ⚙️ Manage Categories
-          </button>
+      <!-- Row 3: Category & Date side-by-side -->
+      <div style="display:grid;grid-template-columns:1.2fr 0.8fr;gap:12px;">
+        <div class="form-group">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <label class="form-label" style="margin-bottom:0;" for="quick-txn-category">Category</label>
+            <button type="button" class="btn-text-link" onclick="openManageCategoriesModal()" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--brand-primary);background:none;border:none;cursor:pointer;padding:0;">
+              <i data-lucide="settings-2" style="width:12px;height:12px;"></i> Manage
+            </button>
+          </div>
+          <input type="text" id="quick-cat-search" class="form-control" placeholder="Search..." style="margin-bottom:6px;font-size:12px;padding:6px 10px;display:none;">
+          <select id="quick-txn-category" class="form-control" required>
+            <option value="">Select a Category</option>
+          </select>
         </div>
-        <input type="text" id="quick-cat-search" class="form-control" placeholder="Search categories..." style="margin-bottom:6px;font-size:12px;padding:6px 10px;display:none;">
-        <select id="quick-txn-category" class="form-control" required>
-          <option value="">Select a Category</option>
-        </select>
+        <div class="form-group">
+          <label class="form-label" for="quick-txn-date">Date</label>
+          <input type="date" id="quick-txn-date" class="form-control" required>
+        </div>
       </div>
 
-      <!-- 4. Transaction Amount -->
+      <!-- Row 4: Description -->
       <div class="form-group">
-        <label class="form-label" for="quick-txn-amount">Transaction Amount ({{ g.current_user.currency }})</label>
-        <input type="number" step="0.01" id="quick-txn-amount" class="form-control" placeholder="e.g. 450.00" required>
-      </div>
-
-      <!-- 5. Transaction Date -->
-      <div class="form-group">
-        <label class="form-label" for="quick-txn-date">Transaction Date</label>
-        <input type="date" id="quick-txn-date" class="form-control" required>
-      </div>
-
-      <!-- 6. Description or Notes -->
-      <div class="form-group">
-        <label class="form-label" for="quick-txn-desc">Description or Notes</label>
+        <label class="form-label" for="quick-txn-desc">Description</label>
         <input type="text" id="quick-txn-desc" class="form-control" placeholder="e.g. Grocery basket, monthly salary, or SIP" required>
       </div>
 
-      <!-- 7. Other existing transaction fields -->
+      <!-- Row 5: Merchant & Notes side-by-side -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="form-group">
-          <label class="form-label" for="quick-txn-merchant">Merchant / Store (Optional)</label>
-          <input type="text" id="quick-txn-merchant" class="form-control" placeholder="e.g. Amazon, Starbucks, Client">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" for="quick-txn-merchant">Merchant (Optional)</label>
+          <input type="text" id="quick-txn-merchant" class="form-control" placeholder="e.g. Amazon, Swiggy">
         </div>
-        <div class="form-group">
-          <label class="form-label" for="quick-txn-notes">Additional Notes (Optional)</label>
-          <input type="text" id="quick-txn-notes" class="form-control" placeholder="e.g. Bill split, reimbursement">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" for="quick-txn-notes">Notes (Optional)</label>
+          <input type="text" id="quick-txn-notes" class="form-control" placeholder="e.g. Bill split, tax invoice">
         </div>
       </div>
 
-      <!-- 8. Save Transaction -->
-      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
-        <button type="button" class="btn btn-secondary" onclick="closeModal('quick-add-modal')">Cancel</button>
-        <button type="submit" class="btn btn-primary" id="btn-save-txn">Save Transaction</button>
+      <!-- Action Footer -->
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid var(--border-subtle);">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('quick-add-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm" id="btn-save-txn">
+          <i data-lucide="check" style="width:14px;height:14px;"></i> Save Transaction
+        </button>
       </div>
     </form>
   </div>
@@ -268,14 +322,16 @@
   <div class="modal-card" style="max-width:580px;max-height:88vh;display:flex;flex-direction:column;">
     <div class="modal-header">
       <div>
-        <h3 style="font-weight:800;font-size:18px;">Manage Categories</h3>
-        <p style="font-size:12px;color:var(--text-muted);">Create custom categories, set defaults, pin to Quick Access, and reorder</p>
+        <h3 style="font-weight:800;font-size:17px;color:var(--text-primary);margin:0 0 2px 0;">Manage Categories</h3>
+        <p style="font-size:12px;color:var(--text-muted);margin:0;">Organize custom categories, default selections, and pinned quick access</p>
       </div>
-      <button type="button" class="modal-close-btn" onclick="closeModal('manage-categories-modal')">×</button>
+      <button type="button" class="modal-close-btn" onclick="closeModal('manage-categories-modal')" aria-label="Close">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      </button>
     </div>
 
     <!-- Filter by type tabs -->
-    <div style="display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;" id="manage-type-tabs">
+    <div style="display:flex;gap:6px;margin:12px 0 10px 0;overflow-x:auto;padding-bottom:4px;" id="manage-type-tabs">
       <button type="button" class="cat-filter-tab active" data-type="ALL">All</button>
       <button type="button" class="cat-filter-tab" data-type="EXPENSE">Expense</button>
       <button type="button" class="cat-filter-tab" data-type="INCOME">Income</button>
@@ -285,12 +341,16 @@
     </div>
 
     <!-- Create Custom Category Form (Collapsible/inline) -->
-    <div style="background:#fcfdfa;border:1px solid rgba(0,0,0,0.08);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px;">
+    <div style="background:var(--bg-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleAddCategoryForm()">
-        <h4 style="font-size:13px;font-weight:700;margin:0;">+ Create Custom Category</h4>
-        <span id="add-cat-toggle-icon" style="font-size:12px;font-weight:700;">▾</span>
+        <h4 style="font-size:12px;font-weight:700;margin:0;display:inline-flex;align-items:center;gap:6px;color:var(--text-primary);">
+          <i data-lucide="plus-circle" style="width:14px;height:14px;color:var(--brand-primary);"></i> Create Custom Category
+        </h4>
+        <span id="add-cat-toggle-icon" style="display:inline-flex;align-items:center;color:var(--text-muted);">
+          <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
+        </span>
       </div>
-      <form id="create-category-form" style="margin-top:12px;">
+      <form id="create-category-form" style="margin-top:12px;display:none;">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
           <div>
             <label class="form-label" style="font-size:11px;">Category Name *</label>
@@ -326,7 +386,7 @@
           </div>
         </div>
 
-        <div style="display:flex;gap:16px;align-items:center;margin-bottom:12px;font-size:12px;">
+        <div style="display:flex;gap:16px;align-items:center;margin-bottom:12px;font-size:12px;color:var(--text-secondary);">
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
             <input type="checkbox" id="new-cat-pin"> Pin to Quick Access
           </label>
@@ -342,12 +402,103 @@
     </div>
 
     <!-- Category Items List (Scrollable) -->
-    <div id="manage-categories-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:2px;max-height:360px;">
+    <div id="manage-categories-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding-right:2px;max-height:360px;">
       <!-- Populated via JavaScript -->
     </div>
 
-    <div style="display:flex;justify-content:flex-end;margin-top:14px;border-top:1px solid rgba(0,0,0,0.06);padding-top:10px;">
+    <div style="display:flex;justify-content:flex-end;margin-top:12px;border-top:1px solid var(--border-subtle);padding-top:10px;">
       <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('manage-categories-modal')">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- FLOATING AI CHATBOT TRIGGER & PANEL -->
+<div id="finance-chatbot-wrapper" class="finance-chatbot-wrapper">
+  <!-- 1. Floating Trigger Button -->
+  <button id="floating-chat-trigger" class="floating-chat-btn" type="button"
+          title="Ask Finance Assistant" aria-label="Ask Finance Assistant"
+          onclick="toggleFinanceChat()">
+    <i data-lucide="bot" id="chat-btn-icon-bot" style="width:24px;height:24px;"></i>
+    <i data-lucide="x" id="chat-btn-icon-close" style="width:24px;height:24px;display:none;"></i>
+    <span class="chat-online-badge"></span>
+  </button>
+
+  <!-- 2. Floating Chat Panel -->
+  <div id="floating-chat-panel" class="floating-chat-panel" role="dialog" aria-modal="false" aria-labelledby="chat-panel-title">
+    <!-- Header -->
+    <div class="chat-panel-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="chat-header-avatar">
+          <i data-lucide="bot" style="width:18px;height:18px;"></i>
+        </div>
+        <div>
+          <h3 id="chat-panel-title" class="chat-header-title">Finance Assistant</h3>
+          <div class="chat-header-sub">
+            <span class="chat-status-dot"></span>
+            <span>Active Support • Real Data</span>
+          </div>
+        </div>
+      </div>
+      <div class="chat-header-actions">
+        <button type="button" class="chat-header-action-btn" onclick="restartFinanceChat()" title="Start New Conversation" aria-label="Start New Conversation">
+          <i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i>
+        </button>
+        <button type="button" class="chat-header-action-btn" onclick="minimizeFinanceChat()" title="Minimize Chat" aria-label="Minimize Chat">
+          <i data-lucide="minus" style="width:14px;height:14px;"></i>
+        </button>
+        <button type="button" class="chat-header-action-btn" onclick="toggleFinanceChat()" title="Close Chat" aria-label="Close Chat">
+          <i data-lucide="x" style="width:14px;height:14px;"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Contextual Page Indicator -->
+    <div id="chat-page-context-pill" class="chat-page-context-pill">
+      <i data-lucide="compass" style="width:12px;height:12px;"></i>
+      <span id="chat-context-text">Page Context: Dashboard</span>
+    </div>
+
+    <!-- Suggested Questions Carousel -->
+    <div id="chat-suggested-row" class="chat-suggested-row">
+      <!-- Injected dynamically based on current page -->
+    </div>
+
+    <!-- Scrollable Messages Container -->
+    <div id="chat-messages-container" class="chat-messages-container">
+      <!-- Welcome Message -->
+      <div class="chat-msg-row assistant">
+        <div class="chat-bubble assistant">
+          <div class="chat-msg-text">
+            Hello, {{ g.current_user.full_name }}! I am your <strong>Finance Assistant</strong>. 
+            I can help you navigate MoneyLeak, explain your 50/30/20 budget, analyze spending leaks, 
+            interpret calculations, or troubleshoot features.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Typing Indicator -->
+    <div id="chat-typing-indicator" class="chat-typing-row" style="display:none;">
+      <div class="chat-typing-bubble">
+        <span></span><span></span><span></span>
+      </div>
+      <span style="font-size:11px;color:var(--text-muted);margin-left:4px;">Assistant is thinking...</span>
+    </div>
+
+    <!-- Input Composer -->
+    <div class="chat-composer-box">
+      <div class="chat-composer-inner">
+        <textarea id="chat-input-textarea" class="chat-input-field" 
+                  placeholder="Ask a question about your finances or MoneyLeak..."
+                  rows="1" maxlength="1000"></textarea>
+        <button id="chat-send-btn" type="button" class="chat-send-button" onclick="sendFinanceChatMessage()" title="Send Message" aria-label="Send Message">
+          <i data-lucide="send" style="width:14px;height:14px;"></i>
+        </button>
+      </div>
+      <div class="chat-composer-hint">
+        <span>Enter to send, Shift+Enter for new line</span>
+        <span id="chat-char-count">0/1000</span>
+      </div>
     </div>
   </div>
 </div>
@@ -355,14 +506,21 @@
 
 <!-- Core JavaScript -->
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/chat_assistant.js') }}"></script>
 <script>
   // Set default today date on date inputs
   document.addEventListener('DOMContentLoaded', () => {
     const todayStr = new Date().toISOString().split('T')[0];
     const quickDate = document.getElementById('quick-txn-date');
     if (quickDate && !quickDate.value) quickDate.value = todayStr;
+
+    // Render Lucide outline icons
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
   });
 </script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>
+

@@ -6,6 +6,7 @@ from flask import Blueprint, render_template, request, jsonify, g
 from app.extensions import db
 from app.routes.auth import login_required
 from app.models.budget import Budget
+from app.services.location_service import BUDGET_PRESETS, CLASSIFICATION_LABELS
 from app.services.budget_engine import calculate_budget_summary, DEFAULT_NEEDS_PCT, DEFAULT_WANTS_PCT, DEFAULT_SAVINGS_PCT
 
 budget_bp = Blueprint('budget', __name__)
@@ -20,7 +21,50 @@ def view_budget():
     month = int(request.args.get('month', today.month))
 
     summary = calculate_budget_summary(user.id, year, month)
-    return render_template('budget.html', user=user, summary=summary, current_year=year, current_month=month)
+    return render_template(
+        'budget.html',
+        user=user,
+        summary=summary,
+        current_year=year,
+        current_month=month,
+        budget_presets=BUDGET_PRESETS,
+        classification_labels=CLASSIFICATION_LABELS
+    )
+
+
+@budget_bp.route('/api/budget/apply-preset', methods=['POST'])
+@login_required
+def api_apply_preset():
+    """Applies an India-adaptive budget preset without affecting transaction history."""
+    user = g.current_user
+    data = request.get_json() or {}
+    preset_key = data.get('preset_key', 'standard')
+
+    if preset_key not in BUDGET_PRESETS:
+        return jsonify({'success': False, 'error': f'Invalid preset: {preset_key}'}), 400
+
+    preset = BUDGET_PRESETS[preset_key]
+    budget = Budget.query.filter_by(user_id=user.id).order_by(Budget.created_at.desc()).first()
+    if not budget:
+        budget = Budget(user_id=user.id)
+        db.session.add(budget)
+
+    budget.needs_percentage = preset['needs']
+    budget.wants_percentage = preset['wants']
+    budget.savings_percentage = preset['savings']
+    user.budget_preset = preset_key
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': f"Applied {preset['title']}.",
+        'budget': {
+            'needs_percentage': preset['needs'],
+            'wants_percentage': preset['wants'],
+            'savings_percentage': preset['savings'],
+            'preset': preset_key
+        }
+    })
 
 
 @budget_bp.route('/api/budget', methods=['GET'])

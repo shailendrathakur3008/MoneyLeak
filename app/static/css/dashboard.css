@@ -1,29 +1,25 @@
 /* ==========================================================================
    DASHBOARD & FINTECH COMPONENTS
-   Faithfully inspired by the reference design:
-   - Dark hero card with 3 Macro Rings (Needs, Wants, Savings)
-   - Pastel quick KPI cards
-   - Small Leaks Big Results motivational banner
-   - Nutrition/Budget Donut breakdown & sparkline progress charts
    ========================================================================== */
 
 /* Dashboard Layout Grid */
 .dashboard-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 24px;
+  gap: 16px;
 }
 
 @media (min-width: 1024px) {
   .dashboard-grid {
-    grid-template-columns: 1.25fr 0.85fr;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 16px;
   }
 }
 
 .dashboard-col {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 }
 
 /* ==========================================================================
@@ -32,10 +28,11 @@
 
 .hero-macro-card {
   background: var(--bg-dark-card);
-  border-radius: var(--radius-xl);
-  padding: 28px 24px;
+  border-radius: var(--radius-md);
+  padding: 20px 22px;
   color: #ffffff;
-  box-shadow: 0 16px 40px rgba(18, 22, 20, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
 }
@@ -43,10 +40,10 @@
 .hero-macro-card::before {
   content: '';
   position: absolute;
-  top: -50px;
-  right: -50px;
-  width: 160px;
-  height: 160px;
+  top: -40px;
+  right: -40px;
+  width: 140px;
+  height: 140px;
   background: radial-gradient(circle, rgba(203, 244, 50, 0.12) 0%, transparent 70%);
   pointer-events: none;
 }
@@ -55,14 +52,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .hero-badge-flame {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--brand-lime);
 }
@@ -71,42 +68,43 @@
   display: flex;
   align-items: baseline;
   gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
   flex-wrap: wrap;
 }
 
 .hero-big-number {
-  font-size: 38px;
+  font-size: 30px;
   font-weight: 800;
-  letter-spacing: -1px;
+  letter-spacing: -0.6px;
   line-height: 1;
   color: #ffffff;
+  font-variant-numeric: tabular-nums;
 }
 
 .hero-target-denom {
-  font-size: 16px;
+  font-size: 14px;
   color: var(--text-on-dark-muted);
   font-weight: 600;
 }
 
 .hero-percentage-pill {
   margin-left: auto;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
-  padding: 4px 12px;
+  padding: 3px 10px;
   border-radius: var(--radius-pill);
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
 }
 
 /* Main Outflow Progress Bar */
 .hero-progress-track {
   width: 100%;
-  height: 10px;
+  height: 7px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-pill);
   overflow: hidden;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .hero-progress-bar {
@@ -120,8 +118,8 @@
 .macro-rings-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  padding-top: 18px;
+  gap: 10px;
+  padding-top: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -134,26 +132,26 @@
 
 .macro-circle-wrap {
   position: relative;
-  width: 68px;
-  height: 68px;
-  margin-bottom: 10px;
+  width: 58px;
+  height: 58px;
+  margin-bottom: 6px;
 }
 
 .macro-circle-svg {
-  width: 68px;
-  height: 68px;
+  width: 58px;
+  height: 58px;
   transform: rotate(-90deg);
 }
 
 .macro-circle-bg {
   fill: none;
   stroke: rgba(255, 255, 255, 0.1);
-  stroke-width: 5;
+  stroke-width: 4.5;
 }
 
 .macro-circle-val {
   fill: none;
-  stroke-width: 5;
+  stroke-width: 4.5;
   stroke-linecap: round;
   transition: stroke-dashoffset 1s ease;
 }
@@ -175,20 +173,20 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 800;
   color: #ffffff;
 }
 
 .macro-label-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: #ffffff;
   margin-bottom: 2px;
 }
 
 .macro-label-fraction {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-on-dark-muted);
 }
 
@@ -198,39 +196,40 @@
 
 .quick-stats-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
 }
 
 .quick-stat-card {
-  border-radius: var(--radius-lg);
-  padding: 20px;
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 140px;
+  min-height: 110px;
   position: relative;
 }
 
 .stat-card-top {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  gap: 6px;
+  font-size: 12px;
   font-weight: 700;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .stat-card-value {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 800;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.4px;
   line-height: 1.1;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
+  font-variant-numeric: tabular-nums;
 }
 
 .stat-card-sub {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-secondary);
 }
@@ -239,29 +238,29 @@
 .mini-sparkline {
   display: flex;
   align-items: flex-end;
-  gap: 4px;
-  height: 28px;
+  gap: 3px;
+  height: 22px;
   position: absolute;
-  bottom: 20px;
-  right: 20px;
+  bottom: 16px;
+  right: 16px;
 }
 
 .mini-spark-bar {
-  width: 5px;
+  width: 4px;
   background: currentColor;
   border-radius: 2px;
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
-/* Motivational Banner (Phone 1 bottom inspired) */
+/* Motivational Banner */
 .motivational-banner {
   background: linear-gradient(135deg, #d4f938 0%, #b8f020 100%);
-  border-radius: var(--radius-xl);
-  padding: 24px;
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 10px 24px rgba(203, 244, 50, 0.35);
+  box-shadow: var(--shadow-xs);
   cursor: pointer;
   text-decoration: none;
   color: var(--text-primary);
@@ -269,62 +268,63 @@
 }
 
 .motivational-banner:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .banner-content {
-  max-width: 75%;
+  max-width: 80%;
 }
 
 .banner-headline {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 800;
-  letter-spacing: -0.4px;
-  line-height: 1.2;
-  margin-bottom: 4px;
+  letter-spacing: -0.3px;
+  line-height: 1.25;
+  margin-bottom: 2px;
 }
 
 .banner-sub {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: #2b3310;
+  line-height: 1.35;
 }
 
 .banner-circle-btn {
-  width: 44px;
-  height: 44px;
+  width: 34px;
+  height: 34px;
   background: var(--bg-dark-card);
   color: #ffffff;
   border-radius: var(--radius-pill);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 800;
   flex-shrink: 0;
   transition: transform var(--transition-fast);
 }
 
 .motivational-banner:hover .banner-circle-btn {
-  transform: translateX(4px);
+  transform: translateX(3px);
 }
 
 /* ==========================================================================
-   3. DONUT BREAKDOWN (Phone 4 Nutrition Breakdown inspired)
+   3. DONUT BREAKDOWN
    ========================================================================== */
 
 .donut-card-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 10px 0;
+  padding: 4px 0;
 }
 
 .donut-chart-box {
   position: relative;
-  width: 200px;
-  height: 200px;
-  margin-bottom: 20px;
+  width: 170px;
+  height: 170px;
+  margin-bottom: 14px;
 }
 
 .donut-center-metric {
@@ -337,14 +337,15 @@
 }
 
 .donut-center-val {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
   color: var(--text-primary);
   line-height: 1.1;
+  font-variant-numeric: tabular-nums;
 }
 
 .donut-center-label {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
   font-weight: 600;
 }
@@ -353,14 +354,14 @@
   width: 100%;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 10px;
+  gap: 6px;
 }
 
 .donut-legend-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 7px 11px;
   border-radius: var(--radius-sm);
   background: var(--bg-card-subtle);
   border: 1px solid var(--border-subtle);
@@ -369,39 +370,41 @@
 .legend-dot-label {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  font-weight: 700;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .legend-dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: var(--radius-pill);
+  flex-shrink: 0;
 }
 
 .legend-pct-val {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
   color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ==========================================================================
-   4. PROGRESS SPARKLINE & TREND CARD (Phone 4 My Progress inspired)
+   4. PROGRESS SPARKLINE & TREND CARD
    ========================================================================== */
 
 .progress-header-tabs {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 6px;
+  margin-bottom: 12px;
   overflow-x: auto;
 }
 
 .tab-pill-btn {
-  padding: 6px 16px;
+  padding: 5px 12px;
   border-radius: var(--radius-pill);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   background: transparent;
   color: var(--text-secondary);
@@ -418,7 +421,7 @@
 
 .trend-chart-box {
   width: 100%;
-  height: 220px;
+  height: 200px;
 }
 
 /* ==========================================================================
@@ -428,57 +431,64 @@
 .transaction-list-compact {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .txn-compact-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 14px;
+  padding: 9px 12px;
   background: var(--bg-surface);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
   transition: all var(--transition-fast);
 }
 
 .txn-compact-item:hover {
   background: var(--bg-surface-hover);
-  transform: translateX(2px);
+  transform: translateX(1px);
 }
 
 .txn-icon-box {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-sm);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-xs);
   background: var(--bg-card-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 14px;
   color: var(--text-primary);
+  flex-shrink: 0;
 }
 
 .txn-meta {
   flex: 1;
-  margin-left: 12px;
+  margin-left: 10px;
+  min-width: 0;
 }
 
 .txn-desc {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .txn-sub {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
 }
 
 .txn-amount {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .txn-amount.expense {
@@ -495,14 +505,14 @@
 
 /* Leak Alert Cards */
 .alert-card-item {
-  border-radius: var(--radius-md);
-  padding: 16px 20px;
-  margin-bottom: 12px;
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  margin-bottom: 8px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 14px;
-  border-left: 4px solid transparent;
+  gap: 10px;
+  border-left: 3px solid transparent;
 }
 
 .alert-card-item.WARNING {
@@ -513,7 +523,7 @@
 .alert-card-item.DANGER {
   background: rgba(239, 68, 68, 0.12);
   border: 1px solid rgba(239, 68, 68, 0.22);
-  border-left: 4px solid #ef4444;
+  border-left: 3px solid #ef4444;
 }
 
 .alert-card-item.INFO {
@@ -523,30 +533,95 @@
 
 .alert-body {
   flex: 1;
+  min-width: 0;
 }
 
 .alert-title-text {
-  font-size: 14px;
-  font-weight: 800;
+  font-size: 13px;
+  font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .alert-desc-text {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-secondary);
-  line-height: 1.4;
+  line-height: 1.35;
 }
 
 .alert-dismiss-btn {
   background: transparent;
   border: none;
-  font-size: 16px;
+  font-size: 14px;
   cursor: pointer;
   color: var(--text-muted);
   transition: color var(--transition-fast);
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .alert-dismiss-btn:hover {
   color: var(--text-primary);
 }
+
+/* ==========================================================================
+   SPENDSENSE STYLES
+   ========================================================================== */
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  color: var(--text-primary);
+  background: var(--card-hover);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.tab-btn.active {
+  color: var(--text-primary);
+  border-bottom-color: var(--primary);
+  background: transparent;
+}
+
+.tab-content-panel {
+  display: none;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.tab-content-panel.active {
+  display: block;
+}
+
+.finding-card {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.finding-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.finding-dismissed {
+  opacity: 0.6;
+  filter: grayscale(0.2);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+

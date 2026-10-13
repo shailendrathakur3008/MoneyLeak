@@ -10,6 +10,8 @@ from app.routes.goals import goals_bp
 from app.routes.reports import reports_bp
 from app.routes.settings import settings_bp
 from app.routes.tools import tools_bp
+from app.routes.assistant import assistant_bp
+from app.routes.locations import locations_bp
 
 def register_blueprints(app):
     app.register_blueprint(auth_bp)
@@ -24,3 +26,5 @@ def register_blueprints(app):
     app.register_blueprint(reports_bp)
     app.register_blueprint(settings_bp)
     app.register_blueprint(tools_bp)
+    app.register_blueprint(assistant_bp)
+    app.register_blueprint(locations_bp)

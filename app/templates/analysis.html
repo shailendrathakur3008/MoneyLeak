@@ -1,103 +1,624 @@
 {% extends 'base.html' %}
 
-{% block title %}MoneyLeak Detector — Financial Intelligence{% endblock %}
+{% block title %}SpendSense — Smart Leak Detector & 50/30/20 Analyzer{% endblock %}
 
 {% block content %}
+<!-- SPENDSENSE TOPBAR -->
 <div class="topbar">
   <div class="topbar-greeting">
-    <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.5px;">MoneyLeak Detection Engine</h1>
-    <div class="greeting-sub">Explainable rule-based insights: recurring drains, unusual spikes, and lifestyle inflation.</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+      <h1 style="font-size:22px;font-weight:800;letter-spacing:-0.5px;margin:0;">SpendSense — Smart Leak Detector</h1>
+      <span class="badge-pill badge-lime" style="font-size:10px;font-weight:700;padding:2px 8px;">
+        <i data-lucide="shield-check" style="width:11px;height:11px;margin-right:3px;"></i> Active Engine
+      </span>
+      {% if spendsense.distribution_50_30_20.preset.title %}
+        <span class="badge-pill badge-blue" style="font-size:10px;font-weight:600;padding:2px 8px;">
+          {{ spendsense.distribution_50_30_20.preset.title }}
+        </span>
+      {% endif %}
+    </div>
+    <div class="greeting-sub">
+      Automated 50/30/20 budget analysis, transaction pattern recognition, and deduplicated savings opportunities.
+    </div>
   </div>
 
-  <div class="topbar-actions">
-    <button type="button" class="btn btn-primary" onclick="openModal('add-recurring-modal')">
-      <span>+ Add Recurring Subscription</span>
+  <div class="topbar-actions" style="display:flex;align-items:center;gap:10px;">
+    <!-- Month/Year Navigation -->
+    <div style="display:inline-flex;align-items:center;background:var(--card-bg);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:2px;">
+      <a href="{{ url_for('analysis.view_analysis', year=current_year - 1 if current_month == 1 else current_year, month=12 if current_month == 1 else current_month - 1) }}" 
+         class="btn btn-ghost btn-sm" style="padding:4px 8px;" title="Previous Month" aria-label="Previous Month">
+        <i data-lucide="chevron-left" style="width:15px;height:15px;"></i>
+      </a>
+      <span style="font-size:12px;font-weight:700;color:var(--text-primary);padding:0 8px;min-width:90px;text-align:center;">
+        {{ spendsense.period.label }}
+      </span>
+      <a href="{{ url_for('analysis.view_analysis', year=current_year + 1 if current_month == 12 else current_year, month=1 if current_month == 12 else current_month + 1) }}" 
+         class="btn btn-ghost btn-sm" style="padding:4px 8px;" title="Next Month" aria-label="Next Month">
+        <i data-lucide="chevron-right" style="width:15px;height:15px;"></i>
+      </a>
+    </div>
+
+    <!-- Data Completeness Status Indicator -->
+    <div class="badge-pill {% if spendsense.data_completeness.is_complete_month %}badge-blue{% else %}badge-peach{% endif %}" 
+         style="font-size:11px;padding:5px 10px;display:inline-flex;align-items:center;gap:5px;"
+         title="{{ spendsense.data_completeness.notes|join(' • ') }}">
+      <i data-lucide="info" style="width:12px;height:12px;"></i>
+      <span>{{ spendsense.period.status_label }}</span>
+    </div>
+
+    <button type="button" class="btn btn-primary btn-sm" onclick="openModal('add-recurring-modal')" style="display:inline-flex;align-items:center;">
+      <i data-lucide="plus" style="width:14px;height:14px;margin-right:5px;"></i>
+      <span>Track Subscription</span>
     </button>
   </div>
 </div>
 
-<!-- LEAK DETECTION CARDS -->
-<div class="dashboard-grid" style="margin-bottom:28px;">
-  <!-- LEFT: DETECTED ALERTS -->
-  <div class="dashboard-col">
-    <div class="card">
-      <div class="card-header-flex">
-        <div>
-          <div class="card-title">Active Leak Alerts & Anomalies</div>
-          <div class="card-subtitle">Transparent rules backed by your real transaction records</div>
+<!-- 4 TOP KPI SUMMARY CARDS -->
+<div class="metrics-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:16px;margin-bottom:20px;">
+  <!-- CARD 1: Monthly Income Inflow -->
+  <div class="card card-compact" style="position:relative;overflow:hidden;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div class="card-subtitle" style="text-transform:uppercase;letter-spacing:0.5px;font-size:11px;">Monthly Take-Home Inflow</div>
+        <div style="font-size:24px;font-weight:800;color:var(--text-primary);margin:4px 0 2px 0;font-variant-numeric:tabular-nums;">
+          {{ spendsense.income.recognized_formatted }}
         </div>
-        <span class="badge-pill badge-peach">{{ alerts|length }} Flagged</span>
       </div>
+      <div style="width:36px;height:36px;border-radius:8px;background:rgba(203,244,50,0.15);display:flex;align-items:center;justify-content:center;color:#16a34a;">
+        <i data-lucide="arrow-down-left" style="width:20px;height:20px;"></i>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:6px;margin-top:6px;">
+      {% if spendsense.income.is_fallback_baseline %}
+        <span class="badge-pill badge-neutral" style="font-size:9px;padding:1px 5px;">Profile Baseline</span>
+        <span>Configured in settings</span>
+      {% else %}
+        <span class="badge-pill badge-lime" style="font-size:9px;padding:1px 5px;">Recorded</span>
+        <span>Net salary / income records</span>
+      {% endif %}
+    </div>
+  </div>
 
-      <div class="alerts-container">
-        {% for alert in alerts %}
-          <div class="alert-card-item {{ alert.severity }}">
-            <div class="alert-body">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-                <span class="badge-pill {% if alert.severity=='DANGER' %}badge-danger{% elif alert.severity=='WARNING' %}badge-peach{% else %}badge-blue{% endif %}" style="font-size:9px;">
-                  {{ alert.alert_type.replace('_', ' ') }}
+  <!-- CARD 2: Total Recorded Spending & Burn Rate -->
+  <div class="card card-compact">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div class="card-subtitle" style="text-transform:uppercase;letter-spacing:0.5px;font-size:11px;">Total Recorded Spending</div>
+        <div style="font-size:24px;font-weight:800;color:var(--text-primary);margin:4px 0 2px 0;font-variant-numeric:tabular-nums;">
+          {{ spendsense.spending.total_consumption_formatted }}
+        </div>
+      </div>
+      <div style="width:36px;height:36px;border-radius:8px;background:rgba(239,68,68,0.12);display:flex;align-items:center;justify-content:center;color:#ef4444;">
+        <i data-lucide="flame" style="width:20px;height:20px;"></i>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:6px;margin-top:6px;">
+      <span style="font-weight:700;color:var(--text-primary);">{{ spendsense.spending.daily_burn_rate_formatted }}</span>
+      <span>daily burn rate</span>
+      <span style="color:var(--text-muted);">• {{ spendsense.spending.transaction_count }} txns</span>
+    </div>
+  </div>
+
+  <!-- CARD 3: 50/30/20 Allocation Health -->
+  <div class="card card-compact">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div class="card-subtitle" style="text-transform:uppercase;letter-spacing:0.5px;font-size:11px;">50/30/20 Macro Allocation</div>
+        <div style="font-size:16px;font-weight:800;color:var(--text-primary);margin:4px 0 2px 0;">
+          {% if spendsense.distribution_50_30_20.wants.is_over_budget %}
+            <span style="color:#ef4444;">Wants Over Budget</span>
+          {% elif spendsense.distribution_50_30_20.needs.is_over_budget %}
+            <span style="color:#f59e0b;">Needs Elevated</span>
+          {% else %}
+            <span style="color:#16a34a;">Balanced Budget</span>
+          {% endif %}
+        </div>
+      </div>
+      <div style="width:36px;height:36px;border-radius:8px;background:rgba(59,130,246,0.12);display:flex;align-items:center;justify-content:center;color:#3b82f6;">
+        <i data-lucide="pie-chart" style="width:20px;height:20px;"></i>
+      </div>
+    </div>
+    <!-- Mini progress ratio -->
+    <div style="display:flex;gap:4px;height:6px;background:var(--card-hover);border-radius:3px;overflow:hidden;margin:8px 0 6px 0;">
+      <div style="width:{{ [spendsense.distribution_50_30_20.needs.actual_pct, 100]|min }}%;background:#3b82f6;" title="Needs: {{ spendsense.distribution_50_30_20.needs.actual_pct }}%"></div>
+      <div style="width:{{ [spendsense.distribution_50_30_20.wants.actual_pct, 100]|min }}%;background:#f59e0b;" title="Wants: {{ spendsense.distribution_50_30_20.wants.actual_pct }}%"></div>
+      <div style="width:{{ [spendsense.distribution_50_30_20.savings.actual_pct, 100]|min }}%;background:#10b981;" title="Savings: {{ spendsense.distribution_50_30_20.savings.actual_pct }}%"></div>
+    </div>
+    <div style="font-size:10px;color:var(--text-muted);display:flex;justify-content:space-between;">
+      <span>N: <b>{{ spendsense.distribution_50_30_20.needs.actual_pct }}%</b> ({{ spendsense.distribution_50_30_20.needs.target_pct }}%)</span>
+      <span>W: <b>{{ spendsense.distribution_50_30_20.wants.actual_pct }}%</b> ({{ spendsense.distribution_50_30_20.wants.target_pct }}%)</span>
+      <span>S: <b>{{ spendsense.distribution_50_30_20.savings.actual_pct }}%</b> ({{ spendsense.distribution_50_30_20.savings.target_pct }}%)</span>
+    </div>
+  </div>
+
+  <!-- CARD 4: Deduplicated Potential Savings -->
+  <div class="card card-compact" style="background:linear-gradient(135deg, rgba(203,244,50,0.06), rgba(22,25,23,0.02));border-color:rgba(203,244,50,0.3);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div class="card-subtitle" style="text-transform:uppercase;letter-spacing:0.5px;font-size:11px;color:#16a34a;font-weight:700;">Potential Monthly Savings</div>
+        <div style="font-size:24px;font-weight:900;color:var(--text-primary);margin:4px 0 2px 0;font-variant-numeric:tabular-nums;">
+          {{ spendsense.potential_savings_summary.monthly_potential_formatted }}
+        </div>
+      </div>
+      <div style="width:36px;height:36px;border-radius:8px;background:rgba(203,244,50,0.25);display:flex;align-items:center;justify-content:center;color:#161917;">
+        <i data-lucide="sparkles" style="width:20px;height:20px;"></i>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:6px;margin-top:6px;">
+      <span style="font-weight:700;color:#16a34a;">{{ spendsense.potential_savings_summary.annual_potential_formatted }}</span>
+      <span>annual potential</span>
+      <span class="badge-pill badge-lime" style="font-size:9px;padding:1px 5px;margin-left:auto;">{{ spendsense.active_findings_count }} findings</span>
+    </div>
+  </div>
+</div>
+
+<!-- DATA TRANSPARENCY NOTICE -->
+{% if spendsense.data_completeness.notes %}
+<div style="background:var(--card-bg);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:8px 14px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text-secondary);">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <i data-lucide="shield-alert" style="width:14px;height:14px;color:#f59e0b;flex-shrink:0;"></i>
+    <span><b>Data Completeness:</b> {{ spendsense.data_completeness.notes|join(" • ") }}</span>
+  </div>
+  <a href="{{ url_for('transactions.view_transactions') }}" class="btn btn-ghost btn-sm" style="font-size:11px;padding:2px 8px;">
+    Add Transactions <i data-lucide="arrow-right" style="width:12px;height:12px;margin-left:4px;"></i>
+  </a>
+</div>
+{% endif %}
+
+<!-- TABS NAVIGATION BAR -->
+<div class="tabs-header" style="display:flex;gap:4px;border-bottom:1px solid var(--border-subtle);margin-bottom:20px;overflow-x:auto;">
+  <button type="button" class="tab-btn active" onclick="switchSpendTab('tab-findings', this)">
+    <i data-lucide="search" style="width:14px;height:14px;margin-right:6px;"></i>
+    <span>Spending Leaks & Findings</span>
+    <span class="badge-pill badge-peach" style="font-size:10px;margin-left:6px;">{{ spendsense.active_findings_count }}</span>
+  </button>
+
+  <button type="button" class="tab-btn" onclick="switchSpendTab('tab-503020', this)">
+    <i data-lucide="pie-chart" style="width:14px;height:14px;margin-right:6px;"></i>
+    <span>50/30/20 Budget Analyzer</span>
+  </button>
+
+  <button type="button" class="tab-btn" onclick="switchSpendTab('tab-recurring', this)">
+    <i data-lucide="calendar-clock" style="width:14px;height:14px;margin-right:6px;"></i>
+    <span>Subscriptions & Recurring</span>
+    <span class="badge-pill badge-blue" style="font-size:10px;margin-left:6px;">{{ spendsense.subscriptions_and_recurring.confirmed_items|length + spendsense.subscriptions_and_recurring.detected_patterns|length }}</span>
+  </button>
+
+  <button type="button" class="tab-btn" onclick="switchSpendTab('tab-small-expenses', this)">
+    <i data-lucide="coins" style="width:14px;height:14px;margin-right:6px;"></i>
+    <span>Small Expense Analysis</span>
+    <span class="badge-pill badge-neutral" style="font-size:10px;margin-left:6px;">{{ spendsense.small_expense_analysis.transaction_count }}</span>
+  </button>
+
+  <button type="button" class="tab-btn" onclick="switchSpendTab('tab-trends', this)">
+    <i data-lucide="trending-up" style="width:14px;height:14px;margin-right:6px;"></i>
+    <span>Spending Trends & MoM</span>
+  </button>
+</div>
+
+<!-- ======================================================================= -->
+<!-- TAB 1: SPENDING LEAKS & FINDINGS                                        -->
+<!-- ======================================================================= -->
+<div id="tab-findings" class="tab-content-panel active">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+    <!-- Filter Buttons -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <button type="button" class="btn btn-secondary btn-sm active leak-filter-btn" onclick="filterFindings('ALL', this)">All ({{ spendsense.findings|length }})</button>
+      <button type="button" class="btn btn-secondary btn-sm leak-filter-btn" onclick="filterFindings('OVERRUN', this)">Overruns & Spikes</button>
+      <button type="button" class="btn btn-secondary btn-sm leak-filter-btn" onclick="filterFindings('SUBSCRIPTION', this)">Subscriptions</button>
+      <button type="button" class="btn btn-secondary btn-sm leak-filter-btn" onclick="filterFindings('MICRO', this)">Micro-Purchases</button>
+      <button type="button" class="btn btn-secondary btn-sm leak-filter-btn" onclick="filterFindings('DUPLICATE', this)">Duplicates</button>
+    </div>
+
+    <!-- Deduplicated Potential Savings Badge -->
+    <div style="font-size:12px;color:var(--text-secondary);display:inline-flex;align-items:center;gap:6px;">
+      <i data-lucide="info" style="width:13px;height:13px;color:#16a34a;"></i>
+      <span>Deduplicated Savings: <b>{{ spendsense.potential_savings_summary.monthly_potential_formatted }}/mo</b> (Zero double-counting)</span>
+    </div>
+  </div>
+
+  <div class="findings-list" style="display:flex;flex-direction:column;gap:12px;">
+    {% for finding in spendsense.findings %}
+      <div class="finding-card card {% if finding.is_dismissed %}finding-dismissed{% endif %}" 
+           data-alert-type="{{ finding.alert_type }}"
+           data-severity="{{ finding.severity }}"
+           style="border-left: 4px solid {% if finding.severity == 'DANGER' %}#ef4444{% elif finding.severity == 'WARNING' %}#f59e0b{% else %}#3b82f6{% endif %};">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:280px;">
+            <!-- Top Badges & Tags -->
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+              <span class="badge-pill {% if finding.severity == 'DANGER' %}badge-peach{% elif finding.severity == 'WARNING' %}badge-peach{% else %}badge-blue{% endif %}" style="font-size:10px;font-weight:700;">
+                {{ finding.alert_type|replace('_', ' ') }}
+              </span>
+
+              {% if finding.category_name %}
+                <span class="badge-pill badge-neutral" style="font-size:10px;">
+                  <i data-lucide="tag" style="width:10px;height:10px;margin-right:3px;"></i> {{ finding.category_name }}
                 </span>
-                <span style="font-size:11px;color:var(--text-muted);">{{ alert.created_at[:10] if alert.created_at else '' }}</span>
-              </div>
-              <div class="alert-title-text">{{ alert.title }}</div>
-              <div class="alert-desc-text">{{ alert.description }}</div>
+              {% endif %}
+
+              {% if finding.merchant %}
+                <span class="badge-pill badge-neutral" style="font-size:10px;">
+                  <i data-lucide="store" style="width:10px;height:10px;margin-right:3px;"></i> {{ finding.merchant }}
+                </span>
+              {% endif %}
+
+              <span class="badge-pill badge-lime" style="font-size:9px;padding:1px 6px;">
+                Confidence: {{ finding.confidence }}
+              </span>
+
+              {% if finding.status == 'TARGET_SET' %}
+                <span class="badge-pill badge-lime" style="font-size:9px;padding:1px 6px;">
+                  <i data-lucide="target" style="width:10px;height:10px;margin-right:2px;"></i> Target Set: {{ finding.custom_target_formatted }}/mo
+                </span>
+              {% elif finding.is_dismissed %}
+                <span class="badge-pill badge-neutral" style="font-size:9px;padding:1px 6px;">Dismissed</span>
+              {% endif %}
             </div>
-            <button type="button" class="alert-dismiss-btn" onclick="dismissAlert({{ alert.id }}, this)" title="Dismiss Alert">✕</button>
+
+            <!-- Finding Title -->
+            <div style="font-size:15px;font-weight:800;color:var(--text-primary);margin-bottom:4px;">
+              {{ finding.title }}
+            </div>
+
+            <!-- Reason Description -->
+            <div style="font-size:13px;color:var(--text-secondary);line-height:1.5;margin-bottom:8px;">
+              {{ finding.reason }}
+            </div>
+
+            <!-- Transparent Calculation Breakdown Box -->
+            {% if finding.calculation %}
+              <div style="background:var(--card-hover);border-radius:var(--radius-sm);padding:6px 10px;font-size:11px;color:var(--text-muted);font-family:var(--font-mono, monospace);margin-bottom:8px;display:inline-flex;align-items:center;gap:6px;">
+                <i data-lucide="calculator" style="width:12px;height:12px;color:var(--text-primary);"></i>
+                <span><b>Calculation:</b> {{ finding.calculation }}</span>
+              </div>
+            {% endif %}
+
+            <!-- Actionable Tip -->
+            <div style="font-size:12px;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
+              <i data-lucide="lightbulb" style="width:13px;height:13px;color:#16a34a;flex-shrink:0;"></i>
+              <span><b>Actionable Next Step:</b> {{ finding.suggested_action }}</span>
+            </div>
           </div>
-        {% else %}
-          <div style="text-align:center;padding:32px;color:var(--text-secondary);">
-            <div style="font-size:32px;margin-bottom:8px;">🛡️</div>
-            <strong>No active leaks detected!</strong><br>
-            <span style="font-size:12px;color:var(--text-muted);">Your discretionary outflow is in line with your historical baseline and budget targets.</span>
+
+          <!-- Right Column: Potential Savings & Actions -->
+          <div style="text-align:right;min-width:180px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;">
+            <div>
+              {% if finding.potential_savings_minor > 0 %}
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.4px;">Potential Monthly Savings</div>
+                <div style="font-size:18px;font-weight:800;color:#16a34a;font-variant-numeric:tabular-nums;">
+                  +{{ finding.potential_savings_formatted }}
+                </div>
+                <div style="font-size:10px;color:var(--text-muted);">
+                  ({{ finding.potential_annual_savings_formatted }}/yr projected)
+                </div>
+              {% else %}
+                <div style="font-size:11px;color:var(--text-muted);">Actual Spending</div>
+                <div style="font-size:16px;font-weight:700;color:var(--text-primary);font-variant-numeric:tabular-nums;">
+                  {{ finding.actual_spending_formatted }}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Interactive Action Buttons -->
+            <div style="display:flex;gap:6px;margin-top:14px;flex-wrap:wrap;justify-content:flex-end;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="openEvidenceModal({{ finding.id }}, '{{ finding.title|replace('\'', '\\\'') }}')" style="font-size:11px;padding:3px 8px;">
+                <i data-lucide="list" style="width:12px;height:12px;margin-right:3px;"></i> Review Evidence
+              </button>
+
+              <button type="button" class="btn btn-primary btn-sm" onclick="openTargetModal({{ finding.id }}, '{{ finding.title|replace('\'', '\\\'') }}', {{ finding.actual_spending_minor }}, {{ finding.potential_savings_minor }})" style="font-size:11px;padding:3px 8px;">
+                <i data-lucide="target" style="width:12px;height:12px;margin-right:3px;"></i> Set Target
+              </button>
+
+              {% if not finding.is_dismissed %}
+                <button type="button" class="btn btn-ghost btn-sm" onclick="applyFindingAction({{ finding.id }}, 'dismiss')" title="Dismiss this finding" aria-label="Dismiss finding" style="padding:4px 6px;">
+                  <i data-lucide="x" style="width:13px;height:13px;"></i>
+                </button>
+              {% else %}
+                <button type="button" class="btn btn-ghost btn-sm" onclick="applyFindingAction({{ finding.id }}, 'reset')" title="Restore finding" aria-label="Restore finding" style="padding:4px 6px;">
+                  <i data-lucide="rotate-ccw" style="width:13px;height:13px;"></i>
+                </button>
+              {% endif %}
+            </div>
           </div>
-        {% endfor %}
+        </div>
+      </div>
+    {% else %}
+      <div class="card" style="text-align:center;padding:48px 20px;">
+        <div style="width:56px;height:56px;border-radius:50%;background:rgba(22,163,74,0.12);display:inline-flex;align-items:center;justify-content:center;color:#16a34a;margin-bottom:12px;">
+          <i data-lucide="shield-check" style="width:28px;height:28px;"></i>
+        </div>
+        <h3 style="font-size:17px;font-weight:800;color:var(--text-primary);margin:0 0 6px 0;">Zero Spending Leaks Detected!</h3>
+        <p style="font-size:13px;color:var(--text-muted);max-width:480px;margin:0 auto 16px auto;">
+          Your recorded expenses this month adhere tightly to your baseline budget allocation and show no unusual surges, recurring drain, or micro-leakage.
+        </p>
+        <a href="{{ url_for('transactions.view_transactions') }}" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
+          <i data-lucide="plus" style="width:13px;height:13px;"></i> Log New Transaction
+        </a>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ======================================================================= -->
+<!-- TAB 2: SMART 50/30/20 BUDGET ANALYZER                                    -->
+<!-- ======================================================================= -->
+<div id="tab-503020" class="tab-content-panel">
+  <!-- Macro Preset Header -->
+  <div class="card" style="margin-bottom:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+      <div>
+        <div class="card-title">Active 50/30/20 Preset: {{ spendsense.distribution_50_30_20.preset.title }}</div>
+        <div class="card-subtitle">{{ spendsense.distribution_50_30_20.preset.subtitle }}</div>
+      </div>
+      <a href="{{ url_for('budget.view_budget') }}" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:5px;">
+        <i data-lucide="sliders" style="width:13px;height:13px;"></i>
+        <span>Change Preset in Budget Planner</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- 3 Macro Cards (Needs, Wants, Savings) -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:16px;margin-bottom:20px;">
+    <!-- NEEDS -->
+    <div class="card" style="border-top: 4px solid #3b82f6;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-weight:800;font-size:14px;color:var(--text-primary);">Needs (Essentials)</span>
+        <span class="badge-pill {% if spendsense.distribution_50_30_20.needs.is_over_budget %}badge-peach{% else %}badge-blue{% endif %}" style="font-size:10px;">
+          {{ spendsense.distribution_50_30_20.needs.status }}
+        </span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+        <div>
+          <div style="font-size:22px;font-weight:800;color:var(--text-primary);font-variant-numeric:tabular-nums;">
+            {{ spendsense.distribution_50_30_20.needs.actual_formatted }}
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);">
+            Actual: <b>{{ spendsense.distribution_50_30_20.needs.actual_pct }}%</b> of income
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:14px;font-weight:700;color:var(--text-muted);font-variant-numeric:tabular-nums;">
+            Target: {{ spendsense.distribution_50_30_20.needs.target_formatted }}
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);">
+            Target: <b>{{ spendsense.distribution_50_30_20.needs.target_pct }}%</b>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--card-hover);border-radius:var(--radius-sm);padding:8px 10px;font-size:11px;color:var(--text-secondary);line-height:1.4;margin-top:10px;">
+        <b>Regional Analysis:</b> {{ spendsense.distribution_50_30_20.needs.explanation }}
+      </div>
+    </div>
+
+    <!-- WANTS -->
+    <div class="card" style="border-top: 4px solid #f59e0b;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-weight:800;font-size:14px;color:var(--text-primary);">Wants (Lifestyle)</span>
+        <span class="badge-pill {% if spendsense.distribution_50_30_20.wants.is_over_budget %}badge-peach{% else %}badge-lime{% endif %}" style="font-size:10px;">
+          {{ spendsense.distribution_50_30_20.wants.status }}
+        </span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+        <div>
+          <div style="font-size:22px;font-weight:800;color:var(--text-primary);font-variant-numeric:tabular-nums;">
+            {{ spendsense.distribution_50_30_20.wants.actual_formatted }}
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);">
+            Actual: <b>{{ spendsense.distribution_50_30_20.wants.actual_pct }}%</b> of income
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:14px;font-weight:700;color:var(--text-muted);font-variant-numeric:tabular-nums;">
+            Target: {{ spendsense.distribution_50_30_20.wants.target_formatted }}
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);">
+            Target: <b>{{ spendsense.distribution_50_30_20.wants.target_pct }}%</b>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--card-hover);border-radius:var(--radius-sm);padding:8px 10px;font-size:11px;color:var(--text-secondary);line-height:1.4;margin-top:10px;">
+        <b>Lifestyle Analysis:</b> {{ spendsense.distribution_50_30_20.wants.explanation }}
+      </div>
+    </div>
+
+    <!-- SAVINGS -->
+    <div class="card" style="border-top: 4px solid #10b981;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-weight:800;font-size:14px;color:var(--text-primary);">Savings & Goals</span>
+        <span class="badge-pill {% if spendsense.distribution_50_30_20.savings.is_met %}badge-lime{% else %}badge-peach{% endif %}" style="font-size:10px;">
+          {{ spendsense.distribution_50_30_20.savings.status }}
+        </span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+        <div>
+          <div style="font-size:22px;font-weight:800;color:var(--text-primary);font-variant-numeric:tabular-nums;">
+            {{ spendsense.distribution_50_30_20.savings.actual_formatted }}
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);">
+            Actual: <b>{{ spendsense.distribution_50_30_20.savings.actual_pct }}%</b> of income
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:14px;font-weight:700;color:var(--text-muted);font-variant-numeric:tabular-nums;">
+            Target: {{ spendsense.distribution_50_30_20.savings.target_formatted }}
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);">
+            Target: <b>{{ spendsense.distribution_50_30_20.savings.target_pct }}%</b>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--card-hover);border-radius:var(--radius-sm);padding:8px 10px;font-size:11px;color:var(--text-secondary);line-height:1.4;margin-top:10px;">
+        <b>Wealth Building:</b> {{ spendsense.distribution_50_30_20.savings.explanation }}
       </div>
     </div>
   </div>
 
-  <!-- RIGHT: SUBSCRIPTIONS & RECURRING COMMITTED COSTS -->
-  <div class="dashboard-col">
-    <div class="card card-dark">
+  <!-- Category-Level Breakdown Table -->
+  <div class="card">
+    <div class="card-header-flex">
+      <div>
+        <div class="card-title">Category Spending Distribution</div>
+        <div class="card-subtitle">Verified expenditure by category and monthly caps</div>
+      </div>
+      <span class="badge-pill badge-neutral" style="font-size:11px;">{{ spendsense.distribution_50_30_20.category_breakdown|length }} Categories</span>
+    </div>
+
+    <div style="overflow-x:auto;margin-top:12px;">
+      <table class="table-compact" style="width:100%;text-align:left;font-size:13px;border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border-subtle);color:var(--text-muted);font-size:11px;text-transform:uppercase;">
+            <th style="padding:8px 12px;">Category</th>
+            <th style="padding:8px 12px;">Group</th>
+            <th style="padding:8px 12px;text-align:right;">Transactions</th>
+            <th style="padding:8px 12px;text-align:right;">Actual Spend</th>
+            <th style="padding:8px 12px;text-align:right;">% of Income</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cat in spendsense.distribution_50_30_20.category_breakdown %}
+            <tr style="border-bottom:1px solid var(--border-subtle);">
+              <td style="padding:10px 12px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
+                <i data-lucide="{{ cat.icon or 'tag' }}" style="width:14px;height:14px;color:var(--text-muted);"></i>
+                <span>{{ cat.name }}</span>
+              </td>
+              <td style="padding:10px 12px;">
+                <span class="badge-pill {% if cat.group == 'NEEDS' %}badge-blue{% elif cat.group == 'WANTS' %}badge-peach{% else %}badge-lime{% endif %}" style="font-size:10px;">
+                  {{ cat.group }}
+                </span>
+              </td>
+              <td style="padding:10px 12px;text-align:right;color:var(--text-muted);font-variant-numeric:tabular-nums;">
+                {{ cat.tx_count }}
+              </td>
+              <td style="padding:10px 12px;text-align:right;font-weight:700;color:var(--text-primary);font-variant-numeric:tabular-nums;">
+                {{ cat.formatted_amount }}
+              </td>
+              <td style="padding:10px 12px;text-align:right;color:var(--text-muted);font-variant-numeric:tabular-nums;">
+                {{ cat.share_of_income_pct }}%
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">
+                No categorized spending recorded for this month.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================= -->
+<!-- TAB 3: SUBSCRIPTIONS & RECURRING                                         -->
+<!-- ======================================================================= -->
+<div id="tab-recurring" class="tab-content-panel">
+  <!-- Summary Banner -->
+  <div class="card card-dark" style="margin-bottom:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;">
+      <div>
+        <div class="card-title" style="color:#ffffff;">Committed Recurring Drain</div>
+        <div class="card-subtitle" style="color:var(--text-on-dark-muted);">Auto-renewing services, utilities, and memberships</div>
+      </div>
+      <div style="display:flex;gap:20px;text-align:right;">
+        <div>
+          <div style="font-size:22px;font-weight:900;color:#cbf432;font-variant-numeric:tabular-nums;">
+            {{ spendsense.subscriptions_and_recurring.total_monthly_committed_formatted }}
+          </div>
+          <div style="font-size:11px;color:var(--text-on-dark-muted);">Monthly Committed</div>
+        </div>
+        <div>
+          <div style="font-size:22px;font-weight:800;color:#ffffff;font-variant-numeric:tabular-nums;">
+            {{ spendsense.subscriptions_and_recurring.total_annual_committed_formatted }}
+          </div>
+          <div style="font-size:11px;color:var(--text-on-dark-muted);">Projected Annual</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;flex-wrap:wrap;">
+    <!-- Confirmed Registered Subscriptions -->
+    <div class="card">
       <div class="card-header-flex">
         <div>
-          <div class="card-title" style="color:#ffffff;">Recurring Commitments</div>
-          <div class="card-subtitle" style="color:var(--text-on-dark-muted);">Auto-renewing services & memberships</div>
+          <div class="card-title">Registered Recurring Payments</div>
+          <div class="card-subtitle">Active subscriptions tracked in your profile</div>
         </div>
-        <span class="badge-pill badge-lime">{{ recurring_items|length }} Services</span>
+        <span class="badge-pill badge-lime" style="font-size:10px;">{{ spendsense.subscriptions_and_recurring.confirmed_items|length }} Registered</span>
       </div>
 
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px;">
-        <div>
-          <div style="font-size:26px;font-weight:800;color:#cbf432;">{{ total_recurring_monthly_formatted }}</div>
-          <div style="font-size:12px;color:var(--text-on-dark-muted);">Committed Monthly Drain</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:18px;font-weight:700;color:#ffffff;">{{ annual_recurring_formatted }}</div>
-          <div style="font-size:12px;color:var(--text-on-dark-muted);">Projected Annual Cost</div>
-        </div>
-      </div>
-
-      <!-- Recurring Items List -->
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        {% for item in recurring_items %}
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(255,255,255,0.06);border-radius:var(--radius-sm);">
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+        {% for item in spendsense.subscriptions_and_recurring.confirmed_items %}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--card-hover);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
             <div>
-              <div style="font-weight:700;font-size:13px;color:#ffffff;">{{ item.name }}</div>
-              <div style="font-size:11px;color:var(--text-on-dark-muted);">
-                {{ item.frequency }} • Next due: {{ item.next_due_date }}
+              <div style="font-weight:700;font-size:13px;color:var(--text-primary);">{{ item.name }}</div>
+              <div style="font-size:11px;color:var(--text-muted);">
+                {{ item.frequency }} • Due: {{ item.next_due_date }} • {{ item.category_name }}
               </div>
             </div>
-            <div style="display:flex;align-items:center;gap:12px;">
+            <div style="display:flex;align-items:center;gap:10px;">
               <div style="text-align:right;">
-                <div style="font-weight:800;font-size:13px;color:#ffffff;">{{ item.amount_minor_units|format_money(user.currency) }}</div>
-                <div style="font-size:10px;color:var(--text-on-dark-muted);">{{ item.annual_cost_minor_units|format_money(user.currency) }}/yr</div>
+                <div style="font-weight:800;font-size:13px;color:var(--text-primary);font-variant-numeric:tabular-nums;">{{ item.formatted_amount }}</div>
+                <div style="font-size:10px;color:var(--text-muted);font-variant-numeric:tabular-nums;">{{ item.formatted_annual }}/yr</div>
               </div>
-              <button type="button" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;" onclick="deleteRecurring({{ item.id }})" title="Delete rule">✕</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="deleteRecurring({{ item.id }})" title="Remove subscription" aria-label="Remove subscription" style="color:#ef4444;padding:4px;">
+                <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
+              </button>
             </div>
           </div>
         {% else %}
-          <div style="text-align:center;padding:16px;color:var(--text-on-dark-muted);font-size:12px;">
-            No recurring payments registered. Track Netflix, Spotify, gym memberships, etc.
+          <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:12px;">
+            <i data-lucide="check-circle" style="width:24px;height:24px;margin-bottom:6px;opacity:0.5;"></i><br>
+            No active subscriptions registered. Click "Track Subscription" to register Netflix, Spotify, gym, etc.
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Auto-Detected Recurring Transaction Patterns -->
+    <div class="card">
+      <div class="card-header-flex">
+        <div>
+          <div class="card-title">Auto-Detected Recurring Patterns</div>
+          <div class="card-subtitle">Patterns recognized from recent transactions</div>
+        </div>
+        <span class="badge-pill badge-blue" style="font-size:10px;">{{ spendsense.subscriptions_and_recurring.detected_patterns|length }} Discovered</span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+        {% for pattern in spendsense.subscriptions_and_recurring.detected_patterns %}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--card-hover);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+            <div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-weight:700;font-size:13px;color:var(--text-primary);">{{ pattern.name }}</span>
+                {% if pattern.is_registered %}
+                  <span class="badge-pill badge-lime" style="font-size:9px;padding:1px 5px;">Tracked</span>
+                {% else %}
+                  <span class="badge-pill badge-peach" style="font-size:9px;padding:1px 5px;">Unregistered</span>
+                {% endif %}
+              </div>
+              <div style="font-size:11px;color:var(--text-muted);">
+                Cadence: {{ pattern.frequency }} • {{ pattern.occurrences_count }} payments observed
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="text-align:right;">
+                <div style="font-weight:800;font-size:13px;color:var(--text-primary);font-variant-numeric:tabular-nums;">{{ pattern.observed_amount_formatted }}</div>
+                <div style="font-size:10px;color:var(--text-muted);">Confidence: {{ pattern.confidence }}</div>
+              </div>
+              {% if not pattern.is_registered %}
+                <button type="button" class="btn btn-secondary btn-sm" onclick="prefillSubscriptionModal('{{ pattern.name|replace('\'', '\\\'') }}', {{ pattern.observed_amount_minor / 100 }}, '{{ pattern.frequency }}', '{{ pattern.category_id or '' }}')" style="font-size:10px;padding:3px 6px;">
+                  <i data-lucide="plus" style="width:11px;height:11px;margin-right:2px;"></i> Track
+                </button>
+              {% endif %}
+            </div>
+          </div>
+        {% else %}
+          <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:12px;">
+            <i data-lucide="sparkles" style="width:24px;height:24px;margin-bottom:6px;opacity:0.5;"></i><br>
+            No recurring transaction patterns detected.
           </div>
         {% endfor %}
       </div>
@@ -105,18 +626,343 @@
   </div>
 </div>
 
-<!-- ADD RECURRING PAYMENT MODAL -->
-<div id="add-recurring-modal" class="modal-backdrop">
-  <div class="modal-card">
-    <div class="modal-header">
+<!-- ======================================================================= -->
+<!-- TAB 4: SMALL EXPENSE ANALYSIS                                            -->
+<!-- ======================================================================= -->
+<div id="tab-small-expenses" class="tab-content-panel">
+  <div class="card" style="margin-bottom:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
       <div>
-        <h3 style="font-weight:800;font-size:18px;">Track Recurring Subscription</h3>
-        <p style="font-size:12px;color:var(--text-muted);">Audit subscriptions to monitor annual drain</p>
+        <div class="card-title">Micro-Spending Audit</div>
+        <div class="card-subtitle">Aggregate impact of frequent small-ticket convenience transactions</div>
       </div>
-      <button type="button" class="modal-close-btn" onclick="closeModal('add-recurring-modal')">×</button>
+      <!-- Threshold Switcher -->
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:11px;color:var(--text-muted);">Max Threshold:</span>
+        <button type="button" class="btn btn-secondary btn-sm active threshold-btn" onclick="switchThreshold(250, this)">{{ user.currency }} 250</button>
+        <button type="button" class="btn btn-secondary btn-sm threshold-btn" onclick="switchThreshold(500, this)">{{ user.currency }} 500</button>
+        <button type="button" class="btn btn-secondary btn-sm threshold-btn" onclick="switchThreshold(1000, this)">{{ user.currency }} 1,000</button>
+      </div>
     </div>
 
-    <form id="add-recurring-form">
+    <!-- Small Expenses KPI Row -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border-subtle);">
+      <div>
+        <div style="font-size:11px;color:var(--text-muted);">Cumulative Small Spend</div>
+        <div id="small-total-val" style="font-size:22px;font-weight:900;color:var(--text-primary);font-variant-numeric:tabular-nums;">
+          {{ spendsense.small_expense_analysis.total_formatted }}
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-muted);">Transaction Count</div>
+        <div id="small-count-val" style="font-size:22px;font-weight:800;color:var(--text-primary);font-variant-numeric:tabular-nums;">
+          {{ spendsense.small_expense_analysis.transaction_count }} purchases
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-muted);">Average Ticket Size</div>
+        <div id="small-avg-val" style="font-size:22px;font-weight:800;color:var(--text-primary);font-variant-numeric:tabular-nums;">
+          {{ spendsense.small_expense_analysis.average_formatted }}
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-muted);">Share of Outflow</div>
+        <div id="small-share-val" style="font-size:22px;font-weight:800;color:#f59e0b;font-variant-numeric:tabular-nums;">
+          {{ spendsense.small_expense_analysis.pct_of_total_expenses }}%
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;flex-wrap:wrap;">
+    <!-- Top Micro Merchants -->
+    <div class="card">
+      <div class="card-title">Top Small Purchase Outlets</div>
+      <div class="card-subtitle" style="margin-bottom:12px;">High frequency micro-merchants</div>
+      <div id="small-merchants-list" style="display:flex;flex-direction:column;gap:8px;">
+        {% for m in spendsense.small_expense_analysis.top_merchants %}
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--card-hover);border-radius:var(--radius-sm);">
+            <div>
+              <div style="font-weight:700;font-size:13px;color:var(--text-primary);">{{ m.merchant }}</div>
+              <div style="font-size:10px;color:var(--text-muted);">{{ m.count }} transactions (avg {{ m.avg_formatted }})</div>
+            </div>
+            <div style="font-weight:800;font-size:13px;color:var(--text-primary);font-variant-numeric:tabular-nums;">
+              {{ m.total_formatted }}
+            </div>
+          </div>
+        {% else %}
+          <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;">No small purchases recorded.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Small Transactions List -->
+    <div class="card">
+      <div class="card-title">Recent Low-Value Transactions</div>
+      <div class="card-subtitle" style="margin-bottom:12px;">Filter purchases below the configured threshold</div>
+      <div id="small-txns-container" style="overflow-x:auto;">
+        <table class="table-compact" style="width:100%;text-align:left;font-size:12px;border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border-subtle);color:var(--text-muted);">
+              <th style="padding:6px 10px;">Date</th>
+              <th style="padding:6px 10px;">Description</th>
+              <th style="padding:6px 10px;">Category</th>
+              <th style="padding:6px 10px;text-align:right;">Amount</th>
+            </tr>
+          </thead>
+          <tbody id="small-txns-tbody">
+            {% for t in spendsense.small_expense_analysis.transactions %}
+              <tr style="border-bottom:1px solid var(--border-subtle);">
+                <td style="padding:8px 10px;color:var(--text-muted);font-variant-numeric:tabular-nums;">{{ t.date }}</td>
+                <td style="padding:8px 10px;font-weight:600;color:var(--text-primary);">{{ t.description }}</td>
+                <td style="padding:8px 10px;color:var(--text-muted);">{{ t.category_name }}</td>
+                <td style="padding:8px 10px;text-align:right;font-weight:700;color:var(--text-primary);font-variant-numeric:tabular-nums;">{{ t.amount_formatted }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);">No transactions match threshold.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================= -->
+<!-- TAB 5: SPENDING TRENDS & MOM                                             -->
+<!-- ======================================================================= -->
+<div id="tab-trends" class="tab-content-panel">
+  <!-- Run Rate Comparison -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-title">Daily Run-Rate: Month-over-Month Comparison</div>
+    <div class="card-subtitle" style="margin-bottom:14px;">
+      Normalizing for partial ongoing months to prevent misleading comparisons against complete past periods.
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:16px;">
+      <div style="background:var(--card-hover);border-radius:var(--radius-sm);padding:14px;">
+        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Current Period ({{ spendsense.trends.current_month.label }})</div>
+        <div style="font-size:22px;font-weight:900;color:var(--text-primary);margin:4px 0;font-variant-numeric:tabular-nums;">
+          {{ spendsense.trends.current_month.daily_burn_rate_formatted }} / day
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);">
+          Recorded: {{ spendsense.trends.current_month.total_spending_formatted }} (Day {{ spendsense.trends.current_month.days_elapsed }} of {{ spendsense.trends.current_month.days_in_month }})
+        </div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">
+          Projected Month-End: <b>{{ spendsense.trends.current_month.projected_month_end_formatted }}</b>
+        </div>
+      </div>
+
+      <div style="background:var(--card-hover);border-radius:var(--radius-sm);padding:14px;">
+        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Previous Complete ({{ spendsense.trends.previous_month.label }})</div>
+        <div style="font-size:22px;font-weight:900;color:var(--text-primary);margin:4px 0;font-variant-numeric:tabular-nums;">
+          {{ spendsense.trends.previous_month.daily_burn_rate_formatted }} / day
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);">
+          Total Outflow: {{ spendsense.trends.previous_month.total_spending_formatted }} (30/31 days complete)
+        </div>
+        <div style="font-size:11px;margin-top:4px;">
+          Burn Rate Shift: 
+          <b style="color:{% if spendsense.trends.previous_month.burn_rate_diff_pct > 0 %}#ef4444{% else %}#16a34a{% endif %};">
+            {% if spendsense.trends.previous_month.burn_rate_diff_pct > 0 %}+{% endif %}{{ spendsense.trends.previous_month.burn_rate_diff_pct }}%
+          </b>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;flex-wrap:wrap;">
+    <!-- Rising Categories -->
+    <div class="card">
+      <div class="card-header-flex">
+        <div>
+          <div class="card-title">Surging Categories (+15% or more)</div>
+          <div class="card-subtitle">Categories experiencing significant upward pressure</div>
+        </div>
+        <span class="badge-pill badge-peach" style="font-size:10px;">{{ spendsense.trends.rising_categories|length }} Rising</span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+        {% for cat in spendsense.trends.rising_categories %}
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--card-hover);border-radius:var(--radius-sm);">
+            <div>
+              <div style="font-weight:700;font-size:13px;color:var(--text-primary);">{{ cat.name }}</div>
+              <div style="font-size:11px;color:var(--text-muted);">
+                {{ cat.prev_formatted }} → {{ cat.curr_formatted }}
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:800;font-size:13px;color:#ef4444;font-variant-numeric:tabular-nums;">+{{ cat.pct_change }}%</div>
+              <div style="font-size:10px;color:var(--text-muted);">+{{ cat.diff_formatted }}</div>
+            </div>
+          </div>
+        {% else %}
+          <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:12px;">
+            No categories surged above +15% this month. Spending trajectory is stable.
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- 3-Month Trajectory History -->
+    <div class="card">
+      <div class="card-header-flex">
+        <div>
+          <div class="card-title">3-Month Trajectory</div>
+          <div class="card-subtitle">Quarterly spending and savings rate trend</div>
+        </div>
+      </div>
+
+      <div style="overflow-x:auto;margin-top:12px;">
+        <table class="table-compact" style="width:100%;text-align:left;font-size:13px;border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border-subtle);color:var(--text-muted);font-size:11px;text-transform:uppercase;">
+              <th style="padding:6px 10px;">Month</th>
+              <th style="padding:6px 10px;text-align:right;">Spending</th>
+              <th style="padding:6px 10px;text-align:right;">Income</th>
+              <th style="padding:6px 10px;text-align:right;">Savings Rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for h in spendsense.trends.history_3_months %}
+              <tr style="border-bottom:1px solid var(--border-subtle);">
+                <td style="padding:10px;font-weight:700;color:var(--text-primary);">{{ h.label }}</td>
+                <td style="padding:10px;text-align:right;color:var(--text-primary);font-variant-numeric:tabular-nums;">{{ h.spending_formatted }}</td>
+                <td style="padding:10px;text-align:right;color:var(--text-muted);font-variant-numeric:tabular-nums;">{{ h.income_formatted }}</td>
+                <td style="padding:10px;text-align:right;font-weight:700;color:#16a34a;font-variant-numeric:tabular-nums;">{{ h.savings_rate }}%</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);">No multi-month history yet.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================= -->
+<!-- MODAL: REVIEW TRANSACTION EVIDENCE                                      -->
+<!-- ======================================================================= -->
+<div id="evidence-modal" class="modal-backdrop">
+  <div class="modal-card" style="max-width:620px;">
+    <div class="modal-header">
+      <div>
+        <h3 id="evidence-modal-title" style="font-weight:800;font-size:16px;color:var(--text-primary);margin:0 0 2px 0;">Transaction Evidence</h3>
+        <p style="font-size:12px;color:var(--text-muted);margin:0;">Transactions backing this finding</p>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeModal('evidence-modal')" aria-label="Close">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      </button>
+    </div>
+
+    <div id="evidence-txns-loading" style="text-align:center;padding:30px;color:var(--text-muted);">
+      <i data-lucide="loader" style="width:24px;height:24px;animation:spin 1s linear infinite;"></i>
+      <div style="margin-top:8px;font-size:12px;">Loading transaction records...</div>
+    </div>
+
+    <div id="evidence-txns-container" style="display:none;margin-top:14px;max-height:360px;overflow-y:auto;">
+      <table class="table-compact" style="width:100%;text-align:left;font-size:12px;border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border-subtle);color:var(--text-muted);">
+            <th style="padding:6px 10px;">Date</th>
+            <th style="padding:6px 10px;">Description / Merchant</th>
+            <th style="padding:6px 10px;">Category</th>
+            <th style="padding:6px 10px;text-align:right;">Amount</th>
+          </tr>
+        </thead>
+        <tbody id="evidence-txns-tbody"></tbody>
+      </table>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid var(--border-subtle);">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('evidence-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================================= -->
+<!-- MODAL: SET CUSTOM SAVINGS TARGET                                        -->
+<!-- ======================================================================= -->
+<div id="target-modal" class="modal-backdrop">
+  <div class="modal-card" style="max-width:460px;">
+    <div class="modal-header">
+      <div>
+        <h3 style="font-weight:800;font-size:16px;color:var(--text-primary);margin:0 0 2px 0;">Set Spending Target</h3>
+        <p id="target-modal-subtitle" style="font-size:12px;color:var(--text-muted);margin:0;">Set a realistic spending cap to unlock monthly savings</p>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeModal('target-modal')" aria-label="Close">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      </button>
+    </div>
+
+    <form id="target-modal-form" style="margin-top:14px;">
+      <input type="hidden" id="target-alert-id">
+      <input type="hidden" id="target-curr-spend-minor">
+
+      <div style="background:var(--card-hover);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);">Current Spending</div>
+          <div id="target-modal-current" style="font-size:16px;font-weight:800;color:var(--text-primary);font-variant-numeric:tabular-nums;">₹0.00</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;color:var(--text-muted);">Suggested Monthly Trim</div>
+          <div id="target-modal-suggested" style="font-size:16px;font-weight:800;color:#16a34a;font-variant-numeric:tabular-nums;">₹0.00</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Proposed Monthly Spending Target ({{ user.currency }})</label>
+        <input type="number" step="0.01" id="target-input-amount" class="form-control" placeholder="e.g. 2500.00" required oninput="recalcTargetSavings()">
+        <span style="font-size:11px;color:var(--text-muted);margin-top:4px;display:block;">
+          Enter the maximum amount you plan to spend per month on this category or merchant.
+        </span>
+      </div>
+
+      <!-- Live Dynamic Savings Calculation -->
+      <div id="target-calc-preview" style="background:rgba(203,244,50,0.1);border:1px solid rgba(203,244,50,0.3);border-radius:var(--radius-sm);padding:10px 12px;margin-top:12px;display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);font-weight:700;">Potential Monthly Savings</div>
+            <div id="target-calc-monthly" style="font-size:16px;font-weight:900;color:#16a34a;">₹0.00</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);font-weight:700;">Potential Annual Projection</div>
+            <div id="target-calc-annual" style="font-size:14px;font-weight:800;color:var(--text-primary);">₹0.00/yr</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid var(--border-subtle);">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('target-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i data-lucide="check" style="width:14px;height:14px;margin-right:4px;"></i> Save Target
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======================================================================= -->
+<!-- MODAL: ADD RECURRING PAYMENT MODAL                                      -->
+<!-- ======================================================================= -->
+<div id="add-recurring-modal" class="modal-backdrop">
+  <div class="modal-card" style="max-width:480px;">
+    <div class="modal-header">
+      <div>
+        <h3 style="font-weight:800;font-size:17px;color:var(--text-primary);margin:0 0 2px 0;">Track Recurring Subscription</h3>
+        <p style="font-size:12px;color:var(--text-muted);margin:0;">Audit auto-renewing subscriptions to monitor ongoing drains</p>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeModal('add-recurring-modal')" aria-label="Close">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      </button>
+    </div>
+
+    <form id="add-recurring-form" style="margin-top:14px;">
       <div class="form-group">
         <label class="form-label">Service / Payment Name</label>
         <input type="text" id="rec-name" class="form-control" placeholder="e.g. Netflix, Spotify, Gym, Cloud Storage" required>
@@ -139,24 +985,28 @@
         </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Next Renewal Date</label>
-        <input type="date" id="rec-next-due" class="form-control" required>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Next Renewal Date</label>
+          <input type="date" id="rec-next-due" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Category (Optional)</label>
+          <select id="rec-category" class="form-control">
+            <option value="">Select Category</option>
+            {% for cat in categories %}
+              <option value="{{ cat.id }}">{{ cat.name }} ({{ cat.budget_group }})</option>
+            {% endfor %}
+          </select>
+        </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Category (Optional)</label>
-        <select id="rec-category" class="form-control">
-          <option value="">Select Category</option>
-          {% for cat in categories %}
-            <option value="{{ cat.id }}">{{ cat.name }} ({{ cat.budget_group }})</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
-        <button type="button" class="btn btn-secondary" onclick="closeModal('add-recurring-modal')">Cancel</button>
-        <button type="submit" class="btn btn-primary">Track Subscription</button>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid var(--border-subtle);">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('add-recurring-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i data-lucide="check" style="width:14px;height:14px;margin-right:4px;"></i> Track Subscription
+        </button>
       </div>
     </form>
   </div>
@@ -165,9 +1015,219 @@
 
 {% block extra_js %}
 <script>
+  const userCurrency = "{{ user.currency }}";
+
+  // Tab Switching
+  function switchSpendTab(panelId, btn) {
+    document.querySelectorAll('.tab-content-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    const panel = document.getElementById(panelId);
+    if (panel) panel.classList.add('active');
+    if (btn) btn.classList.add('active');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // Findings Filtering
+  function filterFindings(type, btn) {
+    document.querySelectorAll('.leak-filter-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    const cards = document.querySelectorAll('.finding-card');
+    cards.forEach(card => {
+      const aType = card.getAttribute('data-alert-type') || '';
+      if (type === 'ALL') {
+        card.style.display = '';
+      } else if (type === 'OVERRUN') {
+        card.style.display = (aType.includes('OVERRUN') || aType.includes('INCREASE') || aType.includes('DISCRETIONARY')) ? '' : 'none';
+      } else if (type === 'SUBSCRIPTION') {
+        card.style.display = (aType.includes('SUBSCRIPTION') || aType.includes('RECURRING')) ? '' : 'none';
+      } else if (type === 'MICRO') {
+        card.style.display = (aType.includes('SMALL') || aType.includes('MERCHANT')) ? '' : 'none';
+      } else if (type === 'DUPLICATE') {
+        card.style.display = aType.includes('DUPLICATE') ? '' : 'none';
+      }
+    });
+  }
+
+  // Apply Action on Finding
+  async function applyFindingAction(alertId, action, customTarget = null) {
+    try {
+      const res = await secureFetch(`/api/spendsense/findings/${alertId}/action`, {
+        method: 'POST',
+        body: JSON.stringify({ action: action, custom_target: customTarget })
+      });
+      if (res && res.success) {
+        showToast(res.message || 'Finding updated.', 'success');
+        setTimeout(() => window.location.reload(), 450);
+      } else {
+        showToast(res ? res.error : 'Action failed', 'danger');
+      }
+    } catch (err) {
+      showToast(err.message, 'danger');
+    }
+  }
+
+  // Open Transaction Evidence Modal
+  async function openEvidenceModal(alertId, title) {
+    document.getElementById('evidence-modal-title').textContent = title || 'Transaction Evidence';
+    document.getElementById('evidence-txns-loading').style.display = 'block';
+    document.getElementById('evidence-txns-container').style.display = 'none';
+    const tbody = document.getElementById('evidence-txns-tbody');
+    tbody.innerHTML = '';
+    openModal('evidence-modal');
+
+    try {
+      const res = await secureFetch(`/api/spendsense/transactions?alert_id=${alertId}`);
+      document.getElementById('evidence-txns-loading').style.display = 'none';
+      document.getElementById('evidence-txns-container').style.display = 'block';
+
+      if (res && res.transactions && res.transactions.length > 0) {
+        res.transactions.forEach(t => {
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid var(--border-subtle)';
+          tr.innerHTML = `
+            <td style="padding:8px 10px;color:var(--text-muted);font-variant-numeric:tabular-nums;">${t.date}</td>
+            <td style="padding:8px 10px;font-weight:600;color:var(--text-primary);">${escapeHtml(t.description || t.merchant || '')}</td>
+            <td style="padding:8px 10px;color:var(--text-muted);">${escapeHtml(t.category_name || 'Uncategorized')}</td>
+            <td style="padding:8px 10px;text-align:right;font-weight:700;color:var(--text-primary);font-variant-numeric:tabular-nums;">${t.amount_formatted}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } else {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-muted);">No specific transaction records found.</td></tr>';
+      }
+    } catch (err) {
+      document.getElementById('evidence-txns-loading').style.display = 'none';
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:24px;color:#ef4444;">Error loading transactions: ${escapeHtml(err.message)}</td></tr>`;
+    }
+  }
+
+  // Open Set Target Modal
+  function openTargetModal(alertId, title, currentSpendMinor, suggestedSavingsMinor) {
+    document.getElementById('target-alert-id').value = alertId;
+    document.getElementById('target-curr-spend-minor').value = currentSpendMinor;
+    document.getElementById('target-modal-subtitle').textContent = title;
+    
+    const currSpendMajor = (currentSpendMinor / 100).toFixed(2);
+    const suggestedSavingsMajor = (suggestedSavingsMinor / 100).toFixed(2);
+    const proposedTargetMajor = Math.max(0, currentSpendMajor - suggestedSavingsMajor).toFixed(2);
+
+    document.getElementById('target-modal-current').textContent = `${userCurrency} ${Number(currSpendMajor).toLocaleString()}`;
+    document.getElementById('target-modal-suggested').textContent = `${userCurrency} ${Number(suggestedSavingsMajor).toLocaleString()}`;
+    
+    const input = document.getElementById('target-input-amount');
+    input.value = proposedTargetMajor > 0 ? proposedTargetMajor : '';
+    recalcTargetSavings();
+
+    openModal('target-modal');
+  }
+
+  function recalcTargetSavings() {
+    const currMinor = Number(document.getElementById('target-curr-spend-minor').value || 0);
+    const inputVal = Number(document.getElementById('target-input-amount').value || 0);
+    const previewBox = document.getElementById('target-calc-preview');
+
+    if (inputVal > 0 && currMinor > 0) {
+      const targetMinor = inputVal * 100;
+      const savingsMinor = Math.max(0, currMinor - targetMinor);
+      const monthlySavings = (savingsMinor / 100).toFixed(2);
+      const annualSavings = ((savingsMinor * 12) / 100).toFixed(2);
+
+      document.getElementById('target-calc-monthly').textContent = `+${userCurrency} ${Number(monthlySavings).toLocaleString()}`;
+      document.getElementById('target-calc-annual').textContent = `${userCurrency} ${Number(annualSavings).toLocaleString()}/yr`;
+      previewBox.style.display = 'block';
+    } else {
+      previewBox.style.display = 'none';
+    }
+  }
+
+  // Target Form Submission
+  document.getElementById('target-modal-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const alertId = document.getElementById('target-alert-id').value;
+    const targetAmt = document.getElementById('target-input-amount').value;
+    if (!alertId || !targetAmt) return;
+
+    await applyFindingAction(alertId, 'set_custom_target', targetAmt);
+    closeModal('target-modal');
+  });
+
+  // Small Expense Threshold Switcher
+  async function switchThreshold(val, btn) {
+    document.querySelectorAll('.threshold-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    try {
+      const res = await secureFetch(`/api/spendsense/small-expenses?threshold=${val}`);
+      if (res && res.success && res.small_expenses) {
+        const s = res.small_expenses;
+        document.getElementById('small-total-val').textContent = s.total_formatted;
+        document.getElementById('small-count-val').textContent = `${s.transaction_count} purchases`;
+        document.getElementById('small-avg-val').textContent = s.average_formatted;
+        document.getElementById('small-share-val').textContent = `${s.pct_of_total_expenses}%`;
+
+        // Update merchants
+        const mList = document.getElementById('small-merchants-list');
+        mList.innerHTML = '';
+        if (s.top_merchants && s.top_merchants.length > 0) {
+          s.top_merchants.forEach(m => {
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+            div.style.padding = '8px 10px';
+            div.style.background = 'var(--card-hover)';
+            div.style.borderRadius = 'var(--radius-sm)';
+            div.innerHTML = `
+              <div>
+                <div style="font-weight:700;font-size:13px;color:var(--text-primary);">${escapeHtml(m.merchant)}</div>
+                <div style="font-size:10px;color:var(--text-muted);">${m.count} txns (avg ${m.avg_formatted})</div>
+              </div>
+              <div style="font-weight:800;font-size:13px;color:var(--text-primary);font-variant-numeric:tabular-nums;">${m.total_formatted}</div>
+            `;
+            mList.appendChild(div);
+          });
+        } else {
+          mList.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;">No small purchases match this threshold.</div>';
+        }
+
+        // Update txns table
+        const tbody = document.getElementById('small-txns-tbody');
+        tbody.innerHTML = '';
+        if (s.transactions && s.transactions.length > 0) {
+          s.transactions.forEach(t => {
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid var(--border-subtle)';
+            tr.innerHTML = `
+              <td style="padding:8px 10px;color:var(--text-muted);font-variant-numeric:tabular-nums;">${t.date}</td>
+              <td style="padding:8px 10px;font-weight:600;color:var(--text-primary);">${escapeHtml(t.description)}</td>
+              <td style="padding:8px 10px;color:var(--text-muted);">${escapeHtml(t.category_name)}</td>
+              <td style="padding:8px 10px;text-align:right;font-weight:700;color:var(--text-primary);font-variant-numeric:tabular-nums;">${t.amount_formatted}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        } else {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);">No small transactions found.</td></tr>';
+        }
+      }
+    } catch (err) {
+      showToast(err.message, 'danger');
+    }
+  }
+
+  // Pre-fill subscription modal from pattern detection
+  function prefillSubscriptionModal(name, amount, freq, catId) {
+    document.getElementById('rec-name').value = name;
+    document.getElementById('rec-amount').value = amount;
+    document.getElementById('rec-freq').value = freq || 'MONTHLY';
+    if (catId) document.getElementById('rec-category').value = catId;
+    openModal('add-recurring-modal');
+  }
+
+  // Add Recurring Subscription Form Handling
   document.addEventListener('DOMContentLoaded', () => {
     const dueEl = document.getElementById('rec-next-due');
-    if (dueEl) dueEl.value = new Date().toISOString().split('T')[0];
+    if (dueEl && !dueEl.value) dueEl.value = new Date().toISOString().split('T')[0];
 
     const form = document.getElementById('add-recurring-form');
     if (form) {
@@ -196,6 +1256,7 @@
     }
   });
 
+  // Delete Recurring Rule
   async function deleteRecurring(id) {
     if (!confirm('Remove this recurring payment tracking rule?')) return;
     try {
@@ -205,6 +1266,11 @@
     } catch (err) {
       showToast(err.message, 'danger');
     }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
   }
 </script>
 {% endblock %}
