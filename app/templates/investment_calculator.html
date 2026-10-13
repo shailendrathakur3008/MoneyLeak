@@ -1,0 +1,1219 @@
+{% extends 'base.html' %}
+
+{% block title %}Investment Explorer & Future Wealth Projection — MoneyLeak{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Scheme Explorer Text-Only Tabs */
+.scheme-explorer-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.explorer-tab-btn {
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(0,0,0,0.1);
+  background: #ffffff;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1.4;
+  text-align: center;
+}
+.explorer-tab-btn:hover {
+  background: #f8faf6;
+  color: var(--text-primary);
+  border-color: rgba(0,0,0,0.2);
+}
+.explorer-tab-btn.active {
+  background: var(--bg-dark-card);
+  color: var(--brand-lime);
+  border-color: var(--bg-dark-card);
+  box-shadow: 0 4px 12px rgba(22,25,23,0.15);
+}
+
+/* Active Removable Filter Text Chips (strictly NO logos/icons) */
+.active-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  background: #f1f5ee;
+  color: #1e293b;
+  border: 1px solid rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.active-filter-chip:hover {
+  background: #e2e8de;
+  border-color: rgba(0,0,0,0.2);
+}
+.active-filter-chip-remove {
+  font-size: 13px;
+  font-weight: 800;
+  color: #64748b;
+  margin-left: 2px;
+}
+.active-filter-chip:hover .active-filter-chip-remove {
+  color: #b91c1c;
+}
+
+.scheme-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.scheme-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div class="topbar-greeting">
+    <div class="greeting-sup">
+      <span>🇮🇳</span>
+      <span>Indian Financial Markets Suite • SEBI & AMFI Compliant</span>
+    </div>
+    <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.5px;margin-top:4px;">
+      Investment Scheme Explorer & Future Wealth Projection
+    </h1>
+    <div class="greeting-sub">
+      Explore 4 approved Indian asset categories: Stocks & Equity, Equity Mutual Funds, SIP Investments, and Gold. Model compound future wealth, personalized recommendations, and multi-asset portfolio projections.
+    </div>
+  </div>
+</div>
+
+<!-- TOP NAVIGATION TABS -->
+<div class="calc-tabs-bar" style="margin-bottom:24px;">
+  <button type="button" class="calc-tab-btn active" data-tab="tab-future">
+    <span>🔮</span>
+    <span>Future Wealth Projection & Explorer</span>
+  </button>
+  <button type="button" class="calc-tab-btn" data-tab="tab-what-if">
+    <span>⏳</span>
+    <span>What If I Invested Earlier?</span>
+  </button>
+</div>
+
+<!-- ========================================================================= -->
+<!-- TAB 1: FUTURE WEALTH PROJECTION & EXPLORER SUITE                          -->
+<!-- Contains:                                                                 -->
+<!-- 1. Explore Investment Options (4 Main Tabs)                               -->
+<!-- 2. Personalize Your Investment                                            -->
+<!-- 3. Recommended for You                                                    -->
+<!-- 4. Compare Investments                                                    -->
+<!-- 5. Future Wealth Projection (Calculator + Scenarios + Portfolio Builder)  -->
+<!-- ========================================================================= -->
+<div id="tab-future" class="calc-tab-content active">
+
+  <!-- ======================================================================= -->
+  <!-- 1. SCHEME EXPLORER                                                      -->
+  <!-- Text-only Tab Navigation & Functional Filter Bar                        -->
+  <!-- ======================================================================= -->
+  <section class="calc-section card" id="scheme-explorer-section" style="margin-bottom:28px;padding:24px;">
+    <div class="card-header-flex" style="margin-bottom:16px;">
+      <div>
+        <h2 class="card-title" style="font-size:19px;font-weight:800;margin:0;letter-spacing:-0.3px;">Scheme Explorer</h2>
+        <div class="card-subtitle" style="margin-top:4px;">
+          Filter vetted Indian investments across approved asset classes. Refine by risk level, duration horizon, minimum contribution, and expense ratio.
+        </div>
+      </div>
+      <div id="explorer-results-count-badge" class="badge-pill badge-dark" style="font-size:12px;padding:6px 14px;font-weight:700;">
+        Showing {{ schemes|length }} investments
+      </div>
+    </div>
+
+    <!-- 1. TEXT-ONLY MAIN TABS -->
+    <!-- All Schemes | Stocks & Equity | Equity Mutual Funds | SIP Investments | Gold -->
+    <div class="scheme-explorer-tabs" id="scheme-explorer-tabs" style="border-bottom:2px solid rgba(0,0,0,0.06);padding-bottom:12px;margin-bottom:20px;">
+      <button type="button" class="explorer-tab-btn active" data-tab="ALL" id="tab-all-schemes">
+        All Schemes
+      </button>
+      <button type="button" class="explorer-tab-btn" data-tab="STOCKS_EQUITY" id="tab-stocks">
+        Stocks & Equity
+      </button>
+      <button type="button" class="explorer-tab-btn" data-tab="EQUITY_MUTUAL_FUNDS" id="tab-mutual-funds">
+        Equity Mutual Funds
+      </button>
+      <button type="button" class="explorer-tab-btn" data-tab="SIP_INVESTMENTS" id="tab-sip">
+        SIP Investments
+      </button>
+      <button type="button" class="explorer-tab-btn" data-tab="GOLD" id="tab-gold">
+        Gold
+      </button>
+    </div>
+
+    <!-- 2. FUNCTIONAL FILTER BAR (Directly below tabs) -->
+    <div class="explorer-filter-bar" style="background:var(--bg-card-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:16px;margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;align-items:end;">
+        
+        <!-- Search Input -->
+        <div class="form-group" style="margin-bottom:0;grid-column:span 2;">
+          <label class="form-label" for="explorer-search" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Search Schemes</label>
+          <input type="text" id="explorer-search" class="form-control form-control-sm" placeholder="Search by scheme name, company, ticker, or category...">
+        </div>
+
+        <!-- Risk Level -->
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" for="explorer-risk" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Risk Level</label>
+          <select id="explorer-risk" class="form-control form-control-sm">
+            <option value="ALL">All Risk Levels</option>
+            <option value="Low">Low</option>
+            <option value="Moderate">Moderate</option>
+            <option value="High">High</option>
+            <option value="Very High">Very High</option>
+          </select>
+        </div>
+
+        <!-- Investment Duration -->
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" for="explorer-duration" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Investment Duration</label>
+          <select id="explorer-duration" class="form-control form-control-sm">
+            <option value="ALL">All Durations</option>
+            <option value="UP_TO_1Y">Up to 1 year</option>
+            <option value="1_TO_3Y">1–3 years</option>
+            <option value="3_TO_5Y">3–5 years</option>
+            <option value="5_TO_10Y">5–10 years</option>
+            <option value="MORE_THAN_10Y">More than 10 years</option>
+          </select>
+        </div>
+
+        <!-- Minimum Investment (in INR) -->
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" for="explorer-min-investment" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Min Investment (₹)</label>
+          <select id="explorer-min-investment" class="form-control form-control-sm">
+            <option value="ALL">Any Amount</option>
+            <option value="500">Up to ₹500</option>
+            <option value="1000">Up to ₹1,000</option>
+            <option value="2500">Up to ₹2,500</option>
+            <option value="5000">Up to ₹5,000</option>
+          </select>
+        </div>
+
+        <!-- Expense Ratio (Max TER) -->
+        <div class="form-group" style="margin-bottom:0;" id="group-expense-ratio">
+          <label class="form-label" for="explorer-expense-ratio" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Max Expense Ratio</label>
+          <select id="explorer-expense-ratio" class="form-control form-control-sm">
+            <option value="ALL">Any Expense Ratio</option>
+            <option value="0.25">Up to 0.25%</option>
+            <option value="0.50">Up to 0.50%</option>
+            <option value="0.75">Up to 0.75%</option>
+            <option value="1.00">Up to 1.00%</option>
+          </select>
+          <div id="expense-ratio-note" style="display:none;font-size:10px;color:var(--text-muted);margin-top:2px;">Not applicable to stocks</div>
+        </div>
+
+        <!-- Historical Returns Period -->
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" for="explorer-return-period" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Return Period</label>
+          <select id="explorer-return-period" class="form-control form-control-sm">
+            <option value="5y" selected>5 Years (CAGR)</option>
+            <option value="3y">3 Years (CAGR)</option>
+            <option value="1y">1 Year (Absolute)</option>
+          </select>
+        </div>
+
+        <!-- Sorting -->
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" for="explorer-sort" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Sort Results</label>
+          <select id="explorer-sort" class="form-control form-control-sm">
+            <option value="relevance" selected>Relevance</option>
+            <option value="return_desc">Historical Returns: High to Low</option>
+            <option value="expense_asc">Lowest Expense Ratio</option>
+            <option value="name_asc">Name: A–Z</option>
+          </select>
+        </div>
+
+        <!-- Reset Filters Action -->
+        <div style="display:flex;align-items:flex-end;">
+          <button type="button" id="btn-reset-filters" class="btn btn-secondary btn-sm" style="width:100%;height:34px;font-weight:700;">
+            Reset Filters
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 3. ACTIVE FILTER CHIPS (Removable text chips without icons or logos) & RETURN BASIS -->
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;">
+      <div id="explorer-active-chips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:26px;">
+        <!-- Injected via JavaScript as removable text chips -->
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);">
+        Return basis: Annualized CAGR based on NAV / exchange data. Historical returns do not indicate future performance.
+      </div>
+    </div>
+
+    <!-- 4. RESULTS GRID -->
+    <div class="schemes-grid" id="explorer-results-grid">
+      <!-- Dynamically rendered via JavaScript based on 6-step filter logic -->
+    </div>
+
+    <!-- 5. EMPTY STATE -->
+    <div id="explorer-empty-state" style="display:none;padding:48px 24px;text-align:center;background:var(--bg-card-subtle);border:1px dashed var(--border-card);border-radius:var(--radius-sm);margin-top:16px;">
+      <h3 style="font-size:17px;font-weight:800;color:var(--text-primary);margin-bottom:6px;">No matching investments found.</h3>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Try removing a filter or changing your search.</p>
+      <button type="button" id="btn-empty-reset" class="btn btn-dark btn-sm" style="font-weight:700;padding:8px 18px;">
+        Reset Filters
+      </button>
+    </div>
+
+  </section>  </section>
+
+  <!-- ======================================================================= -->
+  <!-- 2. PERSONALIZE YOUR INVESTMENT                                          -->
+  <!-- ======================================================================= -->
+  <section class="calc-section card" style="margin-bottom:28px;padding:24px;">
+    <div class="card-header-flex" style="margin-bottom:18px;">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:20px;">🎯</span>
+          <h2 class="card-title" style="font-size:18px;margin:0;">Personalize Your Investment</h2>
+        </div>
+        <div class="card-subtitle" style="margin-top:4px;">
+          Configure your financial profile to receive tailored, verified recommendations matching your goals, horizon, risk tolerance, and liquidity constraints.
+        </div>
+      </div>
+      <button type="button" id="btn-trigger-recs" class="btn btn-dark btn-sm">
+        <span>✨</span> Refresh Recommendations
+      </button>
+    </div>
+
+    <form id="personalize-form" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:16px;align-items:end;">
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Investment Amount ({{ user.currency }})</label>
+        <input type="number" id="pref-amount" class="form-control" value="10000" step="1000">
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Investment Frequency</label>
+        <select id="pref-freq" class="form-control">
+          <option value="MONTHLY" selected>Monthly SIP</option>
+          <option value="LUMPSUM">One-Time Lump Sum</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Investment Duration</label>
+        <select id="pref-duration" class="form-control">
+          <option value="1">1 Year (Short-Term)</option>
+          <option value="3">3 Years (Medium)</option>
+          <option value="5" selected>5 Years (Standard)</option>
+          <option value="10">10 Years (Long-Term)</option>
+          <option value="15">15 Years (Wealth Creation)</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Risk Tolerance</label>
+        <select id="pref-risk" class="form-control">
+          <option value="Low">Low / Conservative</option>
+          <option value="Moderate">Moderate</option>
+          <option value="High" selected>High / Aggressive</option>
+          <option value="Very High">Very High (Equity Alpha)</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Financial Objective</label>
+        <select id="pref-objective" class="form-control">
+          <option value="wealth_accumulation" selected>Wealth Accumulation</option>
+          <option value="high_growth">High Growth / Alpha</option>
+          <option value="tax_saving">Tax Saving (Section 80C)</option>
+          <option value="dividends">Passive Dividend Income</option>
+          <option value="inflation_hedge">Inflation Hedge & Safety</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Preferred Category</label>
+        <select id="pref-category" class="form-control">
+          <option value="ALL" selected>All Approved Categories</option>
+          <option value="STOCKS_EQUITY">Stocks & Equity</option>
+          <option value="EQUITY_MUTUAL_FUNDS">Equity Mutual Funds</option>
+          <option value="SIP_INVESTMENTS">SIP Investments</option>
+          <option value="GOLD">Gold</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Liquidity Requirement</label>
+        <select id="pref-liquidity" class="form-control">
+          <option value="HIGH" selected>High / Instant (T+2)</option>
+          <option value="MEDIUM">Medium Liquidity</option>
+          <option value="LOCK_IN_OK">Lock-in OK (Tax Savers)</option>
+        </select>
+      </div>
+    </form>
+  </section>
+
+  <!-- ======================================================================= -->
+  <!-- 3. RECOMMENDED FOR YOU                                                  -->
+  <!-- ======================================================================= -->
+  <section class="calc-section card" style="margin-bottom:28px;padding:24px;">
+    <div class="card-header-flex" style="margin-bottom:16px;">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:20px;">🏆</span>
+          <h2 class="card-title" style="font-size:18px;margin:0;">Recommended for You</h2>
+        </div>
+        <div class="card-subtitle" style="margin-top:4px;">
+          Personalized, objective recommendations derived from verified market disclosures and your configured parameters. We never guarantee returns or rank products solely by recent performance.
+        </div>
+      </div>
+      <div id="recs-count-badge" class="badge-pill badge-mint" style="font-size:11px;">
+        Curated Matches
+      </div>
+    </div>
+
+    <!-- Recommendations Grid -->
+    <div id="recommendations-container" class="schemes-grid">
+      {% for r in initial_recommendations %}
+        <div class="scheme-card" style="border-top:3px solid var(--brand-lime);">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <span class="badge-pill badge-mint" style="font-size:10px;">{{ r.category_label }}</span>
+              <span class="badge-pill" style="background:#eef8ed;color:#166534;font-size:10px;font-weight:700;">
+                ★ {{ r.match_score }}% Match
+              </span>
+            </div>
+
+            <div class="scheme-title" style="font-size:15px;font-weight:800;">{{ r.name }}</div>
+            <div class="scheme-provider" style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">{{ r.provider }}</div>
+
+            <!-- Recommendation Reason Box -->
+            <div style="background:var(--bg-card-subtle);border-left:3px solid var(--pastel-mint-accent);border-radius:4px;padding:10px 12px;margin-bottom:12px;font-size:11px;color:var(--text-secondary);line-height:1.5;">
+              <strong style="color:var(--pastel-mint-accent);display:block;margin-bottom:2px;">Why Recommended:</strong>
+              {{ r.recommendation_reason }}
+            </div>
+
+            <div class="scheme-meta-grid" style="grid-template-columns:1fr 1fr;gap:8px;">
+              <div class="scheme-meta-item">
+                <div class="scheme-meta-label">5Y Return (CAGR)</div>
+                <div class="scheme-meta-val" style="color:#16a34a;font-weight:800;">
+                  {% if r.cagr_5y %}+{{ r.cagr_5y }}% p.a.{% elif r.cagr_3y %}+{{ r.cagr_3y }}% p.a.{% else %}~{{ r.expected_annual_return }}%{% endif %}
+                </div>
+              </div>
+              <div class="scheme-meta-item">
+                <div class="scheme-meta-label">Expense / Charges</div>
+                <div class="scheme-meta-val">{{ r.expense_ratio }}</div>
+              </div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--text-muted);margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.04);">
+              <span>Source: {{ r.data_source }}</span>
+              <span>Updated: {{ r.last_updated }}</span>
+            </div>
+          </div>
+
+          <div class="scheme-card-actions" style="margin-top:12px;">
+            <button type="button" class="btn btn-secondary btn-sm action-view-details" data-id="{{ r.id }}">Details</button>
+            <button type="button" class="btn btn-primary btn-sm action-project-scheme" data-id="{{ r.id }}" data-rate="{{ r.cagr_5y or r.expected_annual_return }}" data-name="{{ r.name }}" data-method="{% if r.category == 'SIP_INVESTMENTS' %}SIP{% else %}LUMPSUM{% endif %}" data-amount="10000">🔮 Project</button>
+            <button type="button" class="btn btn-dark btn-sm action-add-portfolio" data-id="{{ r.id }}" data-category="{{ r.category }}" data-underlying="{{ r.underlying_scheme_id or '' }}" data-rate="{{ r.cagr_5y or r.expected_annual_return }}" data-name="{{ r.name }}" data-method="{% if r.category == 'SIP_INVESTMENTS' %}SIP{% else %}LUMPSUM{% endif %}" data-amount="10000">➕ Portfolio</button>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- ======================================================================= -->
+  <!-- 4. COMPARE INVESTMENTS                                                  -->
+  <!-- ======================================================================= -->
+  <section class="calc-section card" style="margin-bottom:28px;padding:24px;">
+    <div class="card-header-flex" style="margin-bottom:18px;">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:20px;">⚖️</span>
+          <h2 class="card-title" style="font-size:18px;margin:0;">Compare Investments</h2>
+        </div>
+        <div class="card-subtitle" style="margin-top:4px;">
+          Side-by-side comparison matrix for up to 4 eligible options across Stocks, Equity Mutual Funds, SIP, and Gold using equivalent amounts and time horizons.
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparison Selectors -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px;align-items:end;margin-bottom:16px;">
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Compare Option 1</label>
+        <select id="compare-s1" class="form-control">
+          {% for s in schemes %}
+            <option value="{{ s.id }}" {% if s.id == 'uti-nifty-50-index' or s.id == 'sbi-bluechip-fund' %}selected{% endif %}>
+              {{ s.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Compare Option 2</label>
+        <select id="compare-s2" class="form-control">
+          {% for s in schemes %}
+            <option value="{{ s.id }}" {% if s.id == 'parag-parikh-flexi-cap' %}selected{% endif %}>
+              {{ s.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Compare Option 3 (Optional)</label>
+        <select id="compare-s3" class="form-control">
+          <option value="">-- None --</option>
+          {% for s in schemes %}
+            <option value="{{ s.id }}" {% if s.id == 'reliance-industries' %}selected{% endif %}>
+              {{ s.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Compare Option 4 (Optional)</label>
+        <select id="compare-s4" class="form-control">
+          <option value="">-- None --</option>
+          {% for s in schemes %}
+            <option value="{{ s.id }}" {% if s.id == 'nippon-gold-bees-etf' %}selected{% endif %}>
+              {{ s.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <!-- Comparison Parameters -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:14px;align-items:end;margin-bottom:20px;padding:14px;background:var(--bg-card-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);">
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Comparison Capital ({{ user.currency }})</label>
+        <input type="number" step="5000" id="compare-amount" class="form-control" value="50000">
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Investment Horizon</label>
+        <select id="compare-duration" class="form-control">
+          <option value="1">1 Year</option>
+          <option value="3">3 Years</option>
+          <option value="5" selected>5 Years</option>
+          <option value="10">10 Years</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Investment Method</label>
+        <select id="compare-method" class="form-control">
+          <option value="LUMPSUM" selected>One-time Lump Sum</option>
+          <option value="SIP">Monthly SIP</option>
+        </select>
+      </div>
+
+      <button type="button" id="btn-run-compare" class="btn btn-primary" style="height:44px;">
+        <span>⚡</span> Run Side-by-Side Comparison
+      </button>
+    </div>
+
+    <!-- Results Table Container -->
+    <div id="compare-results-wrapper" style="overflow-x:auto;">
+      <div style="padding:32px;text-align:center;color:var(--text-muted);">
+        Select options above and click "Run Side-by-Side Comparison".
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================= -->
+  <!-- 5. FUTURE WEALTH PROJECTION                                             -->
+  <!-- ======================================================================= -->
+  <section class="calc-section" id="section-future-projection">
+    <!-- Section Title -->
+    <div class="card" style="margin-bottom:20px;padding:18px 24px;">
+      <div class="card-header-flex">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:22px;">🔮</span>
+            <h2 class="card-title" style="font-size:18px;margin:0;">Future Wealth Projection</h2>
+          </div>
+          <div class="card-subtitle" style="margin-top:4px;">
+            Calculate systematic deposits, lump-sum compounding, scenario models, and aggregated multi-investment portfolio projections.
+          </div>
+        </div>
+        <!-- Active Linked Investment Indicator -->
+        <div id="active-linked-badge" class="badge-pill badge-dark" style="font-size:11px;padding:6px 14px;">
+          Manual Custom Parameters
+        </div>
+      </div>
+    </div>
+
+    <!-- HIGHLIGHT STAT CARDS -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:16px;margin-bottom:24px;">
+      <div class="quick-stat-card card-dark">
+        <div>
+          <div class="stat-card-top" style="color:var(--brand-lime);">
+            <span>💰</span>
+            <span>Future Value (FV)</span>
+          </div>
+          <div id="calc-fv-display" class="stat-card-value" style="color:#ffffff;">
+            {{ default_calc.summary.future_value_formatted }}
+          </div>
+          <div class="stat-card-sub" style="color:var(--text-on-dark-muted);">Projected maturity corpus</div>
+        </div>
+      </div>
+
+      <div class="quick-stat-card card-pastel-blue">
+        <div>
+          <div class="stat-card-top" style="color:var(--pastel-blue-accent);">
+            <span>📥</span>
+            <span>Total Capital Invested</span>
+          </div>
+          <div id="calc-invested-display" class="stat-card-value" style="color:var(--pastel-blue-accent);">
+            {{ default_calc.summary.total_invested_formatted }}
+          </div>
+          <div class="stat-card-sub">Principal contribution</div>
+        </div>
+      </div>
+
+      <div class="quick-stat-card card-pastel-mint">
+        <div>
+          <div class="stat-card-top" style="color:var(--pastel-mint-accent);">
+            <span>🚀</span>
+            <span>Estimated Returns (Gain)</span>
+          </div>
+          <div id="calc-returns-display" class="stat-card-value" style="color:var(--pastel-mint-accent);">
+            {{ default_calc.summary.estimated_returns_formatted }}
+          </div>
+          <div class="stat-card-sub">Compound interest multiplier</div>
+        </div>
+      </div>
+
+      <div class="quick-stat-card card-pastel-lavender">
+        <div>
+          <div class="stat-card-top" style="color:var(--pastel-lavender-accent);">
+            <span>📈</span>
+            <span>Wealth Gain Ratio</span>
+          </div>
+          <div id="calc-gain-ratio-display" class="stat-card-value" style="color:var(--pastel-lavender-accent);">
+            {{ default_calc.summary.gain_ratio_pct }}%
+          </div>
+          <div class="stat-card-sub">Growth on invested capital</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- THREE SCENARIOS BANNER (CONSERVATIVE, MODERATE, OPTIMISTIC) -->
+    <div class="card" style="margin-bottom:24px;padding:18px 24px;background:var(--bg-card);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div style="font-weight:800;font-size:13px;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
+          <span>📊</span>
+          <span>Three-Scenario Projection Analysis</span>
+        </div>
+        <span style="font-size:11px;color:var(--text-muted);">
+          Models market volatility buffer (Conservative -2.5% | Optimistic +2.5%)
+        </span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:14px;">
+        <!-- Conservative -->
+        <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:var(--radius-sm);padding:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:11px;font-weight:800;color:#c2410c;text-transform:uppercase;">Conservative</span>
+            <span id="scenario-rate-cons" class="badge-pill" style="background:#fed7aa;color:#7c2d12;font-size:10px;">9.5%</span>
+          </div>
+          <div id="scenario-fv-cons" style="font-size:18px;font-weight:800;color:#9a3412;margin-top:6px;">
+            ₹9,80,000
+          </div>
+          <div id="scenario-gain-cons" style="font-size:11px;color:#c2410c;margin-top:2px;">
+            Gains: +₹3,80,000
+          </div>
+        </div>
+
+        <!-- Moderate -->
+        <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:var(--radius-sm);padding:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:11px;font-weight:800;color:#047857;text-transform:uppercase;">Moderate (Baseline)</span>
+            <span id="scenario-rate-mod" class="badge-pill" style="background:#a7f3d0;color:#065f46;font-size:10px;">12.0%</span>
+          </div>
+          <div id="scenario-fv-mod" style="font-size:18px;font-weight:800;color:#065f46;margin-top:6px;">
+            {{ default_calc.summary.future_value_formatted }}
+          </div>
+          <div id="scenario-gain-mod" style="font-size:11px;color:#047857;margin-top:2px;">
+            Gains: +{{ default_calc.summary.estimated_returns_formatted }}
+          </div>
+        </div>
+
+        <!-- Optimistic -->
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--radius-sm);padding:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:11px;font-weight:800;color:#1d4ed8;text-transform:uppercase;">Optimistic</span>
+            <span id="scenario-rate-opt" class="badge-pill" style="background:#bfdbfe;color:#1e40af;font-size:10px;">14.5%</span>
+          </div>
+          <div id="scenario-fv-opt" style="font-size:18px;font-weight:800;color:#1e40af;margin-top:6px;">
+            ₹13,20,000
+          </div>
+          <div id="scenario-gain-opt" style="font-size:11px;color:#1d4ed8;margin-top:2px;">
+            Gains: +₹7,20,000
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALCULATOR INPUTS & CHARTS GRID -->
+    <div class="dashboard-grid">
+      <!-- LEFT: CONTROLS FORM -->
+      <div class="dashboard-col">
+        <div class="card">
+          <div class="card-header-flex" style="margin-bottom:14px;">
+            <div>
+              <div class="card-title">Projection Parameters</div>
+              <div class="card-subtitle">Adjust systematic deposits, duration & returns</div>
+            </div>
+            <button type="button" id="btn-reset-calc" class="btn btn-secondary btn-sm" title="Reset to manual">
+              Reset
+            </button>
+          </div>
+
+          <form id="investment-calc-form">
+            <div class="form-group">
+              <label class="form-label">Link to Real Indian Asset (Optional)</label>
+              <select id="calc-scheme-link" class="form-control">
+                <option value="">-- Custom Manual Parameters --</option>
+                {% for s in schemes %}
+                  <option value="{{ s.id }}" data-rate="{{ s.cagr_5y or s.cagr_3y or s.cagr_1y or 12.0 }}" data-category="{{ s.category }}" data-name="{{ s.name }}">
+                    {{ s.name }} ({{ s.category_label }}) — ~{{ s.cagr_5y or s.cagr_3y or 12.0 }}%
+                  </option>
+                {% endfor %}
+              </select>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+                Selecting an asset pre-fills historical CAGR assumptions.
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div class="form-group">
+                <label class="form-label">Initial Lump Sum ({{ user.currency }})</label>
+                <input type="number" step="1000" id="calc-initial" class="form-control" value="10000">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Periodic SIP Deposit ({{ user.currency }})</label>
+                <input type="number" step="500" id="calc-periodic" class="form-control" value="5000">
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div class="form-group">
+                <label class="form-label">Deposit Frequency</label>
+                <select id="calc-freq" class="form-control">
+                  <option value="MONTHLY" selected>Monthly SIP</option>
+                  <option value="YEARLY">Yearly Lump Sum</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Expected Annual Return (%)</label>
+                <input type="number" step="0.25" id="calc-return" class="form-control" value="12.0">
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div class="form-group">
+                <label class="form-label">Duration (Years)</label>
+                <input type="number" min="1" max="40" id="calc-duration" class="form-control" value="10">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Annual Step-Up SIP (%)</label>
+                <select id="calc-step-up" class="form-control">
+                  <option value="0" selected>0% (Fixed Contribution)</option>
+                  <option value="5">5% Yearly Step-Up</option>
+                  <option value="10">10% Yearly Step-Up (Recommended)</option>
+                  <option value="15">15% Yearly Step-Up</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Deposit Timing</label>
+              <select id="calc-timing" class="form-control">
+                <option value="BEGINNING" selected>Beginning of Month (Annuity Due)</option>
+                <option value="END">End of Month (Ordinary Annuity)</option>
+              </select>
+            </div>
+
+            <button type="button" id="btn-add-current-to-portfolio" class="btn btn-dark" style="width:100%;margin-top:10px;">
+              <span>➕</span> Add Current Projection to Portfolio
+            </button>
+          </form>
+
+          <!-- DISCLOSURES -->
+          <div style="background:#fef3e8;border:1px solid #fedcc7;border-radius:var(--radius-sm);padding:14px;margin-top:20px;">
+            <div style="font-weight:700;font-size:12px;color:#c2410c;margin-bottom:4px;">⚠️ Important Regulatory Disclosures</div>
+            <ul style="padding-left:18px;font-size:11px;color:#7c2d12;line-height:1.5;margin:0;">
+              <li>Projections are mathematical estimates and do not guarantee future returns.</li>
+              <li>Stocks, equity funds, and gold prices fluctuate; past CAGR is not a guarantee of future gains.</li>
+              <li>Taxes and inflation are not deducted in this baseline accumulation model.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: CHART & YEARLY SCHEDULE -->
+      <div class="dashboard-col">
+        <div class="card">
+          <div class="card-header-flex">
+            <div>
+              <div class="card-title">Wealth Accumulation Trajectory</div>
+              <div class="card-subtitle">Invested Capital vs Compound Wealth Growth</div>
+            </div>
+          </div>
+          <div style="height:250px;">
+            <canvas id="investmentChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header-flex">
+            <div>
+              <div class="card-title">Year-by-Year Growth Table</div>
+              <div class="card-subtitle">Principal vs accrued earnings</div>
+            </div>
+          </div>
+
+          <div style="max-height:260px;overflow-y:auto;">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Year</th>
+                  <th>Invested</th>
+                  <th>Returns</th>
+                  <th>Total Corpus</th>
+                </tr>
+              </thead>
+              <tbody id="calc-schedule-tbody">
+                {% for row in default_calc.schedule %}
+                  <tr>
+                    <td style="font-weight:700;">Year {{ row.year }}</td>
+                    <td>{{ row.invested_formatted }}</td>
+                    <td style="color:#16a34a;font-weight:700;">+{{ row.returns_formatted }}</td>
+                    <td style="font-weight:800;">{{ row.future_value_formatted }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- COMBINED MULTI-INVESTMENT PORTFOLIO BUILDER                           -->
+    <!-- ===================================================================== -->
+    <div class="card" style="margin-top:28px;padding:24px;" id="portfolio-builder-card">
+      <div class="card-header-flex" style="margin-bottom:18px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:20px;">💼</span>
+            <h3 class="card-title" style="font-size:18px;margin:0;">Combined Multi-Asset Portfolio Projection</h3>
+          </div>
+          <div class="card-subtitle" style="margin-top:4px;">
+            Combine multiple eligible investments into one portfolio. SIP is an investment method, linked directly to Equity Mutual Funds to ensure zero double-counting.
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <span id="portfolio-count-badge" class="badge-pill badge-dark">0 Items in Portfolio</span>
+          <button type="button" id="btn-clear-portfolio" class="btn btn-secondary btn-sm">Clear All</button>
+        </div>
+      </div>
+
+      <!-- Asset Allocation Breakdown Bar -->
+      <div style="background:var(--bg-card-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:16px;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:12px;font-weight:700;">
+          <span>Portfolio Asset Allocation:</span>
+          <span style="font-size:11px;color:var(--text-muted);">SIP is linked directly to Equity Mutual Funds</span>
+        </div>
+
+        <!-- Allocation Percentages Bar -->
+        <div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#e5e7eb;margin-bottom:10px;" id="alloc-progress-bar">
+          <div id="alloc-bar-stocks" style="width:33.3%;background:#0284c7;" title="Stocks & Equity"></div>
+          <div id="alloc-bar-mf" style="width:33.3%;background:#16a34a;" title="Equity Mutual Funds (inc. SIP)"></div>
+          <div id="alloc-bar-gold" style="width:33.4%;background:#eab308;" title="Gold"></div>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:12px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="width:10px;height:10px;background:#0284c7;border-radius:2px;display:inline-block;"></span>
+            <strong>Stocks & Equity:</strong>
+            <span id="alloc-label-stocks">0% (₹0)</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="width:10px;height:10px;background:#16a34a;border-radius:2px;display:inline-block;"></span>
+            <strong>Equity Mutual Funds:</strong>
+            <span id="alloc-label-mf">0% (₹0)</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="width:10px;height:10px;background:#eab308;border-radius:2px;display:inline-block;"></span>
+            <strong>Gold:</strong>
+            <span id="alloc-label-gold">0% (₹0)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Portfolio Table -->
+      <div style="overflow-x:auto;margin-bottom:20px;">
+        <table class="custom-table" id="portfolio-table">
+          <thead>
+            <tr>
+              <th>Investment</th>
+              <th>Category</th>
+              <th>Method</th>
+              <th>Amount</th>
+              <th>Exp. CAGR</th>
+              <th>Total Invested</th>
+              <th>Projected Value</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="portfolio-tbody">
+            <tr>
+              <td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;">
+                No investments added yet. Click "➕ Portfolio" on any card above or "Add Current Projection to Portfolio".
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Consolidated Portfolio Summary Stats -->
+      <div id="portfolio-summary-bar" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px;background:#161917;color:#fff;border-radius:var(--radius-sm);padding:18px;">
+        <div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.6);text-transform:uppercase;font-weight:700;">Combined Invested</div>
+          <div id="port-total-invested" style="font-size:18px;font-weight:800;color:#ffffff;margin-top:2px;">₹0</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--brand-lime);text-transform:uppercase;font-weight:700;">Combined Projected Corpus</div>
+          <div id="port-total-fv" style="font-size:18px;font-weight:800;color:var(--brand-lime);margin-top:2px;">₹0</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.6);text-transform:uppercase;font-weight:700;">Total Net Gain</div>
+          <div id="port-total-gains" style="font-size:18px;font-weight:800;color:#4ade80;margin-top:2px;">+₹0</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.6);text-transform:uppercase;font-weight:700;">Conservative / Optimistic</div>
+          <div id="port-scenarios" style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.85);margin-top:4px;">₹0 / ₹0</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ========================================================================= -->
+<!-- TAB 2: "WHAT IF I INVESTED EARLIER?" HISTORICAL CALCULATOR               -->
+<!-- ========================================================================= -->
+<div id="tab-what-if" class="calc-tab-content">
+  <!-- WHAT IF HIGHLIGHT STATS -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:16px;margin-bottom:24px;">
+    <div class="quick-stat-card card-pastel-blue">
+      <div>
+        <div class="stat-card-top" style="color:var(--pastel-blue-accent);">
+          <span>📥</span>
+          <span>Original Amount Invested</span>
+        </div>
+        <div id="whatif-invested-display" class="stat-card-value" style="color:var(--pastel-blue-accent);">
+          {{ default_what_if.summary.original_investment_formatted }}
+        </div>
+        <div class="stat-card-sub">Total capital deposited</div>
+      </div>
+    </div>
+
+    <div class="quick-stat-card card-dark">
+      <div>
+        <div class="stat-card-top" style="color:var(--brand-lime);">
+          <span>💎</span>
+          <span>Current Valuation Today</span>
+        </div>
+        <div id="whatif-current-display" class="stat-card-value" style="color:#ffffff;">
+          {{ default_what_if.summary.current_value_formatted }}
+        </div>
+        <div class="stat-card-sub" style="color:var(--text-on-dark-muted);">What it would be worth now</div>
+      </div>
+    </div>
+
+    <div class="quick-stat-card card-pastel-mint">
+      <div>
+        <div class="stat-card-top" style="color:var(--pastel-mint-accent);">
+          <span>🚀</span>
+          <span>Total Profit / Loss</span>
+        </div>
+        <div id="whatif-profit-display" class="stat-card-value" style="color:var(--pastel-mint-accent);">
+          {{ default_what_if.summary.profit_loss_formatted }}
+        </div>
+        <div id="whatif-return-pct-display" class="stat-card-sub" style="font-weight:700;color:var(--pastel-mint-accent);">
+          +{{ default_what_if.summary.total_return_pct }}% total return
+        </div>
+      </div>
+    </div>
+
+    <div class="quick-stat-card card-pastel-lavender">
+      <div>
+        <div class="stat-card-top" style="color:var(--pastel-lavender-accent);">
+          <span>⚡</span>
+          <span>Annualized Return (CAGR)</span>
+        </div>
+        <div id="whatif-cagr-display" class="stat-card-value" style="color:var(--pastel-lavender-accent);">
+          {{ default_what_if.summary.annualized_return_pct }}% p.a.
+        </div>
+        <div id="whatif-method-label" class="stat-card-sub">Lump Sum Compounded</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-grid">
+    <!-- LEFT: CONTROLS -->
+    <div class="dashboard-col">
+      <div class="card">
+        <div class="card-header-flex">
+          <div>
+            <div class="card-title">Historical "What-If" Parameters</div>
+            <div class="card-subtitle">Calculate actual past performance across approved assets</div>
+          </div>
+        </div>
+
+        <form id="what-if-form">
+          <div class="form-group">
+            <label class="form-label">Select Approved Asset</label>
+            <select id="whatif-scheme" class="form-control">
+              {% for s in schemes %}
+                <option value="{{ s.id }}" {% if s.id == 'parag-parikh-flexi-cap' %}selected{% endif %}>
+                  {{ s.name }} ({{ s.category_label }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="form-group">
+              <label class="form-label">Investment Method</label>
+              <select id="whatif-method" class="form-control">
+                <option value="LUMPSUM" selected>One-time Lump Sum</option>
+                <option value="SIP">Monthly SIP</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Amount ({{ user.currency }})</label>
+              <input type="number" step="1000" id="whatif-amount" class="form-control" value="50000">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>Historical Time Horizon</span>
+              <span id="whatif-duration-text" style="color:var(--text-secondary);font-size:12px;">5 Years Ago</span>
+            </label>
+            <div class="duration-btn-group" style="width:100%;display:grid;grid-template-columns:repeat(5, 1fr);text-align:center;">
+              <button type="button" class="duration-pill-btn" data-years="1">1 Year</button>
+              <button type="button" class="duration-pill-btn" data-years="3">3 Years</button>
+              <button type="button" class="duration-pill-btn active" data-years="5">5 Years</button>
+              <button type="button" class="duration-pill-btn" data-years="10">10 Years</button>
+              <button type="button" class="duration-pill-btn" data-years="15">Max (15Y)</button>
+            </div>
+          </div>
+
+          <!-- SCHEME HIGHLIGHT CARD -->
+          <div id="whatif-scheme-highlight" style="background:var(--bg-card-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:14px;margin-top:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span id="whatif-card-cat" class="badge-pill badge-mint">{{ default_what_if.scheme.category_label }}</span>
+              <span id="whatif-card-risk" class="badge-pill badge-dark">{{ default_what_if.scheme.risk_level }}</span>
+            </div>
+            <div id="whatif-card-title" style="font-weight:800;font-size:14px;color:var(--text-primary);">
+              {{ default_what_if.scheme.name }}
+            </div>
+            <div id="whatif-card-obj" style="font-size:12px;color:var(--text-secondary);margin-top:4px;line-height:1.4;">
+              {{ default_what_if.scheme.objective }}
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;font-size:11px;">
+              <div>
+                <span style="color:var(--text-muted);display:block;">1Y Return</span>
+                <strong id="whatif-1y">{{ default_what_if.scheme.cagr_1y }}%</strong>
+              </div>
+              <div>
+                <span style="color:var(--text-muted);display:block;">3Y Return</span>
+                <strong id="whatif-3y">{{ default_what_if.scheme.cagr_3y }}%</strong>
+              </div>
+              <div>
+                <span style="color:var(--text-muted);display:block;">5Y Return</span>
+                <strong id="whatif-5y">{{ default_what_if.scheme.cagr_5y }}%</strong>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- RIGHT: WHAT IF CHART & BREAKDOWN -->
+    <div class="dashboard-col">
+      <div class="card">
+        <div class="card-header-flex">
+          <div>
+            <div class="card-title">Historical Portfolio Growth Trajectory</div>
+            <div class="card-subtitle">Actual growth of invested capital over time</div>
+          </div>
+        </div>
+        <div style="height:250px;">
+          <canvas id="whatIfChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header-flex">
+          <div>
+            <div class="card-title">Historical Yearly Progression</div>
+            <div class="card-subtitle">Year-by-year valuation milestones</div>
+          </div>
+        </div>
+
+        <div style="max-height:260px;overflow-y:auto;">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Timeline</th>
+                <th>Invested</th>
+                <th>Estimated Value</th>
+                <th>Accrued Profit</th>
+              </tr>
+            </thead>
+            <tbody id="whatif-schedule-tbody">
+              {% for row in default_what_if.timeline %}
+                <tr>
+                  <td style="font-weight:700;">Year {{ row.year }}</td>
+                  <td>{{ row.invested_formatted }}</td>
+                  <td style="font-weight:800;color:var(--text-primary);">{{ row.value_formatted }}</td>
+                  <td style="color:#16a34a;font-weight:700;">+{{ row.profit_formatted }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- DEDICATED SCHEME DETAILS MODAL                                            -->
+<!-- ========================================================================= -->
+<div id="scheme-details-modal" class="modal-backdrop">
+  <div class="modal-card scheme-modal-card">
+    <div class="modal-header">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span id="modal-category" class="badge-pill badge-mint">Category</span>
+          <span id="modal-risk" class="badge-pill badge-dark">Risk</span>
+        </div>
+        <h2 id="modal-title" style="font-size:20px;font-weight:800;letter-spacing:-0.4px;">Scheme Name</h2>
+        <div id="modal-provider" style="font-size:13px;color:var(--text-muted);font-weight:600;">Provider / Entity</div>
+      </div>
+      <button type="button" class="modal-close-btn" id="btn-close-scheme-modal">&times;</button>
+    </div>
+
+    <!-- Purpose & How it Works -->
+    <div style="margin-bottom:20px;">
+      <div class="modal-section-title">Objective & Purpose</div>
+      <p id="modal-objective" style="font-size:13px;line-height:1.6;color:var(--text-primary);margin-bottom:12px;"></p>
+
+      <div class="modal-section-title">How This Instrument Works</div>
+      <p id="modal-how-it-works" style="font-size:13px;line-height:1.6;color:var(--text-secondary);"></p>
+    </div>
+
+    <!-- Key Facts Grid -->
+    <div class="modal-section-title">Key Instrument Specifications</div>
+    <div class="modal-facts-grid">
+      <div class="modal-fact-box">
+        <div class="scheme-meta-label">Eligibility</div>
+        <div id="modal-eligibility" class="scheme-meta-val">All Indian Citizens</div>
+      </div>
+      <div class="modal-fact-box">
+        <div class="scheme-meta-label">Min Investment</div>
+        <div id="modal-min-invest" class="scheme-meta-val">₹500</div>
+      </div>
+      <div class="modal-fact-box">
+        <div class="scheme-meta-label">Lock-in / Duration</div>
+        <div id="modal-lock-in" class="scheme-meta-val">None</div>
+      </div>
+      <div class="modal-fact-box">
+        <div class="scheme-meta-label">Expense / Charges</div>
+        <div id="modal-expense" class="scheme-meta-val">0.20%</div>
+      </div>
+      <div class="modal-fact-box">
+        <div class="scheme-meta-label">Liquidity & Exit</div>
+        <div id="modal-liquidity" class="scheme-meta-val">High (T+2)</div>
+      </div>
+      <div class="modal-fact-box">
+        <div class="scheme-meta-label">Tax Regime</div>
+        <div id="modal-tax-treatment" class="scheme-meta-val" style="font-size:11px;font-weight:600;">Equity LTCG 12.5%</div>
+      </div>
+    </div>
+
+    <!-- Historical Performance Row -->
+    <div class="modal-section-title">Verified Historical Returns (CAGR)</div>
+    <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:10px;background:var(--bg-card-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:14px;margin-bottom:20px;text-align:center;">
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">1 Year</div>
+        <div id="modal-1y" style="font-size:15px;font-weight:800;color:#16a34a;margin-top:2px;">-</div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">3 Years</div>
+        <div id="modal-3y" style="font-size:15px;font-weight:800;color:#16a34a;margin-top:2px;">-</div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">5 Years</div>
+        <div id="modal-5y" style="font-size:15px;font-weight:800;color:#16a34a;margin-top:2px;">-</div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">10 Years</div>
+        <div id="modal-10y" style="font-size:15px;font-weight:800;color:#16a34a;margin-top:2px;">-</div>
+      </div>
+    </div>
+
+    <!-- Pros & Cons -->
+    <div class="pros-cons-grid">
+      <div class="pro-box">
+        <div style="font-weight:800;font-size:12px;color:var(--pastel-mint-accent);margin-bottom:6px;">
+          ✓ Key Advantages
+        </div>
+        <ul id="modal-pros" style="font-size:12px;line-height:1.5;padding-left:16px;color:#14532d;"></ul>
+      </div>
+      <div class="con-box">
+        <div style="font-weight:800;font-size:12px;color:var(--pastel-peach-accent);margin-bottom:6px;">
+          ⚠️ Limitations & Risks
+        </div>
+        <ul id="modal-cons" style="font-size:12px;line-height:1.5;padding-left:16px;color:#7c2d12;"></ul>
+      </div>
+    </div>
+
+    <!-- Data Source & Compliance Footer -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06);margin-bottom:20px;font-size:11px;color:var(--text-muted);">
+      <div>Source: <span id="modal-source" style="font-weight:700;">Official Filings</span></div>
+      <div>Last Updated: <span id="modal-updated">October 2026</span></div>
+    </div>
+
+    <!-- Modal Action Buttons -->
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button type="button" class="btn btn-secondary" id="modal-act-compare">⚖️ Add to Compare</button>
+      <button type="button" class="btn btn-dark" id="modal-act-future">🔮 Project Future</button>
+      <button type="button" class="btn btn-primary" id="modal-act-whatif">⏳ What-If Earlier</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.__ALL_SCHEMES__ = {{ schemes|tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/calculator.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — MoneyLeak</title>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+
+  <style>
+    .auth-page-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: var(--bg-canvas);
+    }
+    .auth-card {
+      background: #ffffff;
+      border-radius: var(--radius-xl);
+      max-width: 440px;
+      width: 100%;
+      padding: 40px 32px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+  </style>
+</head>
+<body>
+
+<div class="auth-page-wrap">
+  <div class="auth-card">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div class="brand-icon-box" style="margin:0 auto 14px auto;">💸</div>
+      <h2 style="font-size:24px;font-weight:800;letter-spacing:-0.5px;">Welcome Back</h2>
+      <p style="font-size:13px;color:var(--text-secondary);margin-top:4px;">Sign in to your MoneyLeak financial dashboard</p>
+    </div>
+
+    <!-- Flash notifications -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div style="margin-bottom:16px;">
+          {% for category, message in messages %}
+            <div class="flash-alert {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" name="email" class="form-control" placeholder="you@domain.com" required autofocus>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width:100%;padding:12px;font-size:14px;margin-top:8px;">
+        Sign In to MoneyLeak
+      </button>
+    </form>
+
+    <div style="text-align:center;margin-top:24px;font-size:13px;color:var(--text-secondary);">
+      Don't have an account? 
+      <a href="{{ url_for('auth.register') }}" style="color:var(--text-primary);font-weight:700;text-decoration:underline;">Create one free</a>
+    </div>
+
+    <div style="text-align:center;margin-top:16px;">
+      <a href="{{ url_for('dashboard.index') }}" style="font-size:12px;color:var(--text-muted);">← Back to Home</a>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

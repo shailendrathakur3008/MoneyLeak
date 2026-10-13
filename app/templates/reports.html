@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}Monthly Financial Reports — MoneyLeak{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div class="topbar-greeting">
+    <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.5px;">Financial Reports & Statements</h1>
+    <div class="greeting-sub">Audit statements, monthly summaries, and downloadable CSV/PDF exports.</div>
+  </div>
+
+  <div class="topbar-actions">
+    <!-- Month/Year Pill Selector -->
+    <div class="pill-date-selector">
+      <form method="GET" action="{{ url_for('reports.view_reports') }}" style="display:flex;gap:4px;">
+        <select name="month" class="pill-option" onchange="this.form.submit()">
+          {% for m in range(1, 13) %}
+            <option value="{{ m }}" {% if m == current_month %}selected{% endif %}>
+              {{ ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1] }}
+            </option>
+          {% endfor %}
+        </select>
+        <select name="year" class="pill-option" onchange="this.form.submit()">
+          {% for y in [current_year-1, current_year, current_year+1] %}
+            <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+
+    <!-- Download Buttons -->
+    <a href="{{ url_for('reports.export_csv', year=current_year, month=current_month) }}" class="btn btn-secondary">
+      <span>📥 Download CSV</span>
+    </a>
+    <a href="{{ url_for('reports.export_pdf', year=current_year, month=current_month) }}" class="btn btn-primary">
+      <span>📄 Download PDF Report</span>
+    </a>
+  </div>
+</div>
+
+<!-- EXECUTIVE STATEMENT CARD -->
+<div class="card" style="margin-bottom:24px;">
+  <div class="card-header-flex">
+    <div>
+      <div class="card-title">Statement Summary: {{ summary.period.start_date }} to {{ summary.period.end_date }}</div>
+      <div class="card-subtitle">Audited numbers derived from authoritative integer minor ledger</div>
+    </div>
+    <span class="badge-pill badge-dark">{{ user.currency }} Standard</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;">
+    <div style="background:var(--bg-card-subtle);padding:16px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+      <div style="font-size:11px;color:var(--text-muted);font-weight:700;">RECOGNIZED INFLOW</div>
+      <div style="font-size:22px;font-weight:800;color:var(--text-primary);margin-top:2px;">{{ summary.income.formatted }}</div>
+      <div style="font-size:11px;color:var(--text-secondary);">Salary & deposits</div>
+    </div>
+
+    <div style="background:var(--bg-card-subtle);padding:16px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+      <div style="font-size:11px;color:var(--text-muted);font-weight:700;">TOTAL OUTFLOWS</div>
+      <div style="font-size:22px;font-weight:800;color:var(--text-primary);margin-top:2px;">{{ summary.total_outflow.formatted }}</div>
+      <div style="font-size:11px;color:var(--text-secondary);">Consumption + Savings</div>
+    </div>
+
+    <div style="background:var(--bg-card-subtle);padding:16px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+      <div style="font-size:11px;color:var(--text-muted);font-weight:700;">CONSUMPTION EXPENSES</div>
+      <div style="font-size:22px;font-weight:800;color:#ef4444;margin-top:2px;">{{ summary.expenses.formatted }}</div>
+      <div style="font-size:11px;color:var(--text-secondary);">Needs & Wants</div>
+    </div>
+
+    <div style="background:var(--bg-card-subtle);padding:16px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+      <div style="font-size:11px;color:var(--text-muted);font-weight:700;">ACTUAL SAVINGS</div>
+      <div style="font-size:22px;font-weight:800;color:#16a34a;margin-top:2px;">{{ summary.actual_savings.formatted }}</div>
+      <div style="font-size:11px;color:var(--text-secondary);">Rate: {{ summary.savings_rate }}%</div>
+    </div>
+
+    <div style="background:var(--bg-card-subtle);padding:16px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+      <div style="font-size:11px;color:var(--text-muted);font-weight:700;">NET MONTHLY SURPLUS</div>
+      <div style="font-size:22px;font-weight:800;color:var(--text-primary);margin-top:2px;">{{ summary.surplus.formatted }}</div>
+      <div style="font-size:11px;color:var(--text-secondary);">Unallocated cash</div>
+    </div>
+  </div>
+</div>
+
+<!-- 50/30/20 DETAILED AUDIT TABLE -->
+<div class="card" style="margin-bottom:24px;">
+  <div class="card-header-flex">
+    <div>
+      <div class="card-title">50/30/20 Framework Compliance</div>
+      <div class="card-subtitle">Variance analysis against target allocations</div>
+    </div>
+  </div>
+
+  <table class="custom-table">
+    <thead>
+      <tr>
+        <th>Framework Bucket</th>
+        <th>Target Share</th>
+        <th>Target Budget</th>
+        <th>Actual Outflow</th>
+        <th>Variance</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="font-weight:700;">Needs (Essentials)</td>
+        <td>{{ summary.distribution_targets.needs_pct }}%</td>
+        <td>{{ summary.needs.target_formatted }}</td>
+        <td>{{ summary.needs.actual_formatted }}</td>
+        <td style="font-weight:700;color:{% if summary.needs.is_over_budget %}#ef4444{% else %}#16a34a{% endif %};">
+          {{ '+ ' if summary.needs.is_over_budget else '- ' }}{{ summary.needs.variance_minor|abs|format_money(user.currency) }}
+        </td>
+        <td>
+          <span class="badge-pill {% if summary.needs.is_over_budget %}badge-danger{% else %}badge-mint{% endif %}">
+            {% if summary.needs.is_over_budget %}Over Budget{% else %}Under Budget{% endif %}
+          </span>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="font-weight:700;">Wants (Discretionary)</td>
+        <td>{{ summary.distribution_targets.wants_pct }}%</td>
+        <td>{{ summary.wants.target_formatted }}</td>
+        <td>{{ summary.wants.actual_formatted }}</td>
+        <td style="font-weight:700;color:{% if summary.wants.is_over_budget %}#ef4444{% else %}#16a34a{% endif %};">
+          {{ '+ ' if summary.wants.is_over_budget else '- ' }}{{ summary.wants.variance_minor|abs|format_money(user.currency) }}
+        </td>
+        <td>
+          <span class="badge-pill {% if summary.wants.is_over_budget %}badge-danger{% else %}badge-mint{% endif %}">
+            {% if summary.wants.is_over_budget %}Over Budget{% else %}Under Budget{% endif %}
+          </span>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="font-weight:700;">Savings & Growth</td>
+        <td>{{ summary.distribution_targets.savings_pct }}%</td>
+        <td>{{ summary.savings.target_formatted }}</td>
+        <td>{{ summary.savings.actual_formatted }}</td>
+        <td style="font-weight:700;color:{% if summary.savings.is_met %}#16a34a{% else %}#f59e0b{% endif %};">
+          Gap: {{ summary.savings.gap_formatted }}
+        </td>
+        <td>
+          <span class="badge-pill {% if summary.savings.is_met %}badge-lime{% else %}badge-peach{% endif %}">
+            {% if summary.savings.is_met %}Goal Met{% else %}Shortfall{% endif %}
+          </span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- CATEGORY EXPENDITURE TABLE -->
+<div class="card">
+  <div class="card-header-flex">
+    <div>
+      <div class="card-title">Category Outflows</div>
+      <div class="card-subtitle">Ranked by volume of spending in period</div>
+    </div>
+  </div>
+
+  <table class="custom-table">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Budget Group</th>
+        <th>Total Amount</th>
+        <th>Share of Income</th>
+        <th>Transactions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cat in summary.category_breakdown %}
+        <tr>
+          <td style="font-weight:700;">{{ cat.name }}</td>
+          <td><span class="badge-pill badge-dark" style="font-size:10px;">{{ cat.group }}</span></td>
+          <td style="font-weight:800;">{{ cat.formatted_amount }}</td>
+          <td>{{ cat.share_of_income_pct }}%</td>
+          <td>{{ cat.tx_count }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">No transactions recorded for this period.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

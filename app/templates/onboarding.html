@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome & Onboarding — MoneyLeak</title>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+
+  <style>
+    .onboarding-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px;
+      background: var(--bg-canvas);
+    }
+    .onboarding-card {
+      background: #ffffff;
+      border-radius: var(--radius-xl);
+      max-width: 580px;
+      width: 100%;
+      padding: 40px 36px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+  </style>
+</head>
+<body>
+
+<div class="onboarding-wrap">
+  <div class="onboarding-card">
+    <div style="text-align:center;margin-bottom:28px;">
+      <span class="badge-pill badge-lime" style="margin-bottom:12px;">Step 1 of 1 • Calibration</span>
+      <h2 style="font-size:26px;font-weight:800;letter-spacing:-0.5px;">Calibrate Your Financial Engine</h2>
+      <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">
+        Set up your baseline income and customize your starting 50/30/20 budget framework.
+      </p>
+    </div>
+
+    <!-- Flash notifications -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div style="margin-bottom:16px;">
+          {% for category, message in messages %}
+            <div class="flash-alert {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('auth.onboarding') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="form-group">
+          <label class="form-label">Currency</label>
+          <select name="currency" class="form-control">
+            <option value="INR" {% if user.currency == 'INR' %}selected{% endif %}>INR (₹) — Indian Rupee</option>
+            <option value="USD" {% if user.currency == 'USD' %}selected{% endif %}>USD ($) — US Dollar</option>
+            <option value="EUR" {% if user.currency == 'EUR' %}selected{% endif %}>EUR (€) — Euro</option>
+            <option value="GBP" {% if user.currency == 'GBP' %}selected{% endif %}>GBP (£) — British Pound</option>
+            <option value="AED" {% if user.currency == 'AED' %}selected{% endif %}>AED (د.إ) — UAE Dirham</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Monthly Net Income</label>
+          <input type="number" step="0.01" name="monthly_income" class="form-control" value="40000" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Income Frequency</label>
+        <select name="income_frequency" class="form-control">
+          <option value="MONTHLY" selected>Monthly Salary</option>
+          <option value="BIWEEKLY">Bi-Weekly</option>
+          <option value="IRREGULAR">Freelance / Irregular</option>
+        </select>
+      </div>
+
+      <!-- 50/30/20 Distribution Sliders -->
+      <div style="background:var(--bg-canvas);border-radius:var(--radius-lg);padding:20px;margin:24px 0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <strong style="font-size:14px;">Budget Framework Allocation</strong>
+          <span id="onboard-sum-pill" class="badge-pill badge-lime">100% Allocated</span>
+        </div>
+
+        <div class="form-group" style="margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px;">
+            <span style="color:#161917;">Needs (Housing, Food, Transit, Bills)</span>
+            <span id="ob-needs-val">50%</span>
+          </div>
+          <input type="range" min="20" max="80" step="5" name="needs_percentage" id="ob-needs" value="50" style="width:100%;accent-color:#161917;">
+        </div>
+
+        <div class="form-group" style="margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px;">
+            <span style="color:#38bdf8;">Wants (Dining, Shopping, Streaming)</span>
+            <span id="ob-wants-val">30%</span>
+          </div>
+          <input type="range" min="10" max="60" step="5" name="wants_percentage" id="ob-wants" value="30" style="width:100%;accent-color:#38bdf8;">
+        </div>
+
+        <div class="form-group" style="margin-bottom:4px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px;">
+            <span style="color:#16a34a;">Savings & Investments (Emergency, SIP)</span>
+            <span id="ob-savings-val">20%</span>
+          </div>
+          <input type="range" min="5" max="50" step="5" name="savings_percentage" id="ob-savings" value="20" style="width:100%;accent-color:#16a34a;">
+        </div>
+      </div>
+
+      <button type="submit" id="onboard-submit" class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;">
+        Complete Onboarding & Enter Dashboard →
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const n = document.getElementById('ob-needs');
+  const w = document.getElementById('ob-wants');
+  const s = document.getElementById('ob-savings');
+  const nv = document.getElementById('ob-needs-val');
+  const wv = document.getElementById('ob-wants-val');
+  const sv = document.getElementById('ob-savings-val');
+  const sumPill = document.getElementById('onboard-sum-pill');
+  const submitBtn = document.getElementById('onboard-submit');
+
+  function updateSum() {
+    const total = parseFloat(n.value) + parseFloat(w.value) + parseFloat(s.value);
+    nv.innerText = `${n.value}%`;
+    wv.innerText = `${w.value}%`;
+    sv.innerText = `${s.value}%`;
+    sumPill.innerText = `${total}% Allocated`;
+
+    if (total === 100) {
+      sumPill.style.background = '#cbf432';
+      sumPill.style.color = '#161917';
+      submitBtn.disabled = false;
+    } else {
+      sumPill.style.background = '#fee2e2';
+      sumPill.style.color = '#dc2626';
+      submitBtn.disabled = true;
+    }
+  }
+
+  n.addEventListener('input', updateSum);
+  w.addEventListener('input', updateSum);
+  s.addEventListener('input', updateSum);
+</script>
+</body>
+</html>

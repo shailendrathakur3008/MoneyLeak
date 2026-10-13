@@ -1,0 +1,552 @@
+/* ==========================================================================
+   DASHBOARD & FINTECH COMPONENTS
+   Faithfully inspired by the reference design:
+   - Dark hero card with 3 Macro Rings (Needs, Wants, Savings)
+   - Pastel quick KPI cards
+   - Small Leaks Big Results motivational banner
+   - Nutrition/Budget Donut breakdown & sparkline progress charts
+   ========================================================================== */
+
+/* Dashboard Layout Grid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: 1.25fr 0.85fr;
+  }
+}
+
+.dashboard-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ==========================================================================
+   1. HERO DARK OUTFLOW & 50/30/20 MACRO CARD
+   ========================================================================== */
+
+.hero-macro-card {
+  background: var(--bg-dark-card);
+  border-radius: var(--radius-xl);
+  padding: 28px 24px;
+  color: #ffffff;
+  box-shadow: 0 16px 40px rgba(18, 22, 20, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-macro-card::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 160px;
+  height: 160px;
+  background: radial-gradient(circle, rgba(203, 244, 50, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.hero-badge-flame {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-lime);
+}
+
+.hero-main-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.hero-big-number {
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1;
+  color: #ffffff;
+}
+
+.hero-target-denom {
+  font-size: 16px;
+  color: var(--text-on-dark-muted);
+  font-weight: 600;
+}
+
+.hero-percentage-pill {
+  margin-left: auto;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Main Outflow Progress Bar */
+.hero-progress-track {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.hero-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #cbf432 0%, #a3e635 100%);
+  border-radius: var(--radius-pill);
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 3 Macro Rings Grid (Needs, Wants, Savings) */
+.macro-rings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.macro-ring-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.macro-circle-wrap {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  margin-bottom: 10px;
+}
+
+.macro-circle-svg {
+  width: 68px;
+  height: 68px;
+  transform: rotate(-90deg);
+}
+
+.macro-circle-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 5;
+}
+
+.macro-circle-val {
+  fill: none;
+  stroke-width: 5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s ease;
+}
+
+.macro-val-needs {
+  stroke: #cbf432;
+}
+
+.macro-val-wants {
+  stroke: #38bdf8;
+}
+
+.macro-val-savings {
+  stroke: #a78bfa;
+}
+
+.macro-circle-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.macro-label-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 2px;
+}
+
+.macro-label-fraction {
+  font-size: 11px;
+  color: var(--text-on-dark-muted);
+}
+
+/* ==========================================================================
+   2. PASTEL STATS & MOTIVATIONAL BANNER
+   ========================================================================== */
+
+.quick-stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.quick-stat-card {
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 140px;
+  position: relative;
+}
+
+.stat-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.stat-card-value {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.stat-card-sub {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* Mini Bar Sparkline */
+.mini-sparkline {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 28px;
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+}
+
+.mini-spark-bar {
+  width: 5px;
+  background: currentColor;
+  border-radius: 2px;
+  opacity: 0.7;
+}
+
+/* Motivational Banner (Phone 1 bottom inspired) */
+.motivational-banner {
+  background: linear-gradient(135deg, #d4f938 0%, #b8f020 100%);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 10px 24px rgba(203, 244, 50, 0.35);
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: transform var(--transition-fast);
+}
+
+.motivational-banner:hover {
+  transform: translateY(-2px);
+}
+
+.banner-content {
+  max-width: 75%;
+}
+
+.banner-headline {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.banner-sub {
+  font-size: 12px;
+  font-weight: 600;
+  color: #2b3310;
+}
+
+.banner-circle-btn {
+  width: 44px;
+  height: 44px;
+  background: var(--bg-dark-card);
+  color: #ffffff;
+  border-radius: var(--radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 800;
+  flex-shrink: 0;
+  transition: transform var(--transition-fast);
+}
+
+.motivational-banner:hover .banner-circle-btn {
+  transform: translateX(4px);
+}
+
+/* ==========================================================================
+   3. DONUT BREAKDOWN (Phone 4 Nutrition Breakdown inspired)
+   ========================================================================== */
+
+.donut-card-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.donut-chart-box {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin-bottom: 20px;
+}
+
+.donut-center-metric {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.donut-center-val {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.donut-center-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.donut-legend-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.donut-legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-subtle);
+}
+
+.legend-dot-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+}
+
+.legend-pct-val {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+/* ==========================================================================
+   4. PROGRESS SPARKLINE & TREND CARD (Phone 4 My Progress inspired)
+   ========================================================================== */
+
+.progress-header-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+}
+
+.tab-pill-btn {
+  padding: 6px 16px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.tab-pill-btn.active {
+  background: var(--brand-lime);
+  color: var(--text-primary);
+}
+
+.trend-chart-box {
+  width: 100%;
+  height: 220px;
+}
+
+/* ==========================================================================
+   5. RECENT TRANSACTIONS LIST & LEAK ALERT ITEMS
+   ========================================================================== */
+
+.transaction-list-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.txn-compact-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  transition: all var(--transition-fast);
+}
+
+.txn-compact-item:hover {
+  background: var(--bg-surface-hover);
+  transform: translateX(2px);
+}
+
+.txn-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.txn-meta {
+  flex: 1;
+  margin-left: 12px;
+}
+
+.txn-desc {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.txn-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.txn-amount {
+  font-size: 14px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.txn-amount.expense {
+  color: var(--text-primary);
+}
+
+.txn-amount.savings {
+  color: #16a34a;
+}
+
+.txn-amount.refund {
+  color: #0284c7;
+}
+
+/* Leak Alert Cards */
+.alert-card-item {
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  border-left: 4px solid transparent;
+}
+
+.alert-card-item.WARNING {
+  background: var(--pastel-peach);
+  border-left-color: var(--pastel-peach-accent);
+}
+
+.alert-card-item.DANGER {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  border-left: 4px solid #ef4444;
+}
+
+.alert-card-item.INFO {
+  background: var(--pastel-blue);
+  border-left-color: var(--pastel-blue-accent);
+}
+
+.alert-body {
+  flex: 1;
+}
+
+.alert-title-text {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.alert-desc-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.alert-dismiss-btn {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+}
+
+.alert-dismiss-btn:hover {
+  color: var(--text-primary);
+}

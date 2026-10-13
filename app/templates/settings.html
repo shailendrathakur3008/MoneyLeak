@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings & Preferences — MoneyLeak{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div class="topbar-greeting">
+    <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.5px;">Account & Preferences</h1>
+    <div class="greeting-sub">Manage profile settings, custom categories, currency, and data security.</div>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <!-- LEFT: PROFILE & CATEGORIES -->
+  <div class="dashboard-col">
+    <!-- PROFILE FORM -->
+    <div class="card">
+      <div class="card-header-flex">
+        <div>
+          <div class="card-title">Profile & Default Currency</div>
+          <div class="card-subtitle">Personal details & financial currency basis</div>
+        </div>
+      </div>
+
+      <form id="profile-form">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" id="prof-name" class="form-control" value="{{ user.full_name }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email Address (Read-only)</label>
+          <input type="email" class="form-control" value="{{ user.email }}" disabled style="background:var(--bg-card-subtle);">
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label class="form-label">Active Currency</label>
+            <select id="prof-currency" class="form-control">
+              {% for code, conf in currency_config.items() %}
+                <option value="{{ code }}" {% if user.currency == code %}selected{% endif %}>
+                  {{ code }} ({{ conf.symbol }}) — {{ conf.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Baseline Monthly Salary</label>
+            <input type="number" step="0.01" id="prof-income" class="form-control" value="{{ (user.monthly_income_minor_units / 100)|round(2) }}">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-top:8px;">Save Profile Changes</button>
+      </form>
+    </div>
+
+    <!-- CUSTOM CATEGORIES MANAGER -->
+    <div class="card">
+      <div class="card-header-flex">
+        <div>
+          <div class="card-title">Custom Categories</div>
+          <div class="card-subtitle">Tailor categories to your lifestyle</div>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="openModal('add-category-modal')">+ New Category</button>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        {% for cat in categories %}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg-card-subtle);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+            <div>
+              <strong style="font-size:13px;">{{ cat.name }}</strong>
+              <span class="badge-pill {% if cat.budget_group=='NEEDS' %}badge-dark{% elif cat.budget_group=='WANTS' %}badge-peach{% else %}badge-mint{% endif %}" style="font-size:9px;margin-left:6px;">
+                {{ cat.budget_group }}
+              </span>
+              {% if cat.monthly_budget_minor_units %}
+                <div style="font-size:11px;color:var(--text-muted);">Cap: {{ cat.monthly_budget_minor_units|format_money(user.currency) }}</div>
+              {% endif %}
+            </div>
+            <button class="btn btn-secondary btn-sm" style="color:#ef4444;" onclick="deleteCategory({{ cat.id }})">Delete</button>
+          </div>
+        {% else %}
+          <div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px;">
+            No custom categories yet. Add categories to customize your 50/30/20 buckets.
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: APPEARANCE, SECURITY & DANGER ZONE -->
+  <div class="dashboard-col">
+    <!-- APPEARANCE SETTINGS -->
+    <div class="card" id="appearance-settings-card">
+      <div class="card-header-flex">
+        <div>
+          <div class="card-title">Appearance</div>
+          <div class="card-subtitle">Choose your visual theme preference</div>
+        </div>
+      </div>
+
+      <div style="margin-top:4px;margin-bottom:14px;">
+        <label class="form-label" style="margin-bottom:8px;">Theme</label>
+        <div class="theme-segmented-control" role="radiogroup" aria-label="Appearance Theme Selection">
+          <button type="button" class="theme-option-btn" data-theme-value="light" id="theme-btn-light" role="radio" aria-checked="false">
+            <span class="theme-btn-icon">☀️</span>
+            <span class="theme-btn-label">Light</span>
+          </button>
+          <button type="button" class="theme-option-btn" data-theme-value="dark" id="theme-btn-dark" role="radio" aria-checked="false">
+            <span class="theme-btn-icon">🌙</span>
+            <span class="theme-btn-label">Dark</span>
+          </button>
+          <button type="button" class="theme-option-btn" data-theme-value="system" id="theme-btn-system" role="radio" aria-checked="false">
+            <span class="theme-btn-icon">💻</span>
+            <span class="theme-btn-label">System</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="theme-status-hint" id="theme-status-hint" style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
+        <span class="theme-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--brand-lime);"></span>
+        <span id="theme-status-text">Active: System preference</span>
+      </div>
+    </div>
+
+    <!-- CHANGE PASSWORD -->
+    <div class="card">
+      <div class="card-header-flex">
+        <div>
+          <div class="card-title">Security & Password</div>
+          <div class="card-subtitle">Ensure your financial records remain secure</div>
+        </div>
+      </div>
+
+      <form id="password-form">
+        <div class="form-group">
+          <label class="form-label">Current Password</label>
+          <input type="password" id="pw-current" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">New Password (Min 8 characters)</label>
+          <input type="password" id="pw-new" class="form-control" minlength="8" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Confirm New Password</label>
+          <input type="password" id="pw-confirm" class="form-control" minlength="8" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-top:8px;">Update Password</button>
+      </form>
+    </div>
+
+    <!-- DANGER ZONE: ACCOUNT DELETION -->
+    <div class="card" style="border:1px solid rgba(239, 68, 68, 0.3);background:rgba(239, 68, 68, 0.04);">
+      <div class="card-header-flex">
+        <div>
+          <div class="card-title" style="color:#ef4444;">Danger Zone</div>
+          <div class="card-subtitle">Permanent removal of all personal records</div>
+        </div>
+      </div>
+
+      <p style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-bottom:16px;">
+        Deleting your account permanently erases your transaction ledger, budgets, leak detection logs, goals, and credentials from our persistent database. This action cannot be reversed.
+      </p>
+
+      <button type="button" class="btn btn-danger btn-sm" onclick="openModal('delete-account-modal')">
+        Permanently Delete My Account
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CATEGORY MODAL -->
+<div id="add-category-modal" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div>
+        <h3 style="font-weight:800;font-size:18px;">Create Custom Category</h3>
+        <p style="font-size:12px;color:var(--text-muted);">Assign to Needs, Wants, or Savings</p>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeModal('add-category-modal')">×</button>
+    </div>
+
+    <form id="add-category-form">
+      <div class="form-group">
+        <label class="form-label">Category Name</label>
+        <input type="text" id="new-cat-name" class="form-control" placeholder="e.g. Pet Care, Gaming, Photography" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">50/30/20 Budget Group</label>
+        <select id="new-cat-group" class="form-control" required>
+          <option value="WANTS" selected>Wants (Discretionary)</option>
+          <option value="NEEDS">Needs (Essentials)</option>
+          <option value="SAVINGS">Savings & Investments</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Monthly Budget Cap (Optional)</label>
+        <input type="number" step="100" id="new-cat-cap" class="form-control" placeholder="e.g. 3000.00">
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('add-category-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Category</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- DELETE ACCOUNT CONFIRM MODAL -->
+<div id="delete-account-modal" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div>
+        <h3 style="font-weight:800;font-size:18px;color:#dc2626;">Confirm Account Deletion</h3>
+        <p style="font-size:12px;color:var(--text-muted);">Confirm with your current password</p>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeModal('delete-account-modal')">×</button>
+    </div>
+
+    <form id="delete-account-form">
+      <div class="form-group">
+        <label class="form-label">Enter Password to Confirm</label>
+        <input type="password" id="del-acc-pw" class="form-control" placeholder="••••••••" required>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('delete-account-modal')">Cancel</button>
+        <button type="submit" class="btn btn-danger">Confirm & Delete Forever</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Profile update
+    const profForm = document.getElementById('profile-form');
+    if (profForm) {
+      profForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+          await secureFetch('/api/settings/profile', {
+            method: 'POST',
+            body: JSON.stringify({
+              full_name: document.getElementById('prof-name').value.trim(),
+              currency: document.getElementById('prof-currency').value,
+              monthly_income: document.getElementById('prof-income').value
+            })
+          });
+          showToast('Profile updated!', 'success');
+          setTimeout(() => window.location.reload(), 500);
+        } catch (err) {
+          showToast(err.message, 'danger');
+        }
+      });
+    }
+
+    // Password update
+    const pwForm = document.getElementById('password-form');
+    if (pwForm) {
+      pwForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+          await secureFetch('/api/settings/password', {
+            method: 'POST',
+            body: JSON.stringify({
+              current_password: document.getElementById('pw-current').value,
+              new_password: document.getElementById('pw-new').value,
+              confirm_password: document.getElementById('pw-confirm').value
+            })
+          });
+          showToast('Password changed successfully!', 'success');
+          pwForm.reset();
+        } catch (err) {
+          showToast(err.message, 'danger');
+        }
+      });
+    }
+
+    // Add category
+    const catForm = document.getElementById('add-category-form');
+    if (catForm) {
+      catForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+          await secureFetch('/api/categories', {
+            method: 'POST',
+            body: JSON.stringify({
+              name: document.getElementById('new-cat-name').value.trim(),
+              budget_group: document.getElementById('new-cat-group').value,
+              monthly_budget: document.getElementById('new-cat-cap').value || null
+            })
+          });
+          showToast('Category created!', 'success');
+          closeModal('add-category-modal');
+          setTimeout(() => window.location.reload(), 500);
+        } catch (err) {
+          showToast(err.message, 'danger');
+        }
+      });
+    }
+
+    // Delete account
+    const delForm = document.getElementById('delete-account-form');
+    if (delForm) {
+      delForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+          await secureFetch('/api/settings/delete-account', {
+            method: 'POST',
+            body: JSON.stringify({
+              password: document.getElementById('del-acc-pw').value
+            })
+          });
+          alert('Your account has been deleted. Redirecting...');
+          window.location.href = '/';
+        } catch (err) {
+          showToast(err.message, 'danger');
+        }
+      });
+    }
+  });
+
+  async function deleteCategory(id) {
+    if (!confirm('Deactivate this custom category?')) return;
+    try {
+      await secureFetch(`/api/categories/${id}`, { method: 'DELETE' });
+      showToast('Category removed.', 'info');
+      setTimeout(() => window.location.reload(), 500);
+    } catch (err) {
+      showToast(err.message, 'danger');
+    }
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+
+{% block title %}MoneyLeak Detector — Financial Intelligence{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div class="topbar-greeting">
+    <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.5px;">MoneyLeak Detection Engine</h1>
+    <div class="greeting-sub">Explainable rule-based insights: recurring drains, unusual spikes, and lifestyle inflation.</div>
+  </div>
+
+  <div class="topbar-actions">
+    <button type="button" class="btn btn-primary" onclick="openModal('add-recurring-modal')">
+      <span>+ Add Recurring Subscription</span>
+    </button>
+  </div>
+</div>
+
+<!-- LEAK DETECTION CARDS -->
+<div class="dashboard-grid" style="margin-bottom:28px;">
+  <!-- LEFT: DETECTED ALERTS -->
+  <div class="dashboard-col">
+    <div class="card">
+      <div class="card-header-flex">
+        <div>
+          <div class="card-title">Active Leak Alerts & Anomalies</div>
+          <div class="card-subtitle">Transparent rules backed by your real transaction records</div>
+        </div>
+        <span class="badge-pill badge-peach">{{ alerts|length }} Flagged</span>
+      </div>
+
+      <div class="alerts-container">
+        {% for alert in alerts %}
+          <div class="alert-card-item {{ alert.severity }}">
+            <div class="alert-body">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                <span class="badge-pill {% if alert.severity=='DANGER' %}badge-danger{% elif alert.severity=='WARNING' %}badge-peach{% else %}badge-blue{% endif %}" style="font-size:9px;">
+                  {{ alert.alert_type.replace('_', ' ') }}
+                </span>
+                <span style="font-size:11px;color:var(--text-muted);">{{ alert.created_at[:10] if alert.created_at else '' }}</span>
+              </div>
+              <div class="alert-title-text">{{ alert.title }}</div>
+              <div class="alert-desc-text">{{ alert.description }}</div>
+            </div>
+            <button type="button" class="alert-dismiss-btn" onclick="dismissAlert({{ alert.id }}, this)" title="Dismiss Alert">✕</button>
+          </div>
+        {% else %}
+          <div style="text-align:center;padding:32px;color:var(--text-secondary);">
+            <div style="font-size:32px;margin-bottom:8px;">🛡️</div>
+            <strong>No active leaks detected!</strong><br>
+            <span style="font-size:12px;color:var(--text-muted);">Your discretionary outflow is in line with your historical baseline and budget targets.</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: SUBSCRIPTIONS & RECURRING COMMITTED COSTS -->
+  <div class="dashboard-col">
+    <div class="card card-dark">
+      <div class="card-header-flex">
+        <div>
+          <div class="card-title" style="color:#ffffff;">Recurring Commitments</div>
+          <div class="card-subtitle" style="color:var(--text-on-dark-muted);">Auto-renewing services & memberships</div>
+        </div>
+        <span class="badge-pill badge-lime">{{ recurring_items|length }} Services</span>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px;">
+        <div>
+          <div style="font-size:26px;font-weight:800;color:#cbf432;">{{ total_recurring_monthly_formatted }}</div>
+          <div style="font-size:12px;color:var(--text-on-dark-muted);">Committed Monthly Drain</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:18px;font-weight:700;color:#ffffff;">{{ annual_recurring_formatted }}</div>
+          <div style="font-size:12px;color:var(--text-on-dark-muted);">Projected Annual Cost</div>
+        </div>
+      </div>
+
+      <!-- Recurring Items List -->
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        {% for item in recurring_items %}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(255,255,255,0.06);border-radius:var(--radius-sm);">
+            <div>
+              <div style="font-weight:700;font-size:13px;color:#ffffff;">{{ item.name }}</div>
+              <div style="font-size:11px;color:var(--text-on-dark-muted);">
+                {{ item.frequency }} • Next due: {{ item.next_due_date }}
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="text-align:right;">
+                <div style="font-weight:800;font-size:13px;color:#ffffff;">{{ item.amount_minor_units|format_money(user.currency) }}</div>
+                <div style="font-size:10px;color:var(--text-on-dark-muted);">{{ item.annual_cost_minor_units|format_money(user.currency) }}/yr</div>
+              </div>
+              <button type="button" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;" onclick="deleteRecurring({{ item.id }})" title="Delete rule">✕</button>
+            </div>
+          </div>
+        {% else %}
+          <div style="text-align:center;padding:16px;color:var(--text-on-dark-muted);font-size:12px;">
+            No recurring payments registered. Track Netflix, Spotify, gym memberships, etc.
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD RECURRING PAYMENT MODAL -->
+<div id="add-recurring-modal" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div>
+        <h3 style="font-weight:800;font-size:18px;">Track Recurring Subscription</h3>
+        <p style="font-size:12px;color:var(--text-muted);">Audit subscriptions to monitor annual drain</p>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeModal('add-recurring-modal')">×</button>
+    </div>
+
+    <form id="add-recurring-form">
+      <div class="form-group">
+        <label class="form-label">Service / Payment Name</label>
+        <input type="text" id="rec-name" class="form-control" placeholder="e.g. Netflix, Spotify, Gym, Cloud Storage" required>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Amount ({{ user.currency }})</label>
+          <input type="number" step="0.01" id="rec-amount" class="form-control" placeholder="e.g. 649.00" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Billing Frequency</label>
+          <select id="rec-freq" class="form-control" required>
+            <option value="MONTHLY" selected>Monthly</option>
+            <option value="YEARLY">Yearly / Annual</option>
+            <option value="WEEKLY">Weekly</option>
+            <option value="QUARTERLY">Quarterly</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Next Renewal Date</label>
+        <input type="date" id="rec-next-due" class="form-control" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Category (Optional)</label>
+        <select id="rec-category" class="form-control">
+          <option value="">Select Category</option>
+          {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.name }} ({{ cat.budget_group }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('add-recurring-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Track Subscription</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const dueEl = document.getElementById('rec-next-due');
+    if (dueEl) dueEl.value = new Date().toISOString().split('T')[0];
+
+    const form = document.getElementById('add-recurring-form');
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+          name: document.getElementById('rec-name').value.trim(),
+          amount: document.getElementById('rec-amount').value,
+          frequency: document.getElementById('rec-freq').value,
+          next_due_date: document.getElementById('rec-next-due').value,
+          category_id: document.getElementById('rec-category').value || null
+        };
+
+        try {
+          await secureFetch('/api/analysis/recurring', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          });
+          showToast('Subscription tracked!', 'success');
+          closeModal('add-recurring-modal');
+          setTimeout(() => window.location.reload(), 500);
+        } catch (err) {
+          showToast(err.message, 'danger');
+        }
+      });
+    }
+  });
+
+  async function deleteRecurring(id) {
+    if (!confirm('Remove this recurring payment tracking rule?')) return;
+    try {
+      await secureFetch(`/api/analysis/recurring/${id}`, { method: 'DELETE' });
+      showToast('Recurring payment rule removed.', 'info');
+      setTimeout(() => window.location.reload(), 500);
+    } catch (err) {
+      showToast(err.message, 'danger');
+    }
+  }
+</script>
+{% endblock %}

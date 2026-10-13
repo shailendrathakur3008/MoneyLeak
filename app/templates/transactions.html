@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+
+{% block title %}Transactions — MoneyLeak Intelligence{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div class="topbar-greeting">
+    <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.5px;">Transaction Ledger</h1>
+    <div class="greeting-sub">Record, categorize, search, and audit financial inflows and outflows.</div>
+  </div>
+
+  <div class="topbar-actions">
+    <button type="button" class="btn btn-secondary" onclick="openModal('add-income-modal')">
+      <span>+ Add Income</span>
+    </button>
+    <button type="button" class="btn btn-primary" onclick="openModal('quick-add-modal')">
+      <span>+ Log Transaction</span>
+    </button>
+  </div>
+</div>
+
+<!-- FILTERS & SEARCH BAR -->
+<div class="card" style="margin-bottom:24px;padding:20px;">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:14px;align-items:end;">
+    <div>
+      <label class="form-label" style="font-size:11px;">Search Ledger</label>
+      <input type="text" id="txn-search" class="form-control" placeholder="Search merchant, description...">
+    </div>
+
+    <div>
+      <label class="form-label" style="font-size:11px;">Category</label>
+      <select id="txn-filter-category" class="form-control">
+        <option value="">All Categories</option>
+        {% for cat in categories %}
+          <option value="{{ cat.id }}">{{ cat.name }} ({{ cat.budget_group }})</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label" style="font-size:11px;">Type</label>
+      <select id="txn-filter-type" class="form-control">
+        <option value="">All Types</option>
+        <option value="EXPENSE">Expense</option>
+        <option value="SAVINGS_CONTRIBUTION">Savings Contribution</option>
+        <option value="REFUND">Refund</option>
+        <option value="DEBT_REPAYMENT">Debt Repayment / EMI</option>
+        <option value="TRANSFER">Transfer</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label" style="font-size:11px;">From Date</label>
+      <input type="date" id="txn-filter-start" class="form-control">
+    </div>
+
+    <div>
+      <label class="form-label" style="font-size:11px;">To Date</label>
+      <input type="date" id="txn-filter-end" class="form-control">
+    </div>
+
+    <div>
+      <label class="form-label" style="font-size:11px;">Sort By</label>
+      <select id="txn-filter-sort" class="form-control">
+        <option value="date_desc">Date: Newest First</option>
+        <option value="date_asc">Date: Oldest First</option>
+        <option value="amount_desc">Amount: Highest First</option>
+        <option value="amount_asc">Amount: Lowest First</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- TRANSACTIONS TABLE CARD -->
+<div class="card">
+  <div style="overflow-x:auto;">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Description & Merchant</th>
+          <th>Category</th>
+          <th>Type</th>
+          <th style="text-align:right;">Amount</th>
+          <th>Notes</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="transactions-table-body">
+        <!-- Dynamically populated by transactions.js -->
+      </tbody>
+    </table>
+  </div>
+
+  <div id="pagination-controls"></div>
+</div>
+
+<!-- EDIT TRANSACTION MODAL -->
+<div id="edit-txn-modal" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div>
+        <h3 style="font-weight:800;font-size:18px;">Edit Transaction</h3>
+        <p style="font-size:12px;color:var(--text-muted);">Modify recorded amount, category, or metadata</p>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeModal('edit-txn-modal')">×</button>
+    </div>
+
+    <form id="edit-txn-form">
+      <input type="hidden" id="edit-txn-id">
+
+      <div class="form-group">
+        <label class="form-label">Amount ({{ user.currency }})</label>
+        <input type="number" step="0.01" id="edit-txn-amount" class="form-control" required>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select id="edit-txn-type" class="form-control" required>
+            <option value="EXPENSE">Expense</option>
+            <option value="SAVINGS_CONTRIBUTION">Savings Contribution</option>
+            <option value="REFUND">Refund</option>
+            <option value="DEBT_REPAYMENT">Loan EMI / Debt</option>
+            <option value="TRANSFER">Account Transfer</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input type="date" id="edit-txn-date" class="form-control" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select id="edit-txn-category" class="form-control">
+          <option value="">Uncategorized</option>
+          {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.name }} ({{ cat.budget_group }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <input type="text" id="edit-txn-desc" class="form-control" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Merchant (Optional)</label>
+        <input type="text" id="edit-txn-merchant" class="form-control">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes (Optional)</label>
+        <input type="text" id="edit-txn-notes" class="form-control">
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('edit-txn-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Update Transaction</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ADD INCOME MODAL -->
+<div id="add-income-modal" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div>
+        <h3 style="font-weight:800;font-size:18px;">Log Income Deposit</h3>
+        <p style="font-size:12px;color:var(--text-muted);">Record paycheck, freelance, dividend or bonus deposit</p>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeModal('add-income-modal')">×</button>
+    </div>
+
+    <form id="add-income-form">
+      <div class="form-group">
+        <label class="form-label">Amount ({{ user.currency }})</label>
+        <input type="number" step="0.01" id="income-amount" class="form-control" placeholder="e.g. 40000.00" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Income Source</label>
+        <input type="text" id="income-source" class="form-control" placeholder="e.g. Monthly Salary or Upwork Freelance" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Received Date</label>
+        <input type="date" id="income-date" class="form-control" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes (Optional)</label>
+        <input type="text" id="income-notes" class="form-control" placeholder="e.g. Annual appraisal bonus">
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('add-income-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Income</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/transactions.js') }}"></script>
+<script>
+  // Income form handler
+  document.addEventListener('DOMContentLoaded', () => {
+    const incDate = document.getElementById('income-date');
+    if (incDate) incDate.value = new Date().toISOString().split('T')[0];
+
+    const incForm = document.getElementById('add-income-form');
+    if (incForm) {
+      incForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+          amount: document.getElementById('income-amount').value,
+          income_source: document.getElementById('income-source').value,
+          received_date: document.getElementById('income-date').value,
+          notes: document.getElementById('income-notes').value
+        };
+
+        try {
+          await secureFetch('/api/income', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          });
+          showToast('Income record added!', 'success');
+          closeModal('add-income-modal');
+          incForm.reset();
+          loadTransactions(1);
+        } catch (err) {
+          showToast(err.message, 'danger');
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}
