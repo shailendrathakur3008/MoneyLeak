@@ -18,6 +18,7 @@ from app.extensions import db, csrf
 from app.models.user import User
 from app.models.budget import Budget
 from app.models.auth_otp import EmailOTP
+from app.services.email_service import send_real_verification_email, verify_real_otp_token
 from app.services.budget_engine import (
     seed_default_categories,
     seed_categories_for_user_type,
@@ -270,18 +271,24 @@ def send_otp():
     db.session.add(otp_record)
     db.session.commit()
 
-    # Log to stdout for local testing & development
-    print(f"\n[MoneyLeak OTP Service] Generated verification code for {email}: {code}\n")
+    # Dispatch real verification email via Supabase Auth / SMTP
+    try:
+        send_real_verification_email(email, code)
+    except Exception as e:
+        print(f"[auth.send_otp] Email dispatch warning: {e}")
 
     existing_user = User.query.filter_by(email=email).first()
 
-    return jsonify({
+    resp_payload = {
         'success': True,
-        'message': f'Verification code sent to {email}.',
+        'message': f'Verification code sent to {email}. Please check your inbox.',
         'is_existing': bool(existing_user),
-        'user_name': existing_user.full_name if existing_user else None,
-        'dev_otp': code  # Available in dev mode for seamless testing
-    })
+        'user_name': existing_user.full_name if existing_user else None
+    }
+    if current_app.config.get('TESTING'):
+        resp_payload['dev_otp'] = code
+
+    return jsonify(resp_payload)
 
 
 @auth_bp.route('/auth/verify-otp', methods=['POST'])
@@ -298,16 +305,21 @@ def verify_otp():
     if not email or not otp_code:
         return jsonify({'success': False, 'error': 'Email and verification code are required.'}), 400
 
-    # Validate OTP
+    # 1. Try real Supabase token verification first
+    is_valid_token, supabase_data = verify_real_otp_token(email, otp_code)
+
+    # 2. Also check local database OTP record as fallback
     otp_record = EmailOTP.query.filter_by(
         email=email,
         is_used=False
     ).order_by(EmailOTP.created_at.desc()).first()
 
-    if not otp_record or not otp_record.is_valid(otp_code):
-        return jsonify({'success': False, 'error': 'Invalid or expired verification code.'}), 400
+    if not is_valid_token:
+        if not otp_record or not otp_record.is_valid(otp_code):
+            return jsonify({'success': False, 'error': 'Invalid or expired verification code. Please check your email.'}), 400
 
-    otp_record.is_used = True
+    if otp_record:
+        otp_record.is_used = True
 
     # Case A: Email change for authenticated user
     if purpose == 'email_change':
@@ -328,18 +340,21 @@ def verify_otp():
         db.session.commit()
         return jsonify({'success': True, 'message': 'Email address verified and updated successfully.'})
 
-    # Case B: Sign-in / Sign-up via Email OTP (Auto-detecting user status)
+    # Case B: Sign-in / Sign-up via Email OTP (Auto-detecting user status & Supabase sync)
     user = User.query.filter_by(email=email).first()
     is_new_user = False
+    supabase_user = (supabase_data or {}).get('user', {})
+    supabase_id = supabase_user.get('id') if isinstance(supabase_user, dict) else None
 
     if not user:
-        # Create new user profile
+        # Create new user profile authenticated via Supabase / Email OTP
         is_new_user = True
         default_name = custom_name or email.split('@')[0].replace('.', ' ').replace('_', ' ').title()
         user = User(
             full_name=default_name,
             email=email,
-            auth_provider='email_otp',
+            auth_provider='supabase' if is_valid_token else 'email_otp',
+            provider_user_id=supabase_id,
             email_verified=True,
             country='India',
             currency='INR',
@@ -360,6 +375,9 @@ def verify_otp():
         seed_default_categories(user)
     else:
         user.email_verified = True
+        if supabase_id and not user.provider_user_id:
+            user.provider_user_id = supabase_id
+            user.auth_provider = 'supabase'
 
     db.session.commit()
 
@@ -562,27 +580,14 @@ def onboarding():
         step = int(data.get('step', user.onboarding_step or 1))
 
         # ---------------------------------------------------------------------
-        # ---------------------------------------------------------------------
-        # STEP 1: Personal Information & Indian Location Selection
+        # STEP 1: Personal Information
         # ---------------------------------------------------------------------
         if step == 1:
             full_name = (data.get('full_name') or '').strip()
             phone = (data.get('phone_number') or '').strip()
             dob = (data.get('date_of_birth') or '').strip()
-            country = (data.get('country') or 'India').strip()
             currency = (data.get('currency') or user.currency).strip().upper()
             lang = (data.get('preferred_language') or 'en').strip()
-
-            # Location details
-            state_id = data.get('state_id')
-            state_name = data.get('state_name')
-            district_id = data.get('district_id')
-            district_name = data.get('district_name')
-            city_id = data.get('city_id')
-            city_name = data.get('city_name')
-            is_custom_city = bool(data.get('is_custom_city', False))
-            pincode = (data.get('pincode') or '').strip() or None
-            location_tier = data.get('location_tier')
 
             if not full_name:
                 return jsonify({'success': False, 'error': 'Full name is required.'}), 400
@@ -590,32 +595,6 @@ def onboarding():
             user.full_name = full_name
             user.phone_number = phone or None
             user.date_of_birth = dob or None
-            user.country = country
-
-            if country == 'India':
-                user.state_id = state_id or None
-                user.state_name = state_name or (STATE_BY_ID.get(state_id, {}).get('name') if state_id else None)
-                user.district_id = district_id or None
-                user.district_name = district_name or None
-                user.city_id = city_id or ('OTHER' if is_custom_city else None)
-                user.city_name = city_name or None
-                user.is_custom_city = is_custom_city
-                user.location_tier = location_tier or 'UNCLASSIFIED'
-                if pincode:
-                    pin_res = validate_indian_pincode(pincode, user.state_id)
-                    if pin_res.get('valid'):
-                        user.pincode = pin_res['clean_pincode']
-                else:
-                    user.pincode = None
-            else:
-                user.state_id = None
-                user.state_name = None
-                user.district_id = None
-                user.district_name = None
-                user.city_id = None
-                user.city_name = None
-                user.pincode = None
-                user.location_tier = 'UNCLASSIFIED'
 
             if currency in CURRENCY_CONFIG:
                 user.currency = currency
@@ -626,162 +605,189 @@ def onboarding():
             return jsonify({
                 'success': True,
                 'next_step': 2,
-                'message': 'Personal and location information saved.'
+                'message': 'Personal information saved.'
             })
 
         # ---------------------------------------------------------------------
-        # STEP 2: Employment Status (Student vs Salaried Employee)
+        # STEP 2: Location & Demographic Profile (India & Global)
         # ---------------------------------------------------------------------
         elif step == 2:
-            user_type = (data.get('user_type') or '').strip().lower()
-            if user_type not in ('student', 'salaried'):
-                return jsonify({'success': False, 'error': 'Please select either Student or Salaried Employee.'}), 400
+            # If user_type passed directly (legacy support)
+            if 'user_type' in data and not any(k in data for k in ('state_id', 'country', 'city_name')):
+                user_type = (data.get('user_type') or '').strip().lower()
+                if user_type in ('student', 'salaried'):
+                    user.user_type = user_type
+            else:
+                country = (data.get('country') or 'India').strip()
+                state_id = data.get('state_id')
+                state_name = data.get('state_name')
+                district_id = data.get('district_id')
+                district_name = data.get('district_name')
+                city_id = data.get('city_id')
+                city_name = data.get('city_name')
+                is_custom_city = bool(data.get('is_custom_city', False))
+                pincode = (data.get('pincode') or '').strip() or None
+                location_tier = data.get('location_tier')
 
-            user.user_type = user_type
+                user.country = country
+                if country == 'India':
+                    user.state_id = state_id or None
+                    user.state_name = state_name or (STATE_BY_ID.get(state_id, {}).get('name') if state_id else None)
+                    user.district_id = district_id or None
+                    user.district_name = district_name or None
+                    user.city_id = city_id or ('OTHER' if is_custom_city else None)
+                    user.city_name = city_name or None
+                    user.is_custom_city = is_custom_city
+                    user.location_tier = location_tier or 'UNCLASSIFIED'
+                    if pincode:
+                        pin_res = validate_indian_pincode(pincode, user.state_id)
+                        if pin_res.get('valid'):
+                            user.pincode = pin_res['clean_pincode']
+                    else:
+                        user.pincode = None
+                else:
+                    user.state_id = None
+                    user.state_name = None
+                    user.district_id = None
+                    user.district_name = None
+                    user.city_id = None
+                    user.city_name = None
+                    user.pincode = None
+                    user.location_tier = 'UNCLASSIFIED'
+
             user.onboarding_step = max(user.onboarding_step, 3)
-
             db.session.commit()
             return jsonify({
                 'success': True,
                 'next_step': 3,
-                'message': f'Employment status set to {"Student" if user_type == "student" else "Salaried Employee"}.'
+                'message': 'Location profile saved.'
             })
 
         # ---------------------------------------------------------------------
-        # STEP 3: Financial Baseline & India-Adaptive 50/30/20 Presets
+        # STEP 3: Income & Career (Employment & Earnings)
         # ---------------------------------------------------------------------
         elif step == 3:
-            is_skip = data.get('action') == 'skip'
+            user_type = (data.get('user_type') or '').strip().lower()
+            if user_type in ('student', 'salaried'):
+                user.user_type = user_type
 
-            if not is_skip:
-                income_val = data.get('monthly_income')
-                opening_bal_val = data.get('opening_balance')
-                savings_target_val = data.get('monthly_savings_target')
-                rent_val = data.get('rent_or_emi')
-                essentials_val = data.get('essential_expenses')
-                debt_val = data.get('debt_payments')
-                dependants_val = data.get('dependants')
-                preset_choice = data.get('budget_preset')
-                needs_pct = data.get('needs_percentage')
-                wants_pct = data.get('wants_percentage')
-                savings_pct = data.get('savings_percentage')
+            income_val = data.get('monthly_income')
+            opening_bal_val = data.get('opening_balance')
+            savings_target_val = data.get('monthly_savings_target')
+            goal = (data.get('primary_financial_goal') or '').strip()
+            exp = (data.get('investment_experience') or '').strip()
 
-                goal = (data.get('primary_financial_goal') or '').strip()
-                exp = (data.get('investment_experience') or '').strip()
-                inv_cats = data.get('preferred_investment_categories')
+            if income_val not in (None, ''):
+                try:
+                    user.monthly_income_minor_units = to_minor_units(income_val, user.currency)
+                except Exception:
+                    pass
 
-                if income_val not in (None, ''):
-                    try:
-                        user.monthly_income_minor_units = to_minor_units(income_val, user.currency)
-                    except Exception:
-                        pass
+            if opening_bal_val not in (None, ''):
+                try:
+                    user.opening_balance_minor_units = to_minor_units(opening_bal_val, user.currency)
+                except Exception:
+                    pass
 
-                if opening_bal_val not in (None, ''):
-                    try:
-                        user.opening_balance_minor_units = to_minor_units(opening_bal_val, user.currency)
-                    except Exception:
-                        pass
+            if savings_target_val not in (None, ''):
+                try:
+                    user.monthly_savings_target_minor_units = to_minor_units(savings_target_val, user.currency)
+                except Exception:
+                    pass
 
-                if savings_target_val not in (None, ''):
-                    try:
-                        user.monthly_savings_target_minor_units = to_minor_units(savings_target_val, user.currency)
-                    except Exception:
-                        pass
-
-                if rent_val not in (None, ''):
-                    try:
-                        user.rent_or_emi_minor_units = to_minor_units(rent_val, user.currency)
-                    except Exception:
-                        pass
-
-                if essentials_val not in (None, ''):
-                    try:
-                        user.essential_expenses_minor_units = to_minor_units(essentials_val, user.currency)
-                    except Exception:
-                        pass
-
-                if debt_val not in (None, ''):
-                    try:
-                        user.debt_payments_minor_units = to_minor_units(debt_val, user.currency)
-                    except Exception:
-                        pass
-
-                if dependants_val not in (None, ''):
-                    try:
-                        user.dependants_count = int(dependants_val)
-                    except Exception:
-                        pass
-
-                if preset_choice:
-                    user.budget_preset = preset_choice
-
-                # Configure target budget allocation
-                if needs_pct is not None and wants_pct is not None and savings_pct is not None:
-                    try:
-                        np = float(needs_pct)
-                        wp = float(wants_pct)
-                        sp = float(savings_pct)
-                        if round(np + wp + sp, 1) == 100.0:
-                            b = Budget.query.filter_by(user_id=user.id).order_by(Budget.created_at.desc()).first()
-                            if not b:
-                                b = Budget(user_id=user.id)
-                                db.session.add(b)
-                            b.needs_percentage = np
-                            b.wants_percentage = wp
-                            b.savings_percentage = sp
-                    except Exception:
-                        pass
-
-                if goal:
-                    user.primary_financial_goal = goal
-                if exp:
-                    user.investment_experience = exp
-                if inv_cats:
-                    if isinstance(inv_cats, list):
-                        user.preferred_investment_categories = json.dumps(inv_cats)
-                    else:
-                        user.preferred_investment_categories = str(inv_cats)
+            if goal:
+                user.primary_financial_goal = goal
+            if exp:
+                user.investment_experience = exp
 
             user.onboarding_step = max(user.onboarding_step, 4)
             db.session.commit()
-
             return jsonify({
                 'success': True,
                 'next_step': 4,
-                'message': 'Financial commitments and adaptive budget configured.'
+                'message': 'Income & career baseline saved.'
             })
 
         # ---------------------------------------------------------------------
-        # STEP 4: Category Preferences
+        # STEP 4: Fixed Obligations (Rent/EMI, Essentials, Debt, Dependants)
         # ---------------------------------------------------------------------
         elif step == 4:
-            selected_categories = data.get('categories', [])
-            if isinstance(selected_categories, str):
-                try:
-                    selected_categories = json.loads(selected_categories)
-                except Exception:
-                    selected_categories = [s.strip() for s in selected_categories.split(',') if s.strip()]
+            rent_val = data.get('rent_or_emi')
+            essentials_val = data.get('essential_expenses')
+            debt_val = data.get('debt_payments')
+            dependants_val = data.get('dependants')
 
-            user_type = user.user_type or 'salaried'
-            seed_categories_for_user_type(user, user_type, selected_categories)
+            if rent_val not in (None, ''):
+                try:
+                    user.rent_or_emi_minor_units = to_minor_units(rent_val, user.currency)
+                except Exception:
+                    pass
+
+            if essentials_val not in (None, ''):
+                try:
+                    user.essential_expenses_minor_units = to_minor_units(essentials_val, user.currency)
+                except Exception:
+                    pass
+
+            if debt_val not in (None, ''):
+                try:
+                    user.debt_payments_minor_units = to_minor_units(debt_val, user.currency)
+                except Exception:
+                    pass
+
+            if dependants_val not in (None, ''):
+                try:
+                    user.dependants_count = int(dependants_val)
+                except Exception:
+                    pass
+
+            # Also seed default categories if passed or needed
+            cats = data.get('categories')
+            if cats:
+                if isinstance(cats, str):
+                    try:
+                        cats = json.loads(cats)
+                    except Exception:
+                        cats = [c.strip() for c in cats.split(',') if c.strip()]
+                seed_categories_for_user_type(user, user.user_type or 'salaried', cats)
 
             user.onboarding_step = max(user.onboarding_step, 5)
             db.session.commit()
-
             return jsonify({
                 'success': True,
                 'next_step': 5,
-                'message': 'Category preferences configured.'
+                'message': 'Obligations profile saved.'
             })
 
         # ---------------------------------------------------------------------
-        # STEP 5: Review and Complete
+        # STEP 5: Financial Goals & Calibration (Review & Complete)
         # ---------------------------------------------------------------------
         elif step == 5:
+            goal = (data.get('primary_financial_goal') or '').strip()
+            savings_target_val = data.get('monthly_savings_target')
+            preset_choice = data.get('budget_preset')
+            exp = (data.get('investment_experience') or '').strip()
+
+            if goal:
+                user.primary_financial_goal = goal
+            if exp:
+                user.investment_experience = exp
+            if savings_target_val not in (None, ''):
+                try:
+                    user.monthly_savings_target_minor_units = to_minor_units(savings_target_val, user.currency)
+                except Exception:
+                    pass
+            if preset_choice:
+                user.budget_preset = preset_choice
+
+            # Ensure default categories seeded if not already
+            if not user.categories:
+                seed_categories_for_user_type(user, user.user_type or 'salaried')
+
             user.onboarding_completed = True
             db.session.commit()
 
-            flash('Welcome! Your profile and personalized dashboard are ready.', 'success')
+            flash('Welcome! Your profile and personalized workspace are ready.', 'success')
             return jsonify({
                 'success': True,
                 'redirect': url_for('dashboard.view_dashboard'),

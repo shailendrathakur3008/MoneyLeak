@@ -10,7 +10,7 @@
   <script>
     (function() {
       try {
-        const saved = localStorage.getItem('moneyleak_theme') || 'system';
+        const saved = localStorage.getItem('moneyleak_theme') || 'light';
         let theme = saved;
         if (saved === 'system') {
           theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -30,75 +30,254 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
 
   <style>
+    :root, [data-theme="light"] {
+      --ml-canvas: #f4f6f2;
+      --ml-card: #ffffff;
+      --ml-card-border: rgba(0, 0, 0, 0.08);
+      --ml-card-shadow: 0 20px 45px -12px rgba(18, 22, 20, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02);
+      --ml-input-bg: #fbfcf9;
+      --ml-input-border: rgba(0, 0, 0, 0.12);
+      --ml-primary-lime: #cbf432;
+      --ml-primary-lime-hover: #d5f93c;
+      --ml-primary-lime-text: #121614;
+      --ml-text-primary: #121614;
+      --ml-text-secondary: #6e756c;
+      --ml-text-muted: #959e93;
+    }
+
+    [data-theme="dark"] {
+      --ml-canvas: #090d16;
+      --ml-card: #0f1626;
+      --ml-card-border: rgba(255, 255, 255, 0.08);
+      --ml-card-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.03);
+      --ml-input-bg: #141d30;
+      --ml-input-border: #1e2a42;
+      --ml-primary-lime: #cbf432;
+      --ml-primary-lime-hover: #bde724;
+      --ml-primary-lime-text: #121614;
+      --ml-text-primary: #ffffff;
+      --ml-text-secondary: #94a3b8;
+      --ml-text-muted: #64748b;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--ml-canvas);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--ml-text-primary);
+      -webkit-font-smoothing: antialiased;
+    }
+
     .onboarding-wrap {
       min-height: 100vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 32px 20px;
-      background: var(--bg-canvas);
+      padding: 40px 20px;
       position: relative;
+      background: 
+        radial-gradient(circle at 50% 8%, rgba(203, 244, 50, 0.18) 0%, transparent 60%),
+        var(--ml-canvas);
+      box-sizing: border-box;
     }
+
     .onboarding-card {
-      background: var(--bg-surface);
-      border-radius: var(--radius-xl);
-      max-width: 680px;
+      background: var(--ml-card);
+      border-radius: 24px;
+      max-width: 760px;
       width: 100%;
-      padding: 36px 32px;
-      box-shadow: var(--shadow-lg);
-      border: 1px solid var(--border-subtle);
+      padding: 40px 38px 36px 38px;
+      box-shadow: var(--ml-card-shadow);
+      border: 1px solid var(--ml-card-border);
       position: relative;
+      box-sizing: border-box;
+      backdrop-filter: blur(12px);
     }
+
     .theme-corner-toggle {
       position: absolute;
-      top: 18px;
-      right: 18px;
-      background: var(--bg-subtle);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-secondary);
-      width: 34px;
-      height: 34px;
-      border-radius: var(--radius-pill);
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.04);
+      border: 1px solid var(--ml-card-border);
+      color: var(--ml-text-secondary);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all var(--duration-fast) var(--ease-standard);
+      transition: all 0.2s ease;
     }
     .theme-corner-toggle:hover {
-      background: var(--bg-canvas);
-      color: var(--text-primary);
+      background: rgba(0, 0, 0, 0.08);
+      color: var(--ml-text-primary);
+      transform: scale(1.05);
     }
-    /* Wizard Step Bar */
-    .wizard-steps-bar {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
+    [data-theme="dark"] .theme-corner-toggle {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    /* =======================================================================
+       5-STEP NUMBERED STEPPER (① ── ② ── ③ ── ④ ── ⑤)
+       ======================================================================= */
+    .stepper-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 34px;
+      position: relative;
+      user-select: none;
+    }
+
+    .stepper-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       gap: 8px;
-      margin-bottom: 28px;
+      cursor: pointer;
+      position: relative;
+      z-index: 2;
+      transition: transform 0.15s ease;
     }
-    .wizard-step-node {
-      height: 5px;
-      border-radius: 3px;
-      background: var(--border-subtle);
-      transition: background var(--duration-fast) var(--ease-standard);
+    .stepper-item:hover {
+      transform: translateY(-1px);
     }
-    .wizard-step-node.completed {
-      background: var(--brand-primary);
+
+    .stepper-circle {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.05);
+      border: 2px solid var(--ml-card-border);
+      color: var(--ml-text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+      transition: all 0.25s ease;
     }
-    .wizard-step-node.active {
-      background: var(--brand-lime, #cbf432);
+    [data-theme="dark"] .stepper-circle {
+      background: rgba(255, 255, 255, 0.06);
     }
+
+    .stepper-circle .step-check {
+      display: none;
+      width: 18px;
+      height: 18px;
+      stroke-width: 3.5px;
+    }
+
+    .stepper-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ml-text-muted);
+      white-space: nowrap;
+      transition: color 0.2s ease, font-weight 0.2s ease;
+    }
+
+    /* Active Step (High-contrast with active lime ring & bold text) */
+    .stepper-item.active .stepper-circle {
+      background: #121614;
+      border-color: #cbf432;
+      color: #cbf432;
+      box-shadow: 0 0 0 4px rgba(203, 244, 50, 0.45);
+    }
+    [data-theme="dark"] .stepper-item.active .stepper-circle {
+      background: #0f172a;
+      border-color: #cbf432;
+      color: #cbf432;
+      box-shadow: 0 0 0 4px rgba(203, 244, 50, 0.35);
+    }
+    .stepper-item.active .stepper-label {
+      color: var(--ml-text-primary);
+      font-weight: 800;
+    }
+
+    /* Completed Step (Solid lime green circle with dark checkmark) */
+    .stepper-item.completed .stepper-circle {
+      background: #cbf432;
+      border-color: #cbf432;
+      color: #121614;
+      box-shadow: 0 2px 10px rgba(203, 244, 50, 0.35);
+    }
+    .stepper-item.completed .step-num {
+      display: none;
+    }
+    .stepper-item.completed .step-check {
+      display: block;
+      color: #121614;
+    }
+    .stepper-item.completed .stepper-label {
+      color: var(--ml-text-primary);
+      font-weight: 700;
+    }
+
+    /* Connecting Progress Lines */
+    .stepper-line {
+      flex: 1;
+      height: 3px;
+      background: rgba(0, 0, 0, 0.08);
+      margin: -22px 6px 0 6px;
+      border-radius: 2px;
+      transition: background 0.3s ease;
+      z-index: 1;
+    }
+    [data-theme="dark"] .stepper-line {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .stepper-line.completed {
+      background: #cbf432;
+    }
+
+    /* Step Content Section */
     .step-section {
       display: none;
     }
     .step-section.active {
       display: block;
-      animation: fadeIn 0.2s ease-in-out;
+      animation: fadeIn 0.25s ease-out;
     }
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(4px); }
+      from { opacity: 0; transform: translateY(6px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
+    /* Step Heading Block */
+    .step-header-box {
+      margin-bottom: 24px;
+      text-align: left;
+    }
+    .step-counter-badge {
+      font-size: 11.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #15803d;
+      background: rgba(203, 244, 50, 0.25);
+      padding: 4px 10px;
+      border-radius: 6px;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+    .step-headline {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+      color: var(--ml-text-primary);
+      margin: 0 0 6px 0;
+    }
+    .step-description {
+      font-size: 13.5px;
+      color: var(--ml-text-secondary);
+      margin: 0;
+      line-height: 1.5;
+    }
+
     /* Selection Cards for Employment */
     .user-type-grid {
       display: grid;
@@ -107,91 +286,162 @@
       margin: 20px 0;
     }
     .user-type-card {
-      background: var(--bg-subtle);
-      border: 2px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
+      background: var(--ml-input-bg);
+      border: 2px solid var(--ml-card-border);
+      border-radius: 16px;
       padding: 20px;
       cursor: pointer;
-      transition: all var(--duration-fast) var(--ease-standard);
+      transition: all 0.2s ease;
       position: relative;
       text-align: left;
     }
     .user-type-card:hover {
-      border-color: var(--text-muted);
+      border-color: var(--ml-text-muted);
       transform: translateY(-2px);
     }
     .user-type-card.selected {
-      border-color: var(--brand-primary);
-      background: var(--bg-surface);
-      box-shadow: var(--shadow-sm);
+      border-color: #121614;
+      background: var(--ml-card);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    }
+    [data-theme="dark"] .user-type-card.selected {
+      border-color: #cbf432;
     }
     .user-type-card input[type="radio"] {
       position: absolute;
       top: 18px;
       right: 18px;
-      accent-color: var(--brand-primary);
+      accent-color: #121614;
       width: 18px;
       height: 18px;
     }
+
     /* Avatar Preview Box */
     .avatar-upload-box {
       display: flex;
       align-items: center;
       gap: 18px;
-      padding: 16px;
-      background: var(--bg-subtle);
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--border-subtle);
-      margin-bottom: 20px;
+      padding: 16px 20px;
+      background: var(--ml-input-bg);
+      border-radius: 16px;
+      border: 1px solid var(--ml-card-border);
+      margin-bottom: 22px;
     }
     .avatar-img-circle {
       width: 64px;
       height: 64px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid var(--border-subtle);
-      background: var(--bg-surface);
+      border: 2px solid var(--ml-card-border);
+      background: var(--ml-card);
     }
-    /* Category Checkbox Chips Grid */
-    .categories-chips-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 10px;
-      max-height: 290px;
-      overflow-y: auto;
-      padding: 4px;
-      margin: 16px 0;
-    }
-    .category-chip-label {
-      display: flex;
+
+    /* Buttons */
+    .btn-lime-primary {
+      background: var(--ml-primary-lime);
+      color: var(--ml-primary-lime-text);
+      border: none;
+      border-radius: 12px;
+      padding: 12px 28px;
+      font-size: 14.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 10px 12px;
-      background: var(--bg-subtle);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      font-size: 12px;
+      transition: all 0.15s ease;
+      box-shadow: 0 4px 14px rgba(203, 244, 50, 0.35);
+      font-family: inherit;
+    }
+    .btn-lime-primary:hover {
+      background: var(--ml-primary-lime-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(203, 244, 50, 0.45);
+    }
+    .btn-lime-primary:active {
+      transform: translateY(0);
+    }
+    .btn-lime-primary:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-step-back {
+      background: transparent;
+      color: var(--ml-text-secondary);
+      border: 1px solid var(--ml-card-border);
+      border-radius: 12px;
+      padding: 12px 20px;
+      font-size: 14px;
       font-weight: 600;
-      color: var(--text-primary);
       cursor: pointer;
-      user-select: none;
-      transition: all var(--duration-fast) var(--ease-standard);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      font-family: inherit;
     }
-    .category-chip-label:hover {
-      border-color: var(--text-muted);
+    .btn-step-back:hover {
+      background: var(--ml-input-bg);
+      color: var(--ml-text-primary);
     }
-    .category-chip-label input[type="checkbox"]:checked + span {
-      color: var(--text-primary);
+
+    /* Form Fields */
+    .form-group {
+      margin-bottom: 18px;
+      position: relative;
+    }
+    .form-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
       font-weight: 700;
+      color: var(--ml-text-primary);
+      margin-bottom: 7px;
     }
-    .category-chip-label:has(input[type="checkbox"]:checked) {
-      border-color: var(--brand-primary);
-      background: var(--bg-surface);
+    .form-control {
+      width: 100%;
+      height: 46px;
+      background: var(--ml-input-bg);
+      border: 1px solid var(--ml-input-border);
+      border-radius: 12px;
+      padding: 0 16px;
+      box-sizing: border-box;
+      font-size: 14px;
+      color: var(--ml-text-primary);
+      font-family: inherit;
+      outline: none;
+      transition: all 0.18s ease;
     }
+    .form-control:focus {
+      background: #ffffff;
+      border-color: #121614;
+      box-shadow: 0 0 0 3px rgba(203, 244, 50, 0.45);
+    }
+    [data-theme="dark"] .form-control:focus {
+      background: #172138;
+      border-color: #cbf432;
+      box-shadow: 0 0 0 3px rgba(203, 244, 50, 0.25);
+    }
+
+    .stepper-nav-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid var(--ml-card-border);
+    }
+
     @media (max-width: 640px) {
       .onboarding-card { padding: 24px 18px; }
+      .stepper-label { font-size: 10px; }
+      .stepper-circle { width: 32px; height: 32px; font-size: 12px; }
       .user-type-grid { grid-template-columns: 1fr; }
       .avatar-upload-box { flex-direction: column; text-align: center; }
+      .stepper-line { margin: -18px 3px 0 3px; }
     }
   </style>
 </head>
@@ -199,27 +449,63 @@
 
 <div class="onboarding-wrap">
   <div class="onboarding-card">
+    
     <!-- Corner Theme Toggle -->
     <button type="button" class="theme-corner-toggle" id="onboard-theme-toggle" title="Toggle theme">
-      <i data-lucide="sun-moon" style="width:16px;height:16px;"></i>
+      <i data-lucide="sun-moon" style="width:17px;height:17px;"></i>
     </button>
 
-    <!-- Top Progress Indicator -->
-    <div style="margin-bottom:20px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <span id="step-badge" class="badge-pill badge-lime" style="font-size:11px;font-weight:700;">
-          Step {{ active_step }} of 5
-        </span>
-        <span id="step-title-hint" style="font-size:12px;color:var(--text-muted);font-weight:600;">
-          Profile Setup
-        </span>
+    <!-- ===================================================================== -->
+    <!-- 5-STEP NUMBERED STEPPER: ① ── ② ── ③ ── ④ ── ⑤                       -->
+    <!-- ===================================================================== -->
+    <div class="stepper-container">
+      <!-- Step 1: Personal -->
+      <div class="stepper-item active" id="stepper-node-1" onclick="goToStep(1)">
+        <div class="stepper-circle">
+          <span class="step-num">1</span>
+          <i data-lucide="check" class="step-check"></i>
+        </div>
+        <div class="stepper-label">Personal</div>
       </div>
-      <div class="wizard-steps-bar">
-        <div class="wizard-step-node" id="step-node-1"></div>
-        <div class="wizard-step-node" id="step-node-2"></div>
-        <div class="wizard-step-node" id="step-node-3"></div>
-        <div class="wizard-step-node" id="step-node-4"></div>
-        <div class="wizard-step-node" id="step-node-5"></div>
+      <div class="stepper-line" id="stepper-line-1"></div>
+
+      <!-- Step 2: Location -->
+      <div class="stepper-item" id="stepper-node-2" onclick="goToStep(2)">
+        <div class="stepper-circle">
+          <span class="step-num">2</span>
+          <i data-lucide="check" class="step-check"></i>
+        </div>
+        <div class="stepper-label">Location</div>
+      </div>
+      <div class="stepper-line" id="stepper-line-2"></div>
+
+      <!-- Step 3: Income & Work -->
+      <div class="stepper-item" id="stepper-node-3" onclick="goToStep(3)">
+        <div class="stepper-circle">
+          <span class="step-num">3</span>
+          <i data-lucide="check" class="step-check"></i>
+        </div>
+        <div class="stepper-label">Income & Work</div>
+      </div>
+      <div class="stepper-line" id="stepper-line-3"></div>
+
+      <!-- Step 4: Obligations -->
+      <div class="stepper-item" id="stepper-node-4" onclick="goToStep(4)">
+        <div class="stepper-circle">
+          <span class="step-num">4</span>
+          <i data-lucide="check" class="step-check"></i>
+        </div>
+        <div class="stepper-label">Obligations</div>
+      </div>
+      <div class="stepper-line" id="stepper-line-4"></div>
+
+      <!-- Step 5: Goals -->
+      <div class="stepper-item" id="stepper-node-5" onclick="goToStep(5)">
+        <div class="stepper-circle">
+          <span class="step-num">5</span>
+          <i data-lucide="check" class="step-check"></i>
+        </div>
+        <div class="stepper-label">Goals</div>
       </div>
     </div>
 
@@ -229,7 +515,9 @@
         {% if messages %}
           <div style="margin-bottom:16px;">
             {% for category, message in messages %}
-              <div class="flash-alert {{ category }}">{{ message }}</div>
+              <div class="status-msg-box {% if category == 'danger' %}error{% elif category == 'success' %}success{% else %}info{% endif %}" style="display:block;">
+                {{ message }}
+              </div>
             {% endfor %}
           </div>
         {% endif %}
@@ -239,31 +527,28 @@
     <!-- ===================================================================== -->
     <!-- STEP 1: PERSONAL INFORMATION                                          -->
     <!-- ===================================================================== -->
-    <div class="step-section" id="step-1">
-      <div style="text-align:left;margin-bottom:20px;">
-        <h2 style="font-size:22px;font-weight:800;letter-spacing:-0.4px;color:var(--text-primary);margin:0 0 4px 0;">
-          Personal Information
-        </h2>
-        <p style="font-size:13px;color:var(--text-secondary);margin:0;">
-          Configure your personal details. Information verified via {{ user.auth_provider|capitalize }} is automatically linked.
-        </p>
+    <div class="step-section active" id="step-1">
+      <div class="step-header-box">
+        <span class="step-counter-badge">Step 1 of 5: Personal Profile</span>
+        <h2 class="step-headline">Personal Information</h2>
+        <p class="step-description">Configure your verified account details and preferred currency display.</p>
       </div>
 
       <!-- Profile Photo Upload Box -->
       <div class="avatar-upload-box">
         <img id="avatar-preview-img" src="{{ user.get_avatar_url() }}" alt="Avatar" class="avatar-img-circle">
         <div style="flex:1;">
-          <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:2px;">Profile Photo</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">
-            Optional. Imported from Google or upload a custom PNG/JPG (max 5MB).
+          <div style="font-size:13px;font-weight:700;color:var(--ml-text-primary);margin-bottom:2px;">Profile Photo</div>
+          <div style="font-size:11px;color:var(--ml-text-muted);margin-bottom:8px;">
+            Imported from Google/Supabase or upload custom PNG/JPG (max 5MB).
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <label class="btn btn-secondary btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:5px 12px;font-size:11px;">
+            <label class="btn-step-back" style="cursor:pointer;padding:6px 14px;font-size:12px;">
               <i data-lucide="upload" style="width:13px;height:13px;"></i>
               <span>Upload Photo</span>
               <input type="file" id="avatar-file-input" accept="image/png,image/jpeg,image/webp" style="display:none;">
             </label>
-            <button type="button" id="btn-remove-photo" class="btn btn-secondary btn-sm" style="padding:5px 12px;font-size:11px;color:var(--danger, #ef4444);display:inline-flex;align-items:center;gap:4px;">
+            <button type="button" id="btn-remove-photo" class="btn-step-back" style="padding:6px 14px;font-size:12px;color:#ef4444;">
               <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
               <span>Remove</span>
             </button>
@@ -273,99 +558,100 @@
       </div>
 
       <form id="form-step-1">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-          <!-- Full Name (Required) -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <!-- Full Name -->
           <div class="form-group">
-            <label class="form-label">Full Name <span style="color:var(--danger, #ef4444);font-weight:700;">*</span></label>
-            <input type="text" id="s1-fullname" class="form-control" value="{{ user.full_name }}" required autofocus placeholder="Your Full Name">
+            <label class="form-label">Full Name <span style="color:#ef4444;">*</span></label>
+            <input type="text" id="s1-fullname" class="form-control" value="{{ user.full_name }}" required placeholder="e.g. Alex Johnson">
           </div>
 
           <!-- Email (Verified, Read-Only) -->
           <div class="form-group">
-            <label class="form-label" style="display:flex;justify-content:space-between;align-items:center;">
+            <label class="form-label">
               <span>Email Address</span>
-              <span class="badge-pill badge-mint" style="font-size:10px;padding:2px 8px;display:inline-flex;align-items:center;gap:3px;">
-                <i data-lucide="check-circle" style="width:10px;height:10px;"></i> Verified
-              </span>
+              <span style="font-size:11px;color:#15803d;font-weight:700;">✓ Verified</span>
             </label>
-            <input type="email" class="form-control" value="{{ user.email }}" disabled readonly style="background:var(--bg-subtle);opacity:0.85;cursor:not-allowed;">
+            <input type="email" class="form-control" value="{{ user.email }}" disabled readonly style="opacity:0.8;cursor:not-allowed;">
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-          <!-- Phone Number (Optional) -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <!-- Phone Number -->
           <div class="form-group">
-            <label class="form-label">Phone Number <span style="color:var(--text-muted);font-weight:normal;">(Optional)</span></label>
+            <label class="form-label">Phone Number <span style="color:var(--ml-text-muted);font-weight:normal;">(Optional)</span></label>
             <input type="tel" id="s1-phone" class="form-control" value="{{ user.phone_number or '' }}" placeholder="+91 98765 43210">
           </div>
 
-          <!-- Date of Birth (Optional) -->
+          <!-- Date of Birth -->
           <div class="form-group">
-            <label class="form-label">Date of Birth <span style="color:var(--text-muted);font-weight:normal;">(Optional)</span></label>
+            <label class="form-label">Date of Birth <span style="color:var(--ml-text-muted);font-weight:normal;">(Optional)</span></label>
             <input type="date" id="s1-dob" class="form-control" value="{{ user.date_of_birth or '' }}">
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">
-          <!-- Country (Step 1) -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <!-- Currency -->
+          <div class="form-group">
+            <label class="form-label">Preferred Currency</label>
+            <select id="s1-currency" class="form-control">
+              <option value="INR" {% if user.currency == 'INR' %}selected{% endif %}>INR (₹) — Indian Rupee</option>
+              <option value="USD" {% if user.currency == 'USD' %}selected{% endif %}>USD ($) — US Dollar</option>
+              <option value="EUR" {% if user.currency == 'EUR' %}selected{% endif %}>EUR (€) — Euro</option>
+              <option value="GBP" {% if user.currency == 'GBP' %}selected{% endif %}>GBP (£) — British Pound</option>
+              <option value="AED" {% if user.currency == 'AED' %}selected{% endif %}>AED (د.إ) — UAE Dirham</option>
+              <option value="SGD" {% if user.currency == 'SGD' %}selected{% endif %}>SGD (S$) — Singapore Dollar</option>
+              <option value="CAD" {% if user.currency == 'CAD' %}selected{% endif %}>CAD (C$) — Canadian Dollar</option>
+            </select>
+          </div>
+
+          <!-- Language -->
+          <div class="form-group">
+            <label class="form-label">Interface Language</label>
+            <select id="s1-lang" class="form-control">
+              <option value="en" selected>English (Default)</option>
+              <option value="hi">Hindi (हिंदी)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="stepper-nav-footer" style="justify-content: flex-end;">
+          <button type="submit" class="btn-lime-primary">
+            Continue to Step 2 →
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- STEP 2: LOCATION & DEMOGRAPHIC PROFILE                                -->
+    <!-- ===================================================================== -->
+    <div class="step-section" id="step-2">
+      <div class="step-header-box">
+        <span class="step-counter-badge">Step 2 of 5: Location & Demographic Profile</span>
+        <h2 class="step-headline">Where are you based?</h2>
+        <p class="step-description">Tailor regional cost-of-living benchmarks and cost allocations for your district.</p>
+      </div>
+
+      <form id="form-step-2">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <!-- Country -->
           <div class="form-group">
             <label class="form-label">Country</label>
-            <select id="s1-country" class="form-control">
+            <select id="s2-country" class="form-control">
               {% for c in all_countries %}
                 <option value="{{ c.name }}" {% if user.country == c.name or (not user.country and c.code == 'IN') %}selected{% endif %}>{{ c.name }}</option>
               {% endfor %}
             </select>
           </div>
 
-          <!-- Currency -->
-          <div class="form-group">
-            <label class="form-label">Preferred Currency</label>
-            <select id="s1-currency" class="form-control">
-              <option value="INR" {% if user.currency == 'INR' %}selected{% endif %}>INR (₹) — Rupee</option>
-              <option value="USD" {% if user.currency == 'USD' %}selected{% endif %}>USD ($) — Dollar</option>
-              <option value="EUR" {% if user.currency == 'EUR' %}selected{% endif %}>EUR (€) — Euro</option>
-              <option value="GBP" {% if user.currency == 'GBP' %}selected{% endif %}>GBP (£) — Pound</option>
-              <option value="AED" {% if user.currency == 'AED' %}selected{% endif %}>AED (د.إ) — Dirham</option>
-              <option value="SGD" {% if user.currency == 'SGD' %}selected{% endif %}>SGD (S$) — Singapore Dollar</option>
-              <option value="CAD" {% if user.currency == 'CAD' %}selected{% endif %}>CAD (C$) — Canadian Dollar</option>
-              <option value="JPY" {% if user.currency == 'JPY' %}selected{% endif %}>JPY (¥) — Yen</option>
-            </select>
-          </div>
-
-          <!-- Language -->
-          <div class="form-group">
-            <label class="form-label">Language</label>
-            <select id="s1-lang" class="form-control">
-              <option value="en" selected>English</option>
-              <option value="hi">Hindi (हिंदी)</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- =================================================================== -->
-        <!-- WHERE ARE YOU BASED? (STRUCTURED INDIAN LOCATION SELECTOR)          -->
-        <!-- =================================================================== -->
-        <div id="location-section-wrap" style="margin-top:20px;padding:20px;background:var(--bg-subtle);border-radius:var(--radius-lg);border:1px solid var(--border-subtle);">
-          <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;">
-            <div style="width:36px;height:36px;border-radius:var(--radius-md);background:rgba(203,244,50,0.15);display:flex;align-items:center;justify-content:center;color:var(--brand-primary);flex-shrink:0;">
-              <i data-lucide="map-pin" style="width:18px;height:18px;"></i>
-            </div>
-            <div>
-              <div style="font-size:15px;font-weight:800;color:var(--text-primary);letter-spacing:-0.2px;">Where are you based?</div>
-              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;line-height:1.4;">
-                Your location helps us personalise your budget using relevant regional cost-of-living information.
-              </div>
-            </div>
-          </div>
-
-          <!-- State / Union Territory (Step 2) -->
-          <div class="form-group" id="group-state" style="margin-bottom:14px;">
-            <label class="form-label" style="display:flex;justify-content:space-between;align-items:center;">
-              <span>State or Union Territory <span style="color:var(--danger, #ef4444);font-weight:700;">*</span></span>
-              <span style="font-size:11px;color:var(--text-muted);font-weight:600;">28 States & 8 Union Territories</span>
+          <!-- State / Union Territory -->
+          <div class="form-group" id="group-state">
+            <label class="form-label">
+              <span>State or Union Territory <span style="color:#ef4444;">*</span></span>
+              <span style="font-size:11px;color:var(--ml-text-muted);">28 States & 8 UTs</span>
             </label>
-            <select id="s1-state" class="form-control">
-              <option value="">-- Select State or Union Territory --</option>
+            <select id="s2-state" class="form-control">
+              <option value="">-- Select State / Union Territory --</option>
               <optgroup label="States (28)">
                 {% for s in all_states %}
                   {% if s.type == 'State' %}
@@ -382,411 +668,289 @@
               </optgroup>
             </select>
           </div>
+        </div>
 
-          <!-- District & City Grid (Steps 3 & 4) -->
-          <div id="indian-sub-location-row" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
-            <!-- District (Step 3) -->
-            <div class="form-group" id="group-district">
-              <label class="form-label" style="display:flex;justify-content:space-between;align-items:center;">
-                <span>District <span style="font-size:11px;color:var(--text-muted);font-weight:normal;">(Recommended)</span></span>
-                <span id="district-load-hint" style="font-size:10px;color:var(--text-muted);"></span>
-              </label>
-              <select id="s1-district" class="form-control">
-                <option value="">-- Select District --</option>
-                {% if user.district_id and user.district_name %}
-                  <option value="{{ user.district_id }}" selected>{{ user.district_name }}</option>
-                {% endif %}
-              </select>
-            </div>
-
-            <!-- City or Town (Step 4) -->
-            <div class="form-group" id="group-city">
-              <label class="form-label" style="display:flex;justify-content:space-between;align-items:center;">
-                <span>City or Town <span style="color:var(--danger, #ef4444);font-weight:700;">*</span></span>
-                <span id="city-load-hint" style="font-size:10px;color:var(--text-muted);"></span>
-              </label>
-              <select id="s1-city-select" class="form-control">
-                <option value="">-- Select City or Town --</option>
-                {% if user.city_id and user.city_name and not user.is_custom_city %}
-                  <option value="{{ user.city_id }}" data-tier="{{ user.location_tier }}" selected>{{ user.city_name }}</option>
-                {% endif %}
-                <option value="OTHER" {% if user.is_custom_city %}selected{% endif %}>Other / Not Listed...</option>
-              </select>
-
-              <!-- Unverified manual entry for "Other / Not Listed" -->
-              <div id="custom-city-wrap" style="display:{% if user.is_custom_city %}block{% else %}none{% endif %};margin-top:8px;">
-                <input type="text" id="s1-custom-city" class="form-control" value="{{ user.city_name if user.is_custom_city else '' }}" placeholder="Enter your town or locality name" style="font-size:12px;">
-                <div style="font-size:11px;color:var(--text-secondary);margin-top:5px;display:flex;align-items:center;gap:5px;">
-                  <i data-lucide="info" style="width:13px;height:13px;color:var(--accent-warning, #f59e0b);"></i>
-                  <span>Unverified locality. Standard 50/30/20 baseline guidelines will be applied.</span>
-                </div>
-              </div>
-            </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <!-- District -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>District <span style="color:var(--ml-text-muted);font-weight:normal;">(Recommended)</span></span>
+              <span id="district-load-hint" style="font-size:10px;color:var(--ml-text-muted);"></span>
+            </label>
+            <select id="s2-district" class="form-control">
+              <option value="">-- Select District --</option>
+              {% if user.district_id and user.district_name %}
+                <option value="{{ user.district_id }}" selected>{{ user.district_name }}</option>
+              {% endif %}
+            </select>
           </div>
 
-          <!-- PIN Code & Regional Classification (Step 5) -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" id="indian-pincode-row">
-            <!-- PIN Code -->
-            <div class="form-group">
-              <label class="form-label">PIN Code <span style="font-size:11px;color:var(--text-muted);font-weight:normal;">(Optional, 6 digits)</span></label>
-              <input type="text" id="s1-pincode" class="form-control" value="{{ user.pincode or '' }}" maxlength="6" placeholder="e.g. 400001, 560001">
-              <div id="pincode-feedback" style="font-size:11px;margin-top:4px;"></div>
-            </div>
+          <!-- City or Town -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>City or Town <span style="color:#ef4444;">*</span></span>
+              <span id="city-load-hint" style="font-size:10px;color:var(--ml-text-muted);"></span>
+            </label>
+            <select id="s2-city-select" class="form-control">
+              <option value="">-- Select City or Town --</option>
+              {% if user.city_id and user.city_name and not user.is_custom_city %}
+                <option value="{{ user.city_id }}" data-tier="{{ user.location_tier }}" selected>{{ user.city_name }}</option>
+              {% endif %}
+              <option value="OTHER" {% if user.is_custom_city %}selected{% endif %}>Other / Not Listed...</option>
+            </select>
 
-            <!-- Regional Living Cost Classification Indicator -->
-            <div class="form-group">
-              <label class="form-label">Cost-of-Living Classification</label>
-              <div id="location-tier-badge-box" style="padding:8px 12px;min-height:38px;background:var(--bg-canvas);border-radius:var(--radius-md);border:1px solid var(--border-subtle);display:flex;align-items:center;gap:8px;">
-                <span class="badge-pill badge-lime" id="tier-pill" style="font-size:10px;">
-                  {% if user.location_tier == 'METRO' %}Metro Tier-1
-                  {% elif user.location_tier == 'URBAN' %}Urban Tier-2
-                  {% elif user.location_tier == 'TOWN' %}Town Tier-3
-                  {% elif user.location_tier == 'RURAL' %}Rural / Semi-Urban
-                  {% else %}Baseline{% endif %}
-                </span>
-                <span id="tier-name-label" style="font-size:11px;color:var(--text-secondary);font-weight:600;">
-                  {% if user.location_tier == 'METRO' %}Major Metropolitan Area
-                  {% elif user.location_tier == 'URBAN' %}Other Urban Area
-                  {% elif user.location_tier == 'TOWN' %}Smaller City or Town
-                  {% elif user.location_tier == 'RURAL' %}Rural or Semi-Urban
-                  {% else %}Standard 50/30/20 Baseline{% endif %}
-                </span>
-              </div>
+            <div id="custom-city-wrap" style="display:{% if user.is_custom_city %}block{% else %}none{% endif %};margin-top:8px;">
+              <input type="text" id="s2-custom-city" class="form-control" value="{{ user.city_name if user.is_custom_city else '' }}" placeholder="Enter town or locality name" style="font-size:13px;">
             </div>
           </div>
         </div>
 
-        <div style="display:flex;justify-content:flex-end;margin-top:20px;">
-          <button type="submit" class="btn btn-primary" style="padding:10px 24px;font-weight:700;">
-            Save & Continue →
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <!-- PIN Code -->
+          <div class="form-group">
+            <label class="form-label">PIN Code <span style="font-size:11px;color:var(--ml-text-muted);font-weight:normal;">(6 Digits)</span></label>
+            <input type="text" id="s2-pincode" class="form-control" value="{{ user.pincode or '' }}" maxlength="6" placeholder="e.g. 400001, 560001">
+            <div id="pincode-feedback" style="font-size:11.5px;margin-top:4px;"></div>
+          </div>
+
+          <!-- Regional Cost Classification Indicator -->
+          <div class="form-group">
+            <label class="form-label">Cost-of-Living Benchmark Tier</label>
+            <div id="location-tier-badge-box" style="padding:10px 14px;background:var(--ml-input-bg);border-radius:12px;border:1px solid var(--ml-card-border);display:flex;align-items:center;gap:10px;">
+              <span id="tier-pill" style="font-size:11px;font-weight:800;background:rgba(203,244,50,0.3);color:#121614;padding:3px 8px;border-radius:6px;">
+                {% if user.location_tier == 'METRO' %}Metro Tier-1
+                {% elif user.location_tier == 'URBAN' %}Urban Tier-2
+                {% elif user.location_tier == 'TOWN' %}Town Tier-3
+                {% elif user.location_tier == 'RURAL' %}Rural / Semi-Urban
+                {% else %}Baseline{% endif %}
+              </span>
+              <span id="tier-name-label" style="font-size:12px;color:var(--ml-text-secondary);font-weight:600;">
+                {% if user.location_tier == 'METRO' %}Major Metropolitan Area
+                {% elif user.location_tier == 'URBAN' %}Urban Benchmark Area
+                {% elif user.location_tier == 'TOWN' %}Smaller City / Town
+                {% elif user.location_tier == 'RURAL' %}Rural / Semi-Urban
+                {% else %}Standard 50/30/20 Baseline{% endif %}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stepper-nav-footer">
+          <button type="button" class="btn-step-back" onclick="goToStep(1)">
+            ← Previous Step
+          </button>
+          <button type="submit" class="btn-lime-primary">
+            Continue to Step 3 →
           </button>
         </div>
       </form>
     </div>
 
     <!-- ===================================================================== -->
-    <!-- STEP 2: EMPLOYMENT STATUS                                              -->
+    <!-- STEP 3: INCOME & CAREER PROFILE                                       -->
     <!-- ===================================================================== -->
-    <div class="step-section" id="step-2">
-      <div style="text-align:left;margin-bottom:14px;">
-        <h2 style="font-size:22px;font-weight:800;letter-spacing:-0.4px;color:var(--text-primary);margin:0 0 4px 0;">
-          Which option best describes you?
-        </h2>
-        <p style="font-size:13px;color:var(--text-secondary);margin:0;">
-          Select your employment status. This personalizes your default budget categories, spending suggestions, and financial view. You can update this anytime in Settings.
-        </p>
+    <div class="step-section" id="step-3">
+      <div class="step-header-box">
+        <span class="step-counter-badge">Step 3 of 5: Income & Career</span>
+        <h2 class="step-headline">Employment & Earnings Baseline</h2>
+        <p class="step-description">Personalize default spending categories, allocation rules, and tax brackets.</p>
       </div>
 
       <div class="user-type-grid">
-        <!-- Student Card -->
-        <label class="user-type-card {% if user.user_type == 'student' %}selected{% endif %}" id="card-student">
-          <input type="radio" name="user_type_radio" value="student" {% if user.user_type == 'student' %}checked{% endif %}>
-          <div style="width:40px;height:40px;border-radius:10px;background:rgba(56,189,248,0.12);color:#0284c7;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
-            <i data-lucide="graduation-cap" style="width:22px;height:22px;"></i>
-          </div>
-          <div style="font-size:16px;font-weight:800;color:var(--text-primary);margin-bottom:4px;">Student</div>
-          <div style="font-size:12px;color:var(--text-secondary);line-height:1.4;margin-bottom:12px;">
-            Undergraduate, postgraduate, or scholar managing allowances, education costs, and living expenses.
-          </div>
-          <ul style="padding-left:18px;margin:0;font-size:11px;color:var(--text-muted);line-height:1.5;">
-            <li>Education, books & hostel rent tracking</li>
-            <li>Family allowance, stipend & part-time income</li>
-            <li>Student-tailored micro-savings suggestions</li>
-          </ul>
-        </label>
-
         <!-- Salaried Employee Card -->
         <label class="user-type-card {% if user.user_type == 'salaried' or not user.user_type %}selected{% endif %}" id="card-salaried">
           <input type="radio" name="user_type_radio" value="salaried" {% if user.user_type == 'salaried' or not user.user_type %}checked{% endif %}>
-          <div style="width:40px;height:40px;border-radius:10px;background:rgba(203,244,50,0.15);color:#16a34a;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
-            <i data-lucide="briefcase" style="width:22px;height:22px;"></i>
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(203,244,50,0.25);color:#15803d;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+            <i data-lucide="briefcase" style="width:20px;height:20px;"></i>
           </div>
-          <div style="font-size:16px;font-weight:800;color:var(--text-primary);margin-bottom:4px;">Salaried Employee</div>
-          <div style="font-size:12px;color:var(--text-secondary);line-height:1.4;margin-bottom:12px;">
-            Salaried professional or corporate employee managing salary allocation, household bills, and investments.
+          <div style="font-size:15px;font-weight:800;color:var(--ml-text-primary);margin-bottom:4px;">Salaried Professional</div>
+          <div style="font-size:12px;color:var(--ml-text-secondary);line-height:1.45;margin-bottom:10px;">
+            Corporate employee or salaried specialist tracking salary, bonuses, PF, and monthly household expenses.
           </div>
-          <ul style="padding-left:18px;margin:0;font-size:11px;color:var(--text-muted);line-height:1.5;">
-            <li>Salary, bonuses & multiple income streams</li>
-            <li>Rent, groceries, utilities, insurance & EMIs</li>
-            <li>50/30/20 salary compounding & SIP projections</li>
+          <ul style="padding-left:18px;margin:0;font-size:11px;color:var(--ml-text-muted);line-height:1.6;">
+            <li>Salary, allowances & bonus allocation</li>
+            <li>Rent, groceries, utilities & EMIs</li>
+            <li>SIP projections & 50/30/20 compounding</li>
+          </ul>
+        </label>
+
+        <!-- Student / Scholar Card -->
+        <label class="user-type-card {% if user.user_type == 'student' %}selected{% endif %}" id="card-student">
+          <input type="radio" name="user_type_radio" value="student" {% if user.user_type == 'student' %}checked{% endif %}>
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(59,130,246,0.12);color:#2563eb;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+            <i data-lucide="graduation-cap" style="width:20px;height:20px;"></i>
+          </div>
+          <div style="font-size:15px;font-weight:800;color:var(--ml-text-primary);margin-bottom:4px;">Student / Scholar</div>
+          <div style="font-size:12px;color:var(--ml-text-secondary);line-height:1.45;margin-bottom:10px;">
+            Scholar or student managing family allowance, stipend, education costs, and living essentials.
+          </div>
+          <ul style="padding-left:18px;margin:0;font-size:11px;color:var(--ml-text-muted);line-height:1.6;">
+            <li>Education, books & hostel rent tracking</li>
+            <li>Stipend, part-time & allowance records</li>
+            <li>Student-tailored micro-savings goals</li>
           </ul>
         </label>
       </div>
 
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
-        <button type="button" class="btn btn-secondary btn-sm" onclick="goToStep(1)">
-          ← Back
-        </button>
-        <button type="button" class="btn btn-primary" onclick="submitStep2()" style="padding:10px 24px;font-weight:700;">
-          Save & Continue →
-        </button>
-      </div>
-    </div>
-
-    <!-- ===================================================================== -->
-    <!-- STEP 3: INITIAL FINANCIAL PREFERENCES (OPTIONAL)                       -->
-    <!-- ===================================================================== -->
-    <div class="step-section" id="step-3">
-      <div style="text-align:left;margin-bottom:18px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <h2 style="font-size:22px;font-weight:800;letter-spacing:-0.4px;color:var(--text-primary);margin:0;">
-            Initial Financial Targets
-          </h2>
-          <span class="badge-pill badge-peach" style="font-size:11px;">Optional</span>
-        </div>
-        <p style="font-size:13px;color:var(--text-secondary);margin:4px 0 0 0;">
-          Helps calibrate your benchmark indicators. We never insert assumed figures or auto-generate transactions. All values can be edited later.
-        </p>
-      </div>
-
       <form id="form-step-3">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-          <!-- Monthly Income / Allowance -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <!-- Monthly Income -->
           <div class="form-group">
-            <label class="form-label">
-              Monthly Income or Allowance ({{ user.currency }})
-            </label>
-            <input type="number" step="100" id="s3-income" class="form-control" value="40000" placeholder="e.g. 40000">
-            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Baseline for 50/30/20 allocation benchmark</div>
+            <label class="form-label">Monthly Net Income / Allowance ({{ user.currency }})</label>
+            <input type="number" step="100" id="s3-income" class="form-control" value="45000" placeholder="e.g. 45000">
+            <div style="font-size:11px;color:var(--ml-text-muted);margin-top:4px;">Inflow baseline for 50/30/20 allocation engine</div>
           </div>
 
-          <!-- Current Available Balance (Opening Balance) -->
+          <!-- Opening Balance -->
           <div class="form-group">
-            <label class="form-label">
-              Opening Available Balance ({{ user.currency }})
-            </label>
+            <label class="form-label">Opening Available Balance ({{ user.currency }})</label>
             <input type="number" step="100" id="s3-balance" class="form-control" value="25000" placeholder="e.g. 25000">
-            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Starting funds, separate from transaction records</div>
+            <div style="font-size:11px;color:var(--ml-text-muted);margin-top:4px;">Current liquid funds across bank accounts</div>
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-          <!-- Monthly Savings Target -->
-          <div class="form-group">
-            <label class="form-label">Monthly Savings Target ({{ user.currency }})</label>
-            <input type="number" step="100" id="s3-savings-target" class="form-control" value="8000" placeholder="e.g. 8000">
-            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Target amount to accumulate monthly</div>
-          </div>
-
-        <!-- Household Living Commitments for Budget Personalisation -->
-        <div style="margin:16px 0;padding:16px;background:var(--bg-subtle);border-radius:var(--radius-lg);border:1px solid var(--border-subtle);">
-          <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:2px;display:flex;align-items:center;gap:6px;">
-            <i data-lucide="home" style="width:14px;height:14px;color:var(--brand-primary);"></i>
-            <span>Household Commitments & Essential Bills (Optional)</span>
-          </div>
-          <div style="font-size:11px;color:var(--text-secondary);margin-bottom:12px;">
-            Your actual commitments refine the starting 50/30/20 allocation to ensure a realistic, feasible budget.
-          </div>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div class="form-group" style="margin-bottom:0;">
-              <label class="form-label" style="font-size:11px;">Monthly Rent or Home EMI ({{ user.currency }})</label>
-              <input type="number" step="100" id="s3-rent" class="form-control" value="0" placeholder="e.g. 15000">
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-              <label class="form-label" style="font-size:11px;">Essential Bills & Groceries ({{ user.currency }})</label>
-              <input type="number" step="100" id="s3-essentials" class="form-control" value="0" placeholder="e.g. 10000">
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-              <label class="form-label" style="font-size:11px;">Required Debt Payments / EMIs ({{ user.currency }})</label>
-              <input type="number" step="100" id="s3-debt" class="form-control" value="0" placeholder="e.g. 3000">
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-              <label class="form-label" style="font-size:11px;">Number of Dependants</label>
-              <input type="number" min="0" id="s3-dependants" class="form-control" value="0" placeholder="0">
-            </div>
-          </div>
-        </div>
-
-        <!-- INDIA-ADAPTIVE 50/30/20 SMART CALIBRATION CARD -->
-        <div id="adaptive-budget-card" style="padding:18px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);margin-bottom:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span class="badge-pill badge-lime" id="ab-location-tag" style="font-size:10px;">India Adaptive</span>
-              <strong style="font-size:13px;color:var(--text-primary);" id="ab-preset-title">Recommended 50/30/20 Preset</strong>
-            </div>
-            <span id="ab-actual-essentials-pill" class="badge-pill badge-peach" style="font-size:10px;">Needs: 50%</span>
-          </div>
-
-          <!-- Feasibility explanation note -->
-          <div id="ab-explanation-box" style="font-size:12px;color:var(--text-secondary);background:var(--bg-subtle);padding:10px 12px;border-radius:var(--radius-md);margin-bottom:12px;line-height:1.45;">
-            Based on your location and financial commitments, we recommend an adaptive starting budget preset.
-          </div>
-
-          <!-- Visual Bar Allocation -->
-          <div style="display:flex;height:10px;border-radius:5px;overflow:hidden;margin-bottom:12px;background:var(--bg-subtle);">
-            <div id="bar-needs" style="background:#3b82f6;width:50%;transition:width 0.3s;" title="Needs"></div>
-            <div id="bar-wants" style="background:#f59e0b;width:30%;transition:width 0.3s;" title="Wants"></div>
-            <div id="bar-savings" style="background:#16a34a;width:20%;transition:width 0.3s;" title="Savings"></div>
-          </div>
-
-          <!-- Preset Selection Cards -->
-          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:8px;" id="preset-cards-grid">
-            <div class="user-type-card preset-card selected" data-preset="standard" data-needs="50" data-wants="30" data-savings="20" style="padding:10px;text-align:center;">
-              <div style="font-weight:700;font-size:12px;color:var(--text-primary);">Standard</div>
-              <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">50 / 30 / 20</div>
-            </div>
-            <div class="user-type-card preset-card" data-preset="metro" data-needs="50" data-wants="25" data-savings="25" style="padding:10px;text-align:center;">
-              <div style="font-weight:700;font-size:12px;color:var(--text-primary);">Metropolitan</div>
-              <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">50 / 25 / 25</div>
-            </div>
-            <div class="user-type-card preset-card" data-preset="high_essential" data-needs="60" data-wants="20" data-savings="20" style="padding:10px;text-align:center;">
-              <div style="font-weight:700;font-size:12px;color:var(--text-primary);">High Essential</div>
-              <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">60 / 20 / 20</div>
-            </div>
-            <div class="user-type-card preset-card" data-preset="lower_cost" data-needs="45" data-wants="30" data-savings="25" style="padding:10px;text-align:center;">
-              <div style="font-weight:700;font-size:12px;color:var(--text-primary);">Lower-Cost</div>
-              <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">45 / 30 / 25</div>
-            </div>
-          </div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-          <!-- Primary Financial Goal -->
-          <div class="form-group">
-            <label class="form-label">Primary Financial Goal</label>
-            <select id="s3-goal" class="form-control">
-              <option value="Emergency Cushion" selected>Emergency Fund Cushion</option>
-              <option value="Education & Certifications">Education & Certifications</option>
-              <option value="Travel & Vacation">Travel & Vacation</option>
-              <option value="Vehicle Purchase">Vehicle Purchase</option>
-              <option value="General Wealth Creation">General Wealth Creation</option>
-            </select>
-          </div>
-
-          <!-- Investment Experience -->
-          <div class="form-group">
-            <label class="form-label">Investment Experience</label>
-            <select id="s3-experience" class="form-control">
-              <option value="Beginner" selected>Beginner (Index Funds & Fixed Deposits)</option>
-              <option value="Intermediate">Intermediate (Mutual Funds & Micro-SIPs)</option>
-              <option value="Experienced">Experienced (Direct Equities & Active Portfolios)</option>
-            </select>
-          </div>
-        </div>
-
-        <div style="display:none;">
-          <select id="s3-inv-categories">
-            <option value="All Approved Instruments" selected>All Approved Instruments</option>
-          </select>
-        </div>
-
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
-          <button type="button" class="btn btn-secondary btn-sm" onclick="goToStep(2)">
-            ← Back
+        <div class="stepper-nav-footer">
+          <button type="button" class="btn-step-back" onclick="goToStep(2)">
+            ← Previous Step
           </button>
-          <div style="display:flex;gap:10px;align-items:center;">
-            <button type="button" class="btn btn-secondary" onclick="submitStep3(true)" style="font-weight:600;">
-              Skip for Now
-            </button>
-            <button type="submit" class="btn btn-primary" style="padding:10px 24px;font-weight:700;">
-              Save & Continue →
-            </button>
-          </div>
+          <button type="submit" class="btn-lime-primary">
+            Continue to Step 4 →
+          </button>
         </div>
       </form>
     </div>
 
     <!-- ===================================================================== -->
-    <!-- STEP 4: CATEGORY PREFERENCES                                           -->
+    <!-- STEP 4: FIXED OBLIGATIONS & COMMITMENTS                               -->
     <!-- ===================================================================== -->
     <div class="step-section" id="step-4">
-      <div style="text-align:left;margin-bottom:14px;">
-        <h2 style="font-size:22px;font-weight:800;letter-spacing:-0.4px;color:var(--text-primary);margin:0 0 4px 0;">
-          Category Preferences
-        </h2>
-        <p style="font-size:13px;color:var(--text-secondary);margin:0;" id="cat-sub-hint">
-          Recommended categories tailored to your profile. Select the categories you want active in your transaction ledger.
-        </p>
+      <div class="step-header-box">
+        <span class="step-counter-badge">Step 4 of 5: Fixed Obligations</span>
+        <h2 class="step-headline">Contractual Commitments & Living Costs</h2>
+        <p class="step-description">Input unavoidable obligations so MoneyLeak can check whether 50% Needs is realistically achievable.</p>
       </div>
 
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;">
-        <span style="font-weight:700;color:var(--text-primary);">Suggested Categories</span>
-        <div style="display:flex;gap:8px;">
-          <button type="button" class="btn btn-secondary btn-sm" onclick="toggleAllCategories(true)" style="padding:4px 10px;font-size:11px;">Select All</button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="toggleAllCategories(false)" style="padding:4px 10px;font-size:11px;">Clear</button>
+      <form id="form-step-4">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <!-- Rent or Home EMI -->
+          <div class="form-group">
+            <label class="form-label">Monthly Rent or Home EMI ({{ user.currency }})</label>
+            <input type="number" step="100" id="s4-rent" class="form-control" value="12000" placeholder="e.g. 15000">
+          </div>
+
+          <!-- Essential Groceries & Utilities -->
+          <div class="form-group">
+            <label class="form-label">Essential Groceries & Utilities ({{ user.currency }})</label>
+            <input type="number" step="100" id="s4-essentials" class="form-control" value="8000" placeholder="e.g. 8000">
+          </div>
         </div>
-      </div>
 
-      <div class="categories-chips-grid" id="categories-container">
-        <!-- Injected via JavaScript dynamically based on Step 2 selection -->
-      </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <!-- Debt Payments / Loans -->
+          <div class="form-group">
+            <label class="form-label">Mandatory Loan EMIs / Debt ({{ user.currency }})</label>
+            <input type="number" step="100" id="s4-debt" class="form-control" value="0" placeholder="e.g. 3000">
+          </div>
 
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
-        <button type="button" class="btn btn-secondary btn-sm" onclick="goToStep(3)">
-          ← Back
-        </button>
-        <button type="button" class="btn btn-primary" onclick="submitStep4()" style="padding:10px 24px;font-weight:700;">
-          Save & Review →
-        </button>
-      </div>
+          <!-- Dependants -->
+          <div class="form-group">
+            <label class="form-label">Number of Dependants</label>
+            <input type="number" min="0" id="s4-dependants" class="form-control" value="0" placeholder="0">
+          </div>
+        </div>
+
+        <!-- India-Adaptive 50/30/20 Smart Calibration Card -->
+        <div style="padding:16px 20px;background:var(--ml-input-bg);border:1px solid var(--ml-card-border);border-radius:16px;margin:18px 0;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:10px;font-weight:800;background:#cbf432;color:#121614;padding:2px 8px;border-radius:4px;">Adaptive 50/30/20</span>
+              <strong style="font-size:13px;color:var(--ml-text-primary);" id="s4-preset-title">Feasibility Gauge</strong>
+            </div>
+            <span id="s4-needs-pill" style="font-size:11px;font-weight:700;color:#15803d;">Needs: ~44% (Healthy)</span>
+          </div>
+
+          <div style="display:flex;height:8px;border-radius:6px;overflow:hidden;margin:10px 0;background:rgba(0,0,0,0.06);">
+            <div id="gauge-needs" style="background:#3b82f6;width:50%;transition:width 0.3s;" title="Needs"></div>
+            <div id="gauge-wants" style="background:#f59e0b;width:30%;transition:width 0.3s;" title="Wants"></div>
+            <div id="gauge-savings" style="background:#16a34a;width:20%;transition:width 0.3s;" title="Savings"></div>
+          </div>
+          <div style="font-size:11.5px;color:var(--ml-text-secondary);line-height:1.4;">
+            Your commitments leave sufficient room for the standard 50/30/20 framework (50% Needs, 30% Wants, 20% Savings).
+          </div>
+        </div>
+
+        <div class="stepper-nav-footer">
+          <button type="button" class="btn-step-back" onclick="goToStep(3)">
+            ← Previous Step
+          </button>
+          <button type="submit" class="btn-lime-primary">
+            Continue to Step 5 →
+          </button>
+        </div>
+      </form>
     </div>
 
     <!-- ===================================================================== -->
-    <!-- STEP 5: REVIEW AND COMPLETE                                            -->
+    <!-- STEP 5: FINANCIAL GOALS & VAULT SETUP                                 -->
     <!-- ===================================================================== -->
     <div class="step-section" id="step-5">
-      <div style="text-align:left;margin-bottom:20px;">
-        <h2 style="font-size:22px;font-weight:800;letter-spacing:-0.4px;color:var(--text-primary);margin:0 0 4px 0;">
-          Review and Complete
-        </h2>
-        <p style="font-size:13px;color:var(--text-secondary);margin:0;">
-          Verify your configuration. Everything can be adjusted at any time in your Settings panel.
-        </p>
+      <div class="step-header-box">
+        <span class="step-counter-badge">Step 5 of 5: Goals & Launch</span>
+        <h2 class="step-headline">Financial Goals & Workspace Activation</h2>
+        <p class="step-description">Set your primary target and finalize your financial operating system.</p>
       </div>
 
-      <!-- Summary Tiles (2x2 Grid) -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-        <!-- Personal Profile -->
-        <div style="background:var(--bg-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px;">
-          <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Personal Profile</div>
-          <div id="rev-name" style="font-size:14px;font-weight:800;color:var(--text-primary);margin-top:2px;">{{ user.full_name }}</div>
-          <div id="rev-email" style="font-size:12px;color:var(--text-secondary);">{{ user.email }}</div>
-          <div id="rev-country-curr" style="font-size:11px;color:var(--text-muted);margin-top:4px;">India • {{ user.currency }}</div>
-        </div>
-
-        <!-- Regional Location -->
-        <div style="background:var(--bg-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px;">
-          <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;display:flex;justify-content:space-between;">
-            <span>Regional Location</span>
-            <span id="rev-tier-badge" class="badge-pill badge-lime" style="font-size:9px;">Baseline</span>
+      <form id="form-step-5">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <!-- Primary Goal -->
+          <div class="form-group">
+            <label class="form-label">Primary Financial Target</label>
+            <select id="s5-goal" class="form-control">
+              <option value="Emergency Cushion" selected>🛡️ 6-Month Emergency Cushion</option>
+              <option value="General Wealth Creation">📈 Wealth Creation & Equity SIPs</option>
+              <option value="Education & Certifications">🎓 Education & Skill Acceleration</option>
+              <option value="Vehicle Purchase">🚗 Vehicle or Property Down Payment</option>
+              <option value="Travel & Vacation">✈️ International Travel & Leisure</option>
+            </select>
           </div>
-          <div id="rev-location-city" style="font-size:14px;font-weight:800;color:var(--text-primary);margin-top:2px;">Location</div>
-          <div id="rev-location-sub" style="font-size:11px;color:var(--text-secondary);margin-top:2px;">District, State</div>
-          <div id="rev-location-pin" style="font-size:10px;color:var(--text-muted);margin-top:4px;">PIN Code</div>
-        </div>
-      </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;">
-        <!-- Employment & Categories -->
-        <div style="background:var(--bg-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px;">
-          <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Employment & Ledger</div>
-          <div id="rev-user-type" style="font-size:14px;font-weight:800;color:var(--text-primary);margin-top:2px;text-transform:capitalize;">
-            {{ user.user_type or 'Salaried Employee' }}
+          <!-- Monthly Savings Goal -->
+          <div class="form-group">
+            <label class="form-label">Monthly Target Savings ({{ user.currency }})</label>
+            <input type="number" step="100" id="s5-savings-target" class="form-control" value="9000" placeholder="e.g. 9000">
+            <div style="font-size:11px;color:var(--ml-text-muted);margin-top:4px;">Target 20% allocation for systematic SIPs</div>
           </div>
-          <div id="rev-cat-count" style="font-size:11px;color:var(--text-muted);margin-top:4px;">Categories configured</div>
         </div>
 
-        <!-- Adaptive Budget Calibration -->
-        <div style="background:var(--bg-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px;">
-          <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;display:flex;justify-content:space-between;">
-            <span>Adaptive Budget</span>
-            <span id="rev-preset-badge" class="badge-pill badge-peach" style="font-size:9px;">50 / 30 / 20</span>
+        <div class="form-group">
+          <label class="form-label">Investment Experience</label>
+          <select id="s5-experience" class="form-control">
+            <option value="Beginner" selected>Beginner (Fixed Deposits, Index Funds & Micro-SIPs)</option>
+            <option value="Intermediate">Intermediate (Mutual Funds, Gold, Diversified Portfolios)</option>
+            <option value="Experienced">Experienced (Direct Equities, Derivatives, Active Hedging)</option>
+          </select>
+        </div>
+
+        <!-- Summary Review Box -->
+        <div style="background:var(--ml-input-bg);border:1px solid var(--ml-card-border);border-radius:16px;padding:18px 20px;margin:20px 0;">
+          <div style="font-size:12px;font-weight:800;text-transform:uppercase;color:var(--ml-text-muted);margin-bottom:12px;">Configuration Overview</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div><span style="color:var(--ml-text-secondary);">Profile:</span> <strong id="rev-name">{{ user.full_name }}</strong></div>
+            <div><span style="color:var(--ml-text-secondary);">Location:</span> <strong id="rev-loc">India</strong></div>
+            <div><span style="color:var(--ml-text-secondary);">Employment:</span> <strong id="rev-type">Salaried Professional</strong></div>
+            <div><span style="color:var(--ml-text-secondary);">Income:</span> <strong id="rev-inc">₹45,000 / mo</strong></div>
           </div>
-          <div id="rev-income" style="font-size:14px;font-weight:800;color:var(--text-primary);margin-top:2px;">₹40,000 / month</div>
-          <div id="rev-budget-ratio" style="font-size:11px;color:var(--text-secondary);margin-top:2px;">50% Needs • 30% Wants • 20% Savings</div>
-          <div id="rev-commitments-summary" style="font-size:10px;color:var(--text-muted);margin-top:4px;">Essential commitments accounted for</div>
         </div>
-      </div>
 
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <button type="button" class="btn btn-secondary btn-sm" onclick="goToStep(4)">
-          ← Back
-        </button>
-        <button type="button" id="btn-complete-profile" class="btn btn-primary" onclick="completeProfileFinal()" style="padding:12px 28px;font-weight:800;font-size:14px;">
-          Complete Profile & Enter Dashboard →
-        </button>
-      </div>
+        <div class="stepper-nav-footer">
+          <button type="button" class="btn-step-back" onclick="goToStep(4)">
+            ← Previous Step
+          </button>
+          <button type="submit" id="btn-complete-setup" class="btn-lime-primary" style="padding:13px 32px;font-size:15px;">
+            Complete Setup & Launch Workspace 🚀
+          </button>
+        </div>
+      </form>
     </div>
 
   </div>
@@ -794,24 +958,74 @@
 
 <script src="{{ url_for('static', filename='js/lucide.min.js') }}"></script>
 <script>
-  // Initial server state
   const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
   let currentStep = {{ active_step or 1 }};
   let selectedUserType = "{{ user.user_type or 'salaried' }}";
 
-  const STUDENT_CATS = {{ student_categories|tojson }};
-  const SALARIED_CATS = {{ salaried_categories|tojson }};
-
   document.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) window.lucide.createIcons();
+
     initThemeToggle();
     initAvatarUpload();
     initEmploymentCards();
-    initStep1Form();
-    initStep3Form();
+    initLocationSelectors();
+    initStepForms();
+
     goToStep(currentStep);
   });
 
+  // ---------------------------------------------------------------------------
+  // STEPPER NAVIGATION ENGINE: ① ── ② ── ③ ── ④ ── ⑤
+  // ---------------------------------------------------------------------------
+  function goToStep(stepNum) {
+    if (stepNum < 1) stepNum = 1;
+    if (stepNum > 5) stepNum = 5;
+    currentStep = stepNum;
+
+    // Toggle active step section
+    for (let i = 1; i <= 5; i++) {
+      const section = document.getElementById(`step-${i}`);
+      if (section) {
+        if (i === stepNum) section.classList.add('active');
+        else section.classList.remove('active');
+      }
+    }
+
+    // Update Numbered Circular Nodes & Connecting Lines
+    for (let i = 1; i <= 5; i++) {
+      const node = document.getElementById(`stepper-node-${i}`);
+      if (node) {
+        node.className = 'stepper-item';
+        if (i < stepNum) {
+          node.classList.add('completed');
+        } else if (i === stepNum) {
+          node.classList.add('active');
+        }
+      }
+
+      // Connecting line (1 to 4)
+      if (i < 5) {
+        const line = document.getElementById(`stepper-line-${i}`);
+        if (line) {
+          if (i < stepNum) line.classList.add('completed');
+          else line.classList.remove('completed');
+        }
+      }
+    }
+
+    if (stepNum === 4) {
+      updateFeasibilityGauge();
+    } else if (stepNum === 5) {
+      updateReviewSummary();
+    }
+
+    if (window.lucide) window.lucide.createIcons();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ---------------------------------------------------------------------------
+  // THEME TOGGLE
+  // ---------------------------------------------------------------------------
   function initThemeToggle() {
     const toggle = document.getElementById('onboard-theme-toggle');
     if (toggle) {
@@ -824,25 +1038,9 @@
     }
   }
 
-  function initEmploymentCards() {
-    const studentCard = document.getElementById('card-student');
-    const salariedCard = document.getElementById('card-salaried');
-    
-    studentCard.addEventListener('click', () => {
-      selectedUserType = 'student';
-      studentCard.classList.add('selected');
-      salariedCard.classList.remove('selected');
-      studentCard.querySelector('input').checked = true;
-    });
-
-    salariedCard.addEventListener('click', () => {
-      selectedUserType = 'salaried';
-      salariedCard.classList.add('selected');
-      studentCard.classList.remove('selected');
-      salariedCard.querySelector('input').checked = true;
-    });
-  }
-
+  // ---------------------------------------------------------------------------
+  // AVATAR UPLOAD
+  // ---------------------------------------------------------------------------
   function initAvatarUpload() {
     const fileInput = document.getElementById('avatar-file-input');
     const removeBtn = document.getElementById('btn-remove-photo');
@@ -854,7 +1052,7 @@
         const file = e.target.files[0];
         if (!file) return;
 
-        statusDiv.innerHTML = '<span style="color:var(--text-muted);">Uploading photo...</span>';
+        statusDiv.innerHTML = '<span style="color:var(--ml-text-muted);">Uploading photo...</span>';
         const formData = new FormData();
         formData.append('photo', file);
 
@@ -867,19 +1065,19 @@
           const data = await res.json();
           if (data.success) {
             previewImg.src = data.photo_url;
-            statusDiv.innerHTML = '<span style="color:#16a34a;">Photo uploaded successfully!</span>';
+            statusDiv.innerHTML = '<span style="color:#16a34a;font-weight:700;">Photo uploaded successfully!</span>';
           } else {
-            statusDiv.innerHTML = `<span style="color:#dc2626;">${data.error || 'Upload failed.'}</span>`;
+            statusDiv.innerHTML = `<span style="color:#ef4444;">${data.error || 'Upload failed.'}</span>`;
           }
         } catch (err) {
-          statusDiv.innerHTML = '<span style="color:#dc2626;">Network error during upload.</span>';
+          statusDiv.innerHTML = '<span style="color:#ef4444;">Network error during upload.</span>';
         }
       });
     }
 
     if (removeBtn) {
       removeBtn.addEventListener('click', async () => {
-        statusDiv.innerHTML = '<span style="color:var(--text-muted);">Removing photo...</span>';
+        statusDiv.innerHTML = '<span style="color:var(--ml-text-muted);">Restoring avatar...</span>';
         try {
           const res = await fetch('/api/profile/remove-photo', {
             method: 'POST',
@@ -888,260 +1086,355 @@
           const data = await res.json();
           if (data.success) {
             previewImg.src = data.avatar_url;
-            statusDiv.innerHTML = '<span style="color:var(--text-secondary);">Photo removed. Default avatar restored.</span>';
+            statusDiv.innerHTML = '<span style="color:var(--ml-text-secondary);">Photo removed.</span>';
           }
         } catch (err) {
-          statusDiv.innerHTML = '<span style="color:#dc2626;">Error removing photo.</span>';
+          statusDiv.innerHTML = '<span style="color:#ef4444;">Error removing photo.</span>';
         }
       });
     }
   }
 
-  function goToStep(stepNum) {
-    currentStep = stepNum;
+  // ---------------------------------------------------------------------------
+  // EMPLOYMENT SELECTION
+  // ---------------------------------------------------------------------------
+  function initEmploymentCards() {
+    const cardStudent = document.getElementById('card-student');
+    const cardSalaried = document.getElementById('card-salaried');
 
-    // Toggle visible step
-    document.querySelectorAll('.step-section').forEach(sec => sec.classList.remove('active'));
-    const target = document.getElementById(`step-${stepNum}`);
-    if (target) target.classList.add('active');
+    if (cardStudent && cardSalaried) {
+      cardStudent.addEventListener('click', () => {
+        selectedUserType = 'student';
+        cardStudent.classList.add('selected');
+        cardSalaried.classList.remove('selected');
+        cardStudent.querySelector('input').checked = true;
+      });
 
-    // Update progress nodes
-    for (let i = 1; i <= 5; i++) {
-      const node = document.getElementById(`step-node-${i}`);
-      if (node) {
-        node.className = 'wizard-step-node';
-        if (i < stepNum) node.classList.add('completed');
-        else if (i === stepNum) node.classList.add('active');
-      }
+      cardSalaried.addEventListener('click', () => {
+        selectedUserType = 'salaried';
+        cardSalaried.classList.add('selected');
+        cardStudent.classList.remove('selected');
+        cardSalaried.querySelector('input').checked = true;
+      });
     }
-
-    // Update hint & badge
-    document.getElementById('step-badge').innerText = `Step ${stepNum} of 5`;
-    const hints = {
-      1: 'Personal Profile',
-      2: 'Employment Status',
-      3: 'Financial Calibration',
-      4: 'Categories Setup',
-      5: 'Review & Complete'
-    };
-    document.getElementById('step-title-hint').innerText = hints[stepNum] || '';
-
-    if (stepNum === 4) {
-      renderCategoryPreferences();
-    } else if (stepNum === 5) {
-      renderReviewSummary();
-    }
-
-    if (window.lucide) window.lucide.createIcons();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function initStep1Form() {
-    const form = document.getElementById('form-step-1');
-    if (!form) return;
+  // ---------------------------------------------------------------------------
+  // LOCATION & PIN CODE ENGINE
+  // ---------------------------------------------------------------------------
+  function initLocationSelectors() {
+    const stateSelect = document.getElementById('s2-state');
+    const districtSelect = document.getElementById('s2-district');
+    const citySelect = document.getElementById('s2-city-select');
+    const customCityWrap = document.getElementById('custom-city-wrap');
+    const pincodeInput = document.getElementById('s2-pincode');
+    const pinFeedback = document.getElementById('pincode-feedback');
+    const tierPill = document.getElementById('tier-pill');
+    const tierNameLabel = document.getElementById('tier-name-label');
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const payload = {
-        step: 1,
-        full_name: document.getElementById('s1-fullname').value.trim(),
-        phone_number: document.getElementById('s1-phone').value.trim(),
-        date_of_birth: document.getElementById('s1-dob').value,
-        country: document.getElementById('s1-country').value,
-        currency: document.getElementById('s1-currency').value,
-        preferred_language: document.getElementById('s1-lang').value
-      };
+    if (stateSelect) {
+      stateSelect.addEventListener('change', async () => {
+        const stateId = stateSelect.value;
+        if (!stateId) return;
 
-      try {
-        const res = await fetch('/onboarding', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': CSRF_TOKEN
-          },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.success) {
-          goToStep(2);
+        // Fetch districts
+        districtSelect.innerHTML = '<option value="">-- Loading Districts... --</option>';
+        try {
+          const res = await fetch(`/api/locations/districts?state_id=${encodeURIComponent(stateId)}`);
+          const data = await res.json();
+          if (data.success) {
+            districtSelect.innerHTML = '<option value="">-- Select District --</option>' +
+              data.districts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+          }
+        } catch (e) {
+          districtSelect.innerHTML = '<option value="">-- Select District --</option>';
+        }
+
+        // Fetch cities
+        citySelect.innerHTML = '<option value="">-- Loading Cities... --</option>';
+        try {
+          const res = await fetch(`/api/locations/cities?state_id=${encodeURIComponent(stateId)}`);
+          const data = await res.json();
+          if (data.success) {
+            citySelect.innerHTML = '<option value="">-- Select City or Town --</option>' +
+              data.cities.map(c => `<option value="${c.id}" data-tier="${c.tier}">${c.name}</option>`).join('') +
+              '<option value="OTHER">Other / Not Listed...</option>';
+          }
+        } catch (e) {
+          citySelect.innerHTML = '<option value="">-- Select City or Town --</option><option value="OTHER">Other / Not Listed...</option>';
+        }
+      });
+    }
+
+    if (citySelect) {
+      citySelect.addEventListener('change', () => {
+        if (citySelect.value === 'OTHER') {
+          customCityWrap.style.display = 'block';
+          tierPill.innerText = 'Baseline';
+          tierNameLabel.innerText = 'Standard 50/30/20 Baseline';
         } else {
-          alert(data.error || 'Error saving personal details.');
+          customCityWrap.style.display = 'none';
+          const opt = citySelect.options[citySelect.selectedIndex];
+          const tier = opt ? opt.getAttribute('data-tier') : 'UNCLASSIFIED';
+          updateTierBadge(tier);
         }
-      } catch (err) {
-        alert('Network error. Please try again.');
-      }
-    });
-  }
-
-  async function submitStep2() {
-    const payload = {
-      step: 2,
-      user_type: selectedUserType
-    };
-
-    try {
-      const res = await fetch('/onboarding', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': CSRF_TOKEN
-        },
-        body: JSON.stringify(payload)
       });
-      const data = await res.json();
-      if (data.success) {
-        goToStep(3);
-      } else {
-        alert(data.error || 'Please select an employment status.');
-      }
-    } catch (err) {
-      alert('Network error. Please try again.');
+    }
+
+    if (pincodeInput) {
+      pincodeInput.addEventListener('input', async (e) => {
+        const val = e.target.value.trim();
+        if (val.length === 6) {
+          const stateId = stateSelect ? stateSelect.value : '';
+          try {
+            const res = await fetch(`/api/locations/validate-pincode?pincode=${val}&state_id=${stateId}`);
+            const data = await res.json();
+            if (data.valid) {
+              pinFeedback.innerHTML = `<span style="color:#16a34a;font-weight:700;">✓ Valid PIN (${data.state_name || 'India'})</span>`;
+            } else {
+              pinFeedback.innerHTML = `<span style="color:#ef4444;">${data.reason || 'Invalid Indian PIN code.'}</span>`;
+            }
+          } catch (err) {}
+        } else {
+          pinFeedback.innerHTML = '';
+        }
+      });
     }
   }
 
-  function initStep3Form() {
-    const form = document.getElementById('form-step-3');
-    if (!form) return;
+  function updateTierBadge(tier) {
+    const tierPill = document.getElementById('tier-pill');
+    const tierNameLabel = document.getElementById('tier-name-label');
+    if (!tierPill) return;
 
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      submitStep3(false);
-    });
-  }
-
-  async function submitStep3(isSkip) {
-    const payload = {
-      step: 3,
-      action: isSkip ? 'skip' : 'save',
-      monthly_income: document.getElementById('s3-income').value,
-      opening_balance: document.getElementById('s3-balance').value,
-      monthly_savings_target: document.getElementById('s3-savings-target').value,
-      primary_financial_goal: document.getElementById('s3-goal').value,
-      investment_experience: document.getElementById('s3-experience').value,
-      preferred_investment_categories: [document.getElementById('s3-inv-categories').value]
-    };
-
-    try {
-      const res = await fetch('/onboarding', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': CSRF_TOKEN
-        },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (data.success) {
-        goToStep(4);
-      } else {
-        alert(data.error || 'Error saving financial targets.');
-      }
-    } catch (err) {
-      alert('Network error. Please try again.');
+    if (tier === 'METRO') {
+      tierPill.innerText = 'Metro Tier-1';
+      tierNameLabel.innerText = 'Major Metropolitan Area';
+    } else if (tier === 'URBAN') {
+      tierPill.innerText = 'Urban Tier-2';
+      tierNameLabel.innerText = 'Urban Area';
+    } else if (tier === 'TOWN') {
+      tierPill.innerText = 'Town Tier-3';
+      tierNameLabel.innerText = 'Smaller City / Town';
+    } else if (tier === 'RURAL') {
+      tierPill.innerText = 'Rural / Semi-Urban';
+      tierNameLabel.innerText = 'Rural or Semi-Urban Area';
+    } else {
+      tierPill.innerText = 'Baseline';
+      tierNameLabel.innerText = 'Standard 50/30/20 Baseline';
     }
   }
 
-  function renderCategoryPreferences() {
-    const container = document.getElementById('categories-container');
-    const hint = document.getElementById('cat-sub-hint');
-    const list = selectedUserType === 'student' ? STUDENT_CATS : SALARIED_CATS;
+  function updateFeasibilityGauge() {
+    const income = parseFloat(document.getElementById('s3-income').value || 45000);
+    const rent = parseFloat(document.getElementById('s4-rent').value || 0);
+    const essentials = parseFloat(document.getElementById('s4-essentials').value || 0);
+    const debt = parseFloat(document.getElementById('s4-debt').value || 0);
 
-    hint.innerText = selectedUserType === 'student'
-      ? 'Suggested default categories for your Student profile (academics, allowance & living expenses).'
-      : 'Suggested default categories for your Salaried Employee profile (salary, household bills & wealth investments).';
+    const totalNeeds = rent + essentials + debt;
+    const needsPct = income > 0 ? Math.min(100, Math.round((totalNeeds / income) * 100)) : 50;
 
-    container.innerHTML = list.map(c => `
-      <label class="category-chip-label">
-        <input type="checkbox" name="cat_pref" value="${c.name}" checked style="accent-color:var(--brand-primary);width:16px;height:16px;">
-        <span style="display:flex;align-items:center;gap:6px;">
-          <i data-lucide="${c.icon || 'tag'}" style="width:14px;height:14px;color:var(--text-secondary);"></i>
-          <span>${c.name}</span>
-        </span>
-      </label>
-    `).join('');
+    const barNeeds = document.getElementById('gauge-needs');
+    const pill = document.getElementById('s4-needs-pill');
 
-    if (window.lucide) window.lucide.createIcons();
-  }
-
-  function toggleAllCategories(checked) {
-    document.querySelectorAll('#categories-container input[type="checkbox"]').forEach(cb => {
-      cb.checked = checked;
-    });
-  }
-
-  async function submitStep4() {
-    const checked = Array.from(document.querySelectorAll('#categories-container input[type="checkbox"]:checked'))
-      .map(cb => cb.value);
-
-    const payload = {
-      step: 4,
-      categories: checked
-    };
-
-    try {
-      const res = await fetch('/onboarding', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': CSRF_TOKEN
-        },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (data.success) {
-        goToStep(5);
+    if (barNeeds) {
+      barNeeds.style.width = `${needsPct}%`;
+    }
+    if (pill) {
+      if (needsPct <= 50) {
+        pill.innerHTML = `Needs: ~${needsPct}% <span style="color:#16a34a;">(Healthy ✓)</span>`;
+      } else if (needsPct <= 65) {
+        pill.innerHTML = `Needs: ~${needsPct}% <span style="color:#f59e0b;">(Elevated ⚠️)</span>`;
       } else {
-        alert(data.error || 'Error saving categories.');
+        pill.innerHTML = `Needs: ~${needsPct}% <span style="color:#ef4444;">(High Essential ⚡)</span>`;
       }
-    } catch (err) {
-      alert('Network error. Please try again.');
     }
   }
 
-  function renderReviewSummary() {
-    document.getElementById('rev-name').innerText = document.getElementById('s1-fullname').value;
-    document.getElementById('rev-country-curr').innerText = `${document.getElementById('s1-country').value} • ${document.getElementById('s1-currency').value}`;
-    document.getElementById('rev-user-type').innerText = selectedUserType === 'student' ? 'Student' : 'Salaried Employee';
+  function updateReviewSummary() {
+    const nameEl = document.getElementById('rev-name');
+    const locEl = document.getElementById('rev-loc');
+    const typeEl = document.getElementById('rev-type');
+    const incEl = document.getElementById('rev-inc');
 
-    const incomeVal = document.getElementById('s3-income').value || '40000';
-    const balVal = document.getElementById('s3-balance').value || '25000';
-    const savVal = document.getElementById('s3-savings-target').value || '8000';
-    const curr = document.getElementById('s1-currency').value;
+    if (nameEl) nameEl.innerText = document.getElementById('s1-fullname').value || 'User';
+    
+    const stateSel = document.getElementById('s2-state');
+    const stateName = stateSel && stateSel.selectedIndex > 0 ? stateSel.options[stateSel.selectedIndex].text : 'India';
+    if (locEl) locEl.innerText = stateName;
 
-    document.getElementById('rev-income').innerText = `${curr} ${Number(incomeVal).toLocaleString('en-IN')}`;
-    document.getElementById('rev-balance').innerText = `${curr} ${Number(balVal).toLocaleString('en-IN')}`;
-    document.getElementById('rev-savings').innerText = `${curr} ${Number(savVal).toLocaleString('en-IN')}`;
+    if (typeEl) typeEl.innerText = selectedUserType === 'student' ? 'Student / Scholar' : 'Salaried Professional';
 
-    const catCount = document.querySelectorAll('#categories-container input[type="checkbox"]:checked').length;
-    document.getElementById('rev-cat-count').innerText = `${catCount} active categories ready`;
+    const curr = document.getElementById('s1-currency').value || 'INR';
+    const incVal = document.getElementById('s3-income').value || '45000';
+    if (incEl) incEl.innerText = `${curr} ${Number(incVal).toLocaleString('en-IN')} / mo`;
   }
 
-  async function completeProfileFinal() {
-    const btn = document.getElementById('btn-complete-profile');
-    btn.disabled = true;
-    btn.innerText = 'Setting Up Your Vault...';
+  // ---------------------------------------------------------------------------
+  // STEP SUBMISSIONS
+  // ---------------------------------------------------------------------------
+  function initStepForms() {
+    // Step 1: Personal
+    const f1 = document.getElementById('form-step-1');
+    if (f1) {
+      f1.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+          step: 1,
+          full_name: document.getElementById('s1-fullname').value.trim(),
+          phone_number: document.getElementById('s1-phone').value.trim(),
+          date_of_birth: document.getElementById('s1-dob').value,
+          currency: document.getElementById('s1-currency').value,
+          preferred_language: document.getElementById('s1-lang').value
+        };
 
-    try {
-      const res = await fetch('/onboarding', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': CSRF_TOKEN
-        },
-        body: JSON.stringify({ step: 5 })
+        try {
+          const res = await fetch('/onboarding', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (data.success) goToStep(2);
+          else alert(data.error || 'Failed saving personal information.');
+        } catch (err) {
+          alert('Network connection error.');
+        }
       });
-      const data = await res.json();
-      if (data.success) {
-        window.location.href = data.redirect || '/dashboard';
-      } else {
-        btn.disabled = false;
-        btn.innerText = 'Complete Profile & Enter Dashboard →';
-        alert(data.error || 'Error finalizing profile.');
-      }
-    } catch (err) {
-      btn.disabled = false;
-      btn.innerText = 'Complete Profile & Enter Dashboard →';
-      alert('Network error. Please try again.');
+    }
+
+    // Step 2: Location
+    const f2 = document.getElementById('form-step-2');
+    if (f2) {
+      f2.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const stateSelect = document.getElementById('s2-state');
+        const stateOpt = stateSelect.options[stateSelect.selectedIndex];
+        const citySelect = document.getElementById('s2-city-select');
+        const isCustom = citySelect.value === 'OTHER';
+        const customName = document.getElementById('s2-custom-city').value.trim();
+        const cityOpt = citySelect.options[citySelect.selectedIndex];
+
+        const payload = {
+          step: 2,
+          country: document.getElementById('s2-country').value,
+          state_id: stateSelect.value,
+          state_name: stateOpt ? stateOpt.getAttribute('data-name') : '',
+          district_id: document.getElementById('s2-district').value,
+          district_name: document.getElementById('s2-district').options[document.getElementById('s2-district').selectedIndex]?.text || '',
+          city_id: citySelect.value,
+          city_name: isCustom ? customName : (cityOpt ? cityOpt.text : ''),
+          is_custom_city: isCustom,
+          pincode: document.getElementById('s2-pincode').value.trim(),
+          location_tier: cityOpt ? (cityOpt.getAttribute('data-tier') || 'UNCLASSIFIED') : 'UNCLASSIFIED'
+        };
+
+        try {
+          const res = await fetch('/onboarding', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (data.success) goToStep(3);
+          else alert(data.error || 'Failed saving location details.');
+        } catch (err) {
+          alert('Network connection error.');
+        }
+      });
+    }
+
+    // Step 3: Income & Career
+    const f3 = document.getElementById('form-step-3');
+    if (f3) {
+      f3.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+          step: 3,
+          user_type: selectedUserType,
+          monthly_income: document.getElementById('s3-income').value,
+          opening_balance: document.getElementById('s3-balance').value
+        };
+
+        try {
+          const res = await fetch('/onboarding', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (data.success) goToStep(4);
+          else alert(data.error || 'Failed saving income details.');
+        } catch (err) {
+          alert('Network connection error.');
+        }
+      });
+    }
+
+    // Step 4: Fixed Obligations
+    const f4 = document.getElementById('form-step-4');
+    if (f4) {
+      f4.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+          step: 4,
+          rent_or_emi: document.getElementById('s4-rent').value,
+          essential_expenses: document.getElementById('s4-essentials').value,
+          debt_payments: document.getElementById('s4-debt').value,
+          dependants: document.getElementById('s4-dependants').value
+        };
+
+        try {
+          const res = await fetch('/onboarding', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (data.success) goToStep(5);
+          else alert(data.error || 'Failed saving obligations.');
+        } catch (err) {
+          alert('Network connection error.');
+        }
+      });
+    }
+
+    // Step 5: Goals & Launch
+    const f5 = document.getElementById('form-step-5');
+    if (f5) {
+      f5.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btn-complete-setup');
+        btn.disabled = true;
+        btn.innerText = 'Initializing Workspace...';
+
+        const payload = {
+          step: 5,
+          primary_financial_goal: document.getElementById('s5-goal').value,
+          monthly_savings_target: document.getElementById('s5-savings-target').value,
+          investment_experience: document.getElementById('s5-experience').value
+        };
+
+        try {
+          const res = await fetch('/onboarding', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (data.success) {
+            window.location.href = data.redirect || '/dashboard';
+          } else {
+            btn.disabled = false;
+            btn.innerText = 'Complete Setup & Launch Workspace 🚀';
+            alert(data.error || 'Error completing setup.');
+          }
+        } catch (err) {
+          btn.disabled = false;
+          btn.innerText = 'Complete Setup & Launch Workspace 🚀';
+          alert('Network connection error.');
+        }
+      });
     }
   }
 </script>

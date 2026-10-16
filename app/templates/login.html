@@ -103,17 +103,224 @@
       box-sizing: border-box;
     }
 
-    .auth-card-wrap {
-      max-width: 460px;
+    .auth-split-wrapper {
+      max-width: 1040px;
       width: 100%;
+      display: grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap: 36px;
+      align-items: center;
+      margin: 0 auto;
+      z-index: 1;
+      box-sizing: border-box;
+    }
+
+    /* Left Column: System Overview */
+    .overview-column {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .overview-brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(203, 244, 50, 0.2);
+      border: 1px solid rgba(203, 244, 50, 0.4);
+      padding: 8px 16px;
+      border-radius: 9999px;
+      width: fit-content;
+      margin-bottom: 8px;
+    }
+
+    .overview-brand-name {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: var(--ml-text-primary);
+    }
+
+    .overview-headline {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      line-height: 1.25;
+      color: var(--ml-text-primary);
+      margin: 0 0 8px 0;
+    }
+
+    .overview-subheadline {
+      font-size: 14.5px;
+      line-height: 1.55;
+      color: var(--ml-text-secondary);
+      margin: 0 0 10px 0;
+    }
+
+    /* System Feature Cards */
+    .preview-card {
+      background: var(--ml-card);
+      border: 1px solid var(--ml-card-border);
+      border-radius: 18px;
+      padding: 18px 20px;
+      box-shadow: 0 8px 20px -6px rgba(18, 22, 20, 0.05);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+    }
+    .preview-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px -6px rgba(18, 22, 20, 0.09);
+    }
+
+    .preview-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .preview-icon-box {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(203, 244, 50, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+
+    .preview-card-title {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: -0.2px;
+      color: var(--ml-text-primary);
+    }
+
+    .preview-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 12px 0;
+      font-size: 12.5px;
+      line-height: 1.7;
+      color: var(--ml-text-secondary);
+    }
+
+    .preview-list li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot-needs {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #3b82f6;
+      flex-shrink: 0;
+    }
+    .dot-wants {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f59e0b;
+      flex-shrink: 0;
+    }
+    .dot-savings {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #16a34a;
+      flex-shrink: 0;
+    }
+
+    .distribution-bar-mini {
+      display: flex;
+      height: 8px;
+      border-radius: 9999px;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.05);
+    }
+    .dist-seg {
+      height: 100%;
+    }
+    .dist-needs { background: #3b82f6; }
+    .dist-wants { background: #f59e0b; }
+    .dist-savings { background: #cbf432; }
+
+    .preview-desc {
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: var(--ml-text-secondary);
+      margin: 0 0 10px 0;
+    }
+
+    .leak-flag-chip, .security-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 8px;
+    }
+    .leak-flag-chip {
+      background: rgba(245, 158, 11, 0.12);
+      color: #b45309;
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+    [data-theme="dark"] .leak-flag-chip {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+    .security-chip {
+      background: rgba(22, 163, 74, 0.1);
+      color: #15803d;
+      border: 1px solid rgba(22, 163, 74, 0.2);
+    }
+    [data-theme="dark"] .security-chip {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      border-color: rgba(34, 197, 94, 0.3);
+    }
+
+    /* Right Column: Form Card */
+    .form-column {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+
+    .auth-card-wrap {
+      width: 100%;
+      max-width: 440px;
       background: var(--ml-card);
       border: 1px solid var(--ml-card-border);
       border-radius: 24px;
-      padding: 42px 38px 36px 38px;
+      padding: 38px 34px 32px 34px;
       box-shadow: var(--ml-card-shadow);
       position: relative;
       box-sizing: border-box;
       backdrop-filter: blur(12px);
+    }
+
+    @media (max-width: 960px) {
+      .auth-split-wrapper {
+        grid-template-columns: 1fr;
+        gap: 28px;
+        max-width: 460px;
+      }
+      .overview-column {
+        order: 2;
+      }
+      .form-column {
+        order: 1;
+      }
+      .overview-headline {
+        font-size: 24px;
+      }
     }
 
     .theme-corner-toggle {
@@ -623,153 +830,226 @@
 <body>
 
 <div class="auth-page-container">
-  <div class="auth-card-wrap">
-    <!-- Corner Theme Toggle -->
-    <button type="button" class="theme-corner-toggle" id="auth-theme-toggle" title="Toggle theme">
-      <i data-lucide="sun-moon" style="width:17px;height:17px;"></i>
-    </button>
+  <div class="auth-split-wrapper">
 
-    <!-- Brand Wallet Icon Box (Signature Lime Badge) -->
-    <div class="brand-icon-badge">
-      <i data-lucide="wallet" style="width:22px;height:22px;color:#121614;"></i>
+    <!-- =================================================================== -->
+    <!-- LEFT COLUMN: OVERVIEW OF SYSTEM                                     -->
+    <!-- =================================================================== -->
+    <div class="overview-column">
+      <div class="overview-header">
+        <div class="overview-brand-badge">
+          <i data-lucide="wallet" style="width:20px;height:20px;color:#121614;"></i>
+          <span class="overview-brand-name">MoneyLeak</span>
+        </div>
+        <h1 class="overview-headline">Stop silent financial leakage. Master your cashflow with precision.</h1>
+        <p class="overview-subheadline">An intelligent personal financial operating system built on zero-compromise deterministic math.</p>
+      </div>
+
+      <!-- Feature Card 1: 50/30/20 Distribution Engine -->
+      <div class="preview-card">
+        <div class="preview-card-header">
+          <div class="preview-icon-box">⚡</div>
+          <div class="preview-card-title">The 50/30/20 Distribution Engine</div>
+        </div>
+        <div class="preview-card-body">
+          <ul class="preview-list">
+            <li><span class="dot-needs"></span> <span><b>Needs (50%):</b> Rent, groceries, EMIs, essential utilities</span></li>
+            <li><span class="dot-wants"></span> <span><b>Wants (30%):</b> Dining out, subscriptions, travel & leisure</span></li>
+            <li><span class="dot-savings"></span> <span><b>Savings (20%):</b> Systematic SIPs, emergency fund, compounding</span></li>
+          </ul>
+          <div class="distribution-bar-mini">
+            <div class="dist-seg dist-needs" style="width:50%;" title="Needs 50%"></div>
+            <div class="dist-seg dist-wants" style="width:30%;" title="Wants 30%"></div>
+            <div class="dist-seg dist-savings" style="width:20%;" title="Savings 20%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature Card 2: Automated Leak Detection -->
+      <div class="preview-card">
+        <div class="preview-card-header">
+          <div class="preview-icon-box">🔍</div>
+          <div class="preview-card-title">Automated Leak Detection</div>
+        </div>
+        <div class="preview-card-body">
+          <p class="preview-desc">Continuously analyzes spending patterns to uncover silent drains before they compound.</p>
+          <div class="leak-flag-chip">
+            <i data-lucide="alert-triangle" style="width:14px;height:14px;"></i>
+            <span>Flags surge expenses, dormant subscriptions & creeping inflation</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature Card 3: Bank-Grade Security & Math -->
+      <div class="preview-card">
+        <div class="preview-card-header">
+          <div class="preview-icon-box">🛡️</div>
+          <div class="preview-card-title">Bank-Grade Security & Math</div>
+        </div>
+        <div class="preview-card-body">
+          <p class="preview-desc">Integer minor units with zero rounding errors. Strict client data isolation with Supabase encryption.</p>
+          <div class="security-chip">
+            <i data-lucide="shield-check" style="width:14px;height:14px;"></i>
+            <span>Client data isolation • Argon2id hashing • SOC2 standards</span>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Header -->
-    <div class="auth-header">
-      <h1 class="auth-title">Welcome to MoneyLeak</h1>
-      <p class="auth-subtitle">Enter your email to sign in or instantly initialize your financial workspace.</p>
-    </div>
+    <!-- =================================================================== -->
+    <!-- RIGHT COLUMN: LOGIN FORM                                            -->
+    <!-- =================================================================== -->
+    <div class="form-column">
+      <div class="auth-card-wrap">
+        <!-- Corner Theme Toggle -->
+        <button type="button" class="theme-corner-toggle" id="auth-theme-toggle" title="Toggle theme">
+          <i data-lucide="sun-moon" style="width:17px;height:17px;"></i>
+        </button>
 
-    <!-- Flash notifications -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div style="margin-bottom:18px;">
-          {% for category, message in messages %}
-            <div class="status-msg-box {% if category == 'danger' %}error{% elif category == 'success' %}success{% else %}info{% endif %}" style="display:block;">
-              {{ message }}
+        <!-- Brand Wallet Icon Box (Signature Lime Badge) -->
+        <div class="brand-icon-badge">
+          <i data-lucide="wallet" style="width:22px;height:22px;color:#121614;"></i>
+        </div>
+
+        <!-- Header -->
+        <div class="auth-header">
+          <h2 class="auth-title" style="font-size:24px;">Welcome to MoneyLeak</h2>
+          <p class="auth-subtitle">Enter your email to sign in or get started in seconds.</p>
+        </div>
+
+        <!-- Flash notifications -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div style="margin-bottom:18px;">
+              {% for category, message in messages %}
+                <div class="status-msg-box {% if category == 'danger' %}error{% elif category == 'success' %}success{% else %}info{% endif %}" style="display:block;">
+                  {{ message }}
+                </div>
+              {% endfor %}
             </div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
+          {% endif %}
+        {% endwith %}
 
-    <!-- Google Button (Opens Account Chooser & Consent Window) -->
-    <button type="button" class="btn-google-auth" id="btn-google-login">
-      <svg width="20" height="20" viewBox="0 0 24 24">
-        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-      </svg>
-      <span>Continue with Google</span>
-    </button>
-
-    <!-- Divider -->
-    <div class="auth-divider">
-      <span>OR VERIFY WITH EMAIL & OTP</span>
-    </div>
-
-    <!-- Real-Time Auto-Detection Pill -->
-    <div id="detection-pill" class="detection-pill" style="display: none;"></div>
-
-    <!-- Alert / Feedback Box -->
-    <div id="auth-status-box" class="status-msg-box"></div>
-
-    <!-- =================================================================== -->
-    <!-- UNIFIED AUTH FORM (AUTO-DETECTS NEW VS RETURNING USERS)             -->
-    <!-- =================================================================== -->
-    <div id="unified-auth-container">
-      
-      <!-- Field 1: Email Address -->
-      <div class="form-group" id="group-email">
-        <label class="form-label" for="auth-email-input">
-          <span>Work / Personal Email</span>
-          <span id="detection-mini-badge" style="font-size:11px;font-weight:700;"></span>
-        </label>
-        <input 
-          type="email" 
-          id="auth-email-input" 
-          class="auth-input" 
-          placeholder="name@example.com" 
-          autocomplete="email" 
-          required 
-          autofocus
-        >
-      </div>
-
-      <!-- Field 2: Full Name (Appears ONLY for new users) -->
-      <div class="form-group" id="group-name" style="display: none;">
-        <label class="form-label" for="auth-name-input">
-          <span>Your Full Name</span>
-          <span style="font-size:11px;color:#854d0e;font-weight:700;">New Account Setup</span>
-        </label>
-        <input 
-          type="text" 
-          id="auth-name-input" 
-          class="auth-input" 
-          placeholder="e.g. Alex Johnson" 
-          autocomplete="name"
-        >
-      </div>
-
-      <!-- Field 3: 6-Digit OTP Verification Code (Revealed when code is sent) -->
-      <div class="form-group" id="group-otp-code" style="display: none;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <label class="form-label" for="auth-otp-input" style="margin-bottom:0;">Enter 6-Digit OTP Code</label>
-          <span id="otp-destination-tag" style="font-size:11px; color:#15803d; font-weight:700;"></span>
-        </div>
-        <input 
-          type="text" 
-          id="auth-otp-input" 
-          class="auth-input otp-code-input" 
-          maxlength="6" 
-          placeholder="123456" 
-          autocomplete="one-time-code"
-        >
-      </div>
-
-      <!-- Field 4: Optional Password (For existing users who prefer passwords) -->
-      <div class="form-group" id="group-password" style="display: none;">
-        <label class="form-label" for="auth-password-input">Account Password</label>
-        <input 
-          type="password" 
-          id="auth-password-input" 
-          class="auth-input" 
-          placeholder="••••••••" 
-          autocomplete="current-password"
-        >
-      </div>
-
-      <!-- Primary Action Button (The Signature Lime Button) -->
-      <button type="button" id="btn-primary-action" class="btn-primary-action">
-        Continue with Email
-      </button>
-
-      <!-- Sub Actions (Resend code / Change email) -->
-      <div id="otp-sub-actions" style="display:none; text-align:center; margin-top:14px;">
-        <button type="button" class="btn-text-link" id="btn-reset-email">
-          <i data-lucide="rotate-ccw" style="width:13px;height:13px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> 
-          Change email or resend code
+        <!-- Google Button (Opens Account Chooser & Consent Window) -->
+        <button type="button" class="btn-google-auth" id="btn-google-login">
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Continue with Google</span>
         </button>
-      </div>
 
-      <!-- Password toggle for existing accounts -->
-      <div id="password-toggle-wrap" style="text-align:center; margin-top: 16px; display: none;">
-        <button type="button" id="btn-toggle-password" class="btn-text-link">
-          Prefer password? Sign in with password
-        </button>
-      </div>
+        <!-- Divider -->
+        <div class="auth-divider">
+          <span>OR VERIFY WITH EMAIL</span>
+        </div>
 
+        <!-- Real-Time Auto-Detection Pill -->
+        <div id="detection-pill" class="detection-pill" style="display: none;"></div>
+
+        <!-- Alert / Feedback Box -->
+        <div id="auth-status-box" class="status-msg-box"></div>
+
+        <!-- =================================================================== -->
+        <!-- UNIFIED AUTH FORM (AUTO-DETECTS NEW VS RETURNING USERS)             -->
+        <!-- =================================================================== -->
+        <div id="unified-auth-container">
+          
+          <!-- Field 1: Email Address -->
+          <div class="form-group" id="group-email">
+            <label class="form-label" for="auth-email-input">
+              <span>Work / Personal Email</span>
+              <span id="detection-mini-badge" style="font-size:11px;font-weight:700;"></span>
+            </label>
+            <input 
+              type="email" 
+              id="auth-email-input" 
+              class="auth-input" 
+              placeholder="you@domain.com" 
+              autocomplete="email" 
+              required 
+              autofocus
+            >
+          </div>
+
+          <!-- Field 2: Full Name (Appears ONLY for new users) -->
+          <div class="form-group" id="group-name" style="display: none;">
+            <label class="form-label" for="auth-name-input">
+              <span>Your Full Name</span>
+              <span style="font-size:11px;color:#854d0e;font-weight:700;">✨ New Account</span>
+            </label>
+            <input 
+              type="text" 
+              id="auth-name-input" 
+              class="auth-input" 
+              placeholder="e.g. Alex Johnson" 
+              autocomplete="name"
+            >
+          </div>
+
+          <!-- Field 3: 6-Digit OTP Verification Code (Clean empty input) -->
+          <div class="form-group" id="group-otp-code" style="display: none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <label class="form-label" for="auth-otp-input" style="margin-bottom:0;">Enter 6-Digit OTP Code</label>
+              <span id="otp-destination-tag" style="font-size:11px; color:#15803d; font-weight:700;"></span>
+            </div>
+            <input 
+              type="text" 
+              id="auth-otp-input" 
+              class="auth-input otp-code-input" 
+              maxlength="6" 
+              placeholder="••••••" 
+              autocomplete="one-time-code"
+            >
+          </div>
+
+          <!-- Field 4: Optional Password (For existing users who prefer passwords) -->
+          <div class="form-group" id="group-password" style="display: none;">
+            <label class="form-label" for="auth-password-input">Account Password</label>
+            <input 
+              type="password" 
+              id="auth-password-input" 
+              class="auth-input" 
+              placeholder="••••••••" 
+              autocomplete="current-password"
+            >
+          </div>
+
+          <!-- Primary Action Button (The Signature Lime Button) -->
+          <button type="button" id="btn-primary-action" class="btn-primary-action">
+            Send 6-Digit OTP Code
+          </button>
+
+          <!-- Sub Actions (Resend code / Change email) -->
+          <div id="otp-sub-actions" style="display:none; text-align:center; margin-top:14px;">
+            <button type="button" class="btn-text-link" id="btn-reset-email">
+              <i data-lucide="rotate-ccw" style="width:13px;height:13px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> 
+              Change email or resend code
+            </button>
+          </div>
+
+          <!-- Password toggle for existing accounts -->
+          <div id="password-toggle-wrap" style="text-align:center; margin-top: 16px; display: none;">
+            <button type="button" id="btn-toggle-password" class="btn-text-link">
+              Prefer password? Sign in with password
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Footer Links -->
+        <div class="auth-footer-links">
+          <div style="margin-top: 10px;">
+            <a href="{{ url_for('dashboard.index') }}" class="auth-back-link">
+              <i data-lucide="arrow-left" style="width:13px;height:13px;"></i> Back to Home
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Footer Links -->
-    <div class="auth-footer-links">
-      <div style="margin-top: 10px;">
-        <a href="{{ url_for('dashboard.index') }}" class="auth-back-link">
-          <i data-lucide="arrow-left" style="width:13px;height:13px;"></i> Back to Home
-        </a>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -1256,12 +1536,9 @@
             btnAction.disabled = false;
             btnAction.innerText = data.is_existing ? 'Verify & Restore Workspace →' : 'Verify & Initialize Workspace →';
 
-            let msg = `Verification code sent to <b>${email}</b>.`;
-            if (data.dev_otp) {
-              msg += ` <span style="background:rgba(203,244,50,0.3);color:#121614;padding:2px 6px;border-radius:4px;margin-left:4px;font-weight:700;">Dev Code: <b>${data.dev_otp}</b></span>`;
-              otpInput.value = data.dev_otp;
-            }
+            let msg = `Verification code sent to <b>${email}</b>. Please check your inbox.`;
             showStatus(msg, 'success');
+            otpInput.value = '';
             otpInput.focus();
           } else {
             showStatus(data.error || 'Could not send verification code.', 'error');
