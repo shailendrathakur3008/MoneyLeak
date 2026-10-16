@@ -12,6 +12,24 @@ class EmailOTP(db.Model):
     expires_at = db.Column(db.DateTime, nullable=False)
     is_used = db.Column(db.Boolean, default=False)
 
+    def __init__(
+        self,
+        email: str | None = None,
+        otp_code: str | None = None,
+        purpose: str = 'login',
+        expires_at: datetime | None = None,
+        is_used: bool = False,
+        **kwargs
+    ):
+        super().__init__(
+            email=email,
+            otp_code=otp_code,
+            purpose=purpose,
+            expires_at=expires_at,
+            is_used=is_used,
+            **kwargs
+        )
+
     def is_valid(self, code: str) -> bool:
         if self.is_used:
             return False

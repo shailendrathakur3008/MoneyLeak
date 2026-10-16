@@ -13,6 +13,24 @@ class Budget(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    def __init__(
+        self,
+        user_id: int | None = None,
+        period: str = 'DEFAULT',
+        needs_percentage: float = 50.0,
+        wants_percentage: float = 30.0,
+        savings_percentage: float = 20.0,
+        **kwargs
+    ):
+        super().__init__(
+            user_id=user_id,
+            period=period,
+            needs_percentage=needs_percentage,
+            wants_percentage=wants_percentage,
+            savings_percentage=savings_percentage,
+            **kwargs
+        )
+
     def to_dict(self):
         return {
             'id': self.id,
