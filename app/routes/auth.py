@@ -66,6 +66,10 @@ def register():
     if session.get('user_id'):
         return redirect(url_for('dashboard.view_dashboard'))
 
+    # If accessed via GET, redirect directly to the single unified auth portal
+    if request.method == 'GET':
+        return redirect(url_for('auth.login'))
+
     if request.method == 'POST':
         data = request.get_json() if request.is_json else request.form
         full_name = data.get('full_name', '').strip()
@@ -201,8 +205,38 @@ def logout():
 
 
 # -----------------------------------------------------------------------------
-# 2. EMAIL OTP AUTHENTICATION
+# 2. EMAIL OTP & USER RECOGNITION AUTHENTICATION
 # -----------------------------------------------------------------------------
+
+@auth_bp.route('/auth/check-email', methods=['POST'])
+@csrf.exempt
+def check_email():
+    """Real-time instant user recognition for the single unified login form."""
+    data = request.get_json() if request.is_json else request.form
+    email = (data.get('email') or '').strip().lower()
+    if not email or '@' not in email:
+        return jsonify({'success': False, 'error': 'A valid email address is required.'}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if user:
+        first_name = user.full_name.split()[0] if user.full_name else 'User'
+        return jsonify({
+            'success': True,
+            'is_existing': True,
+            'full_name': user.full_name,
+            'first_name': first_name,
+            'has_password': bool(user.password_hash),
+            'onboarding_completed': user.onboarding_completed,
+            'auth_provider': user.auth_provider or 'local',
+            'message': f'Welcome back, {first_name}! Your existing financial data will be loaded.'
+        })
+    else:
+        return jsonify({
+            'success': True,
+            'is_existing': False,
+            'message': 'New user detected. We will set up your new personalized workspace!'
+        })
+
 
 @auth_bp.route('/auth/send-otp', methods=['POST'])
 @csrf.exempt
@@ -215,7 +249,7 @@ def send_otp():
     if not email or '@' not in email:
         return jsonify({'success': False, 'error': 'A valid email address is required.'}), 400
 
-    # Rate limit: allow maximum 1 OTP per 30 seconds for the same email
+    # Rate limit: allow maximum 1 OTP per 20 seconds for the same email
     recent_otp = EmailOTP.query.filter_by(email=email).order_by(EmailOTP.created_at.desc()).first()
     if recent_otp and (datetime.utcnow() - recent_otp.created_at).total_seconds() < 20:
         return jsonify({
@@ -239,9 +273,13 @@ def send_otp():
     # Log to stdout for local testing & development
     print(f"\n[MoneyLeak OTP Service] Generated verification code for {email}: {code}\n")
 
+    existing_user = User.query.filter_by(email=email).first()
+
     return jsonify({
         'success': True,
         'message': f'Verification code sent to {email}.',
+        'is_existing': bool(existing_user),
+        'user_name': existing_user.full_name if existing_user else None,
         'dev_otp': code  # Available in dev mode for seamless testing
     })
 
@@ -255,6 +293,7 @@ def verify_otp():
     otp_code = (data.get('otp_code') or '').strip()
     purpose = data.get('purpose', 'login').strip()
     new_email = (data.get('new_email') or '').strip().lower()
+    custom_name = (data.get('full_name') or '').strip()
 
     if not email or not otp_code:
         return jsonify({'success': False, 'error': 'Email and verification code are required.'}), 400
@@ -289,14 +328,14 @@ def verify_otp():
         db.session.commit()
         return jsonify({'success': True, 'message': 'Email address verified and updated successfully.'})
 
-    # Case B: Sign-in / Sign-up via Email OTP
+    # Case B: Sign-in / Sign-up via Email OTP (Auto-detecting user status)
     user = User.query.filter_by(email=email).first()
     is_new_user = False
 
     if not user:
         # Create new user profile
         is_new_user = True
-        default_name = email.split('@')[0].replace('.', ' ').replace('_', ' ').title()
+        default_name = custom_name or email.split('@')[0].replace('.', ' ').replace('_', ' ').title()
         user = User(
             full_name=default_name,
             email=email,
@@ -333,8 +372,9 @@ def verify_otp():
     return jsonify({
         'success': True,
         'is_new_user': is_new_user,
+        'user_name': user.full_name,
         'redirect': dest,
-        'message': 'Email verified successfully!'
+        'message': f'Welcome back, {user.full_name}! Your existing data has been loaded.' if not is_new_user else 'Welcome to MoneyLeak! Initializing your workspace...'
     })
 
 

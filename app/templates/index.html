@@ -180,13 +180,15 @@
       </button>
 
       {% if session.get('user_id') %}
-        <a href="{{ url_for('dashboard.view_dashboard') }}" class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
+        <a href="{{ url_for('dashboard.view_dashboard') }}" class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;">
+          <i data-lucide="layout-dashboard" style="width:14px;height:14px;"></i>
           <span>Go to Dashboard</span>
-          <i data-lucide="arrow-right" style="width:13px;height:13px;"></i>
         </a>
       {% else %}
-        <a href="{{ url_for('auth.login') }}" class="btn btn-secondary btn-sm">Log In</a>
-        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Create Account</a>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;padding:8px 16px;">
+          <i data-lucide="log-in" style="width:14px;height:14px;"></i>
+          <span>Enter Workspace</span>
+        </a>
       {% endif %}
     </div>
   </header>
@@ -195,7 +197,7 @@
   <section class="landing-hero">
     <div class="landing-badge">
       <span style="display:inline-flex;align-items:center;gap:6px;">
-        <i data-lucide="shield-check" style="width:13px;height:13px;"></i> Stop Silent Financial Leakage
+        <i data-lucide="sparkles" style="width:13px;height:13px;"></i> Single Portal • Auto-Detects New & Returning Users
       </span>
     </div>
     <h1 class="hero-title">
@@ -203,16 +205,16 @@
       <span>Find out with MoneyLeak.</span>
     </h1>
     <p class="hero-desc">
-      A high-density personal finance platform for salaried professionals and smart savers. Enforce the 50/30/20 framework, discover recurring subscription drains, and project future wealth.
+      A high-density personal finance platform for salaried professionals and smart savers. Enforce the 50/30/20 framework, discover recurring subscription drains, and restore financial clarity.
     </p>
 
     <div class="hero-cta-btns">
-      <a href="{{ url_for('auth.register') }}" class="btn btn-primary" style="padding:11px 22px;font-size:14px;font-weight:700;display:inline-flex;align-items:center;gap:8px;">
-        <span>Start Free Account</span>
-        <i data-lucide="arrow-right" style="width:15px;height:15px;"></i>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-primary" style="padding:13px 26px;font-size:15px;font-weight:700;display:inline-flex;align-items:center;gap:8px;border-radius:12px;box-shadow:0 6px 20px rgba(79,70,229,0.35);">
+        <span>Enter Your Workspace</span>
+        <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
       </a>
-      <a href="{{ url_for('auth.login') }}" class="btn btn-dark" style="padding:11px 22px;font-size:14px;font-weight:700;">
-        Sign In to Your Vault
+      <a href="#features-preview" class="btn btn-dark" style="padding:13px 22px;font-size:14px;font-weight:700;border-radius:12px;">
+        Explore 50/30/20 Engine
       </a>
     </div>
 
@@ -308,7 +310,7 @@
     <div style="margin-top:10px;">
       <a href="#" style="margin: 0 8px; color:var(--text-secondary); text-decoration: underline;">Privacy Policy</a> • 
       <a href="#" style="margin: 0 8px; color:var(--text-secondary); text-decoration: underline;">Terms of Service</a> • 
-      <a href="{{ url_for('auth.login') }}" style="margin: 0 8px; color:var(--text-secondary); text-decoration: underline;">Client Login</a>
+      <a href="{{ url_for('auth.login') }}" style="margin: 0 8px; color:var(--text-secondary); text-decoration: underline;">Enter Workspace</a>
     </div>
   </footer>
 

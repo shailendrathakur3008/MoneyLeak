@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign In — MoneyLeak</title>
+  <title>Welcome to MoneyLeak — Access Workspace</title>
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
   <!-- Theme Pre-Hydration -->
   <script>
     (function() {
       try {
-        const saved = localStorage.getItem('moneyleak_theme') || 'system';
+        const saved = localStorage.getItem('moneyleak_theme') || 'dark';
         let theme = saved;
         if (saved === 'system') {
           theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -23,263 +23,833 @@
   <!-- Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
 
   <style>
-    .auth-page-wrap {
+    :root {
+      --casecraft-bg: #090d16;
+      --casecraft-card: #0f1626;
+      --casecraft-border: rgba(255, 255, 255, 0.08);
+      --casecraft-input-bg: #141d30;
+      --casecraft-input-border: #1e2a42;
+      --casecraft-primary: #4f46e5;
+      --casecraft-primary-hover: #4338ca;
+      --casecraft-text: #ffffff;
+      --casecraft-text-muted: #94a3b8;
+      
+      --google-dialog-bg: #202124;
+      --google-dialog-text: #e8eaed;
+      --google-dialog-subtext: #9aa0a6;
+      --google-dialog-border: #3c4043;
+      --google-dialog-hover: #303134;
+      --google-dialog-input-bg: #17181b;
+    }
+
+    [data-theme="light"] {
+      --casecraft-bg: #f8fafc;
+      --casecraft-card: #ffffff;
+      --casecraft-border: #e2e8f0;
+      --casecraft-input-bg: #f1f5f9;
+      --casecraft-input-border: #cbd5e1;
+      --casecraft-primary: #4f46e5;
+      --casecraft-primary-hover: #4338ca;
+      --casecraft-text: #0f172a;
+      --casecraft-text-muted: #64748b;
+
+      --google-dialog-bg: #ffffff;
+      --google-dialog-text: #202124;
+      --google-dialog-subtext: #5f6368;
+      --google-dialog-border: #dadce0;
+      --google-dialog-hover: #f1f3f4;
+      --google-dialog-input-bg: #ffffff;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--casecraft-bg);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--casecraft-text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .auth-page-container {
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px;
-      background: var(--bg-canvas);
+      padding: 32px 20px;
       position: relative;
+      background: 
+        radial-gradient(circle at 50% 15%, rgba(99, 102, 241, 0.14) 0%, transparent 60%),
+        radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+        var(--casecraft-bg);
+      box-sizing: border-box;
     }
-    .auth-card {
-      background: var(--bg-surface);
-      border-radius: var(--radius-xl);
-      max-width: 440px;
+
+    .auth-card-wrap {
+      max-width: 460px;
       width: 100%;
-      padding: 34px 28px;
-      box-shadow: var(--shadow-md);
-      border: 1px solid var(--border-subtle);
+      background: var(--casecraft-card);
+      border: 1px solid var(--casecraft-border);
+      border-radius: 24px;
+      padding: 44px 38px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.03);
       position: relative;
+      box-sizing: border-box;
+      backdrop-filter: blur(12px);
     }
+
     .theme-corner-toggle {
       position: absolute;
-      top: 18px;
-      right: 18px;
-      background: var(--bg-subtle);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-secondary);
-      width: 34px;
-      height: 34px;
-      border-radius: var(--radius-pill);
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--casecraft-border);
+      color: var(--casecraft-text-muted);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all var(--duration-fast) var(--ease-standard);
+      transition: all 0.2s ease;
     }
     .theme-corner-toggle:hover {
-      background: var(--bg-canvas);
-      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--casecraft-text);
+      transform: scale(1.05);
     }
-    .auth-social-btn {
+
+    .auth-header {
+      text-align: center;
+      margin-bottom: 26px;
+    }
+
+    .auth-title {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.6px;
+      margin: 0 0 8px 0;
+      color: var(--casecraft-text);
+    }
+
+    .auth-subtitle {
+      font-size: 14.5px;
+      line-height: 1.5;
+      color: var(--casecraft-text-muted);
+      margin: 0;
+      font-weight: 500;
+    }
+
+    /* Google Action Button - Pure White High-Contrast */
+    .btn-google-auth {
       width: 100%;
+      height: 52px;
+      background: #ffffff;
+      color: #0f172a;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      padding: 10px 16px;
-      font-size: 13px;
-      font-weight: 700;
-      border-radius: var(--radius-md);
-      margin-bottom: 10px;
-      transition: all var(--duration-fast) var(--ease-standard);
+      gap: 12px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      margin-bottom: 6px;
     }
-    .auth-social-btn:hover {
+    .btn-google-auth:hover {
+      background: #f8fafc;
       transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
     }
+    .btn-google-auth:active {
+      transform: translateY(0);
+    }
+
+    /* Divider */
     .auth-divider {
       display: flex;
       align-items: center;
-      margin: 18px 0;
-      color: var(--text-muted);
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      margin: 22px 0;
+      text-align: center;
     }
     .auth-divider::before,
     .auth-divider::after {
       content: '';
       flex: 1;
       height: 1px;
-      background: var(--border-subtle);
+      background: var(--casecraft-border);
     }
     .auth-divider span {
-      padding: 0 10px;
+      padding: 0 14px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--casecraft-text-muted);
+      text-transform: uppercase;
+    }
+
+    /* Form Fields */
+    .form-group {
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .form-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--casecraft-text-muted);
+      margin-bottom: 8px;
+    }
+
+    .auth-input {
+      width: 100%;
+      height: 50px;
+      background: var(--casecraft-input-bg);
+      border: 1px solid var(--casecraft-input-border);
+      border-radius: 12px;
+      padding: 0 16px;
+      box-sizing: border-box;
+      font-size: 15px;
+      color: var(--casecraft-text);
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    }
+    .auth-input:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+    }
+    .auth-input::placeholder {
+      color: #64748b;
+    }
+
+    .otp-code-input {
+      letter-spacing: 6px;
+      font-size: 22px;
+      font-weight: 800;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* User Recognition Banner / Pill */
+    .detection-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      transition: all 0.2s ease;
+      animation: fadeInSlide 0.25s ease-out;
+    }
+    .detection-pill.existing {
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #4ade80;
+    }
+    .detection-pill.new-user {
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #a5b4fc;
+    }
+
+    @keyframes fadeInSlide {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Primary CTA Button (Vibrant Indigo) */
+    .btn-primary-action {
+      width: 100%;
+      height: 52px;
+      background: var(--casecraft-primary);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.45);
+      font-family: inherit;
+    }
+    .btn-primary-action:hover {
+      background: var(--casecraft-primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.6);
+    }
+    .btn-primary-action:active {
+      transform: translateY(0);
+    }
+    .btn-primary-action:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Mode Switcher & Links */
+    .btn-text-link {
+      background: none;
+      border: none;
+      color: var(--casecraft-text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 6px 10px;
+      font-family: inherit;
+      transition: color 0.15s ease;
+    }
+    .btn-text-link:hover {
+      color: var(--casecraft-text);
+      text-decoration: underline;
+    }
+
+    .auth-footer-links {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 13px;
+      color: var(--casecraft-text-muted);
+    }
+
+    .auth-back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--casecraft-text-muted);
+      text-decoration: none;
+      font-size: 12.5px;
+      transition: color 0.15s ease;
+    }
+    .auth-back-link:hover {
+      color: var(--casecraft-text);
+    }
+
+    .status-msg-box {
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      line-height: 1.4;
+      display: none;
+    }
+    .status-msg-box.success {
+      display: block;
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.25);
+      color: #4ade80;
+    }
+    .status-msg-box.error {
+      display: block;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      color: #f87171;
+    }
+    .status-msg-box.info {
+      display: block;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      color: #a5b4fc;
+    }
+
+    /* ======================================================================= */
+    /* AUTHENTIC GOOGLE OAUTH POPUP WINDOW STYLES                              */
+    /* ======================================================================= */
+    .google-oauth-window {
+      max-width: 440px;
+      width: 100%;
+      background: var(--google-dialog-bg);
+      color: var(--google-dialog-text);
+      border: 1px solid var(--google-dialog-border);
+      border-radius: 14px;
+      padding: 32px 28px 24px 28px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 0, 0, 0.08);
+      position: relative;
+      box-sizing: border-box;
+      font-family: 'Roboto', 'Plus Jakarta Sans', -apple-system, sans-serif;
+      animation: googleWindowPop 0.22s ease-out;
+    }
+
+    @keyframes googleWindowPop {
+      from { opacity: 0; transform: scale(0.96) translateY(-8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .google-modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: transparent;
+      border: none;
+      color: var(--google-dialog-subtext);
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease;
+    }
+    .google-modal-close:hover {
+      background: var(--google-dialog-hover);
+      color: var(--google-dialog-text);
+    }
+
+    .google-account-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+      border: 1px solid transparent;
+      user-select: none;
+    }
+    .google-account-item:hover {
+      background-color: var(--google-dialog-hover);
+    }
+    .google-account-item:active {
+      background-color: rgba(66, 133, 244, 0.12);
+    }
+
+    .google-account-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .google-account-details {
+      flex: 1;
+      min-width: 0;
+      text-align: left;
+    }
+    .google-account-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--google-dialog-text);
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .google-account-email {
+      font-size: 12px;
+      color: var(--google-dialog-subtext);
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .google-dialog-input {
+      width: 100%;
+      height: 42px;
+      background: var(--google-dialog-input-bg);
+      border: 1px solid var(--google-dialog-border);
+      border-radius: 6px;
+      padding: 0 12px;
+      box-sizing: border-box;
+      font-size: 13.5px;
+      color: var(--google-dialog-text);
+      outline: none;
+      font-family: inherit;
+    }
+    .google-dialog-input:focus {
+      border-color: #1a73e8;
+      box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+    }
+
+    /* Consent Screen Active Chip */
+    .google-active-account-chip {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      border: 1px solid var(--google-dialog-border);
+      border-radius: 20px;
+      background: var(--google-dialog-hover);
+      cursor: pointer;
+      transition: border-color 0.15s ease;
+    }
+    .google-active-account-chip:hover {
+      border-color: #1a73e8;
+    }
+
+    .google-scope-box {
+      border: 1px solid var(--google-dialog-border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      background: var(--google-dialog-input-bg);
+      margin: 16px 0;
+    }
+    .google-scope-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .google-scope-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .google-btn-primary {
+      background: #1a73e8;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 22px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s ease, box-shadow 0.15s ease;
+      font-family: inherit;
+    }
+    .google-btn-primary:hover {
+      background: #1557b0;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    }
+
+    .google-btn-cancel {
+      background: transparent;
+      color: #1a73e8;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .google-btn-cancel:hover {
+      background: var(--google-dialog-hover);
+    }
+
+    [data-theme="dark"] .google-btn-primary {
+      background: #8ab4f8;
+      color: #202124;
+    }
+    [data-theme="dark"] .google-btn-primary:hover {
+      background: #aecbfa;
+    }
+    [data-theme="dark"] .google-btn-cancel {
+      color: #8ab4f8;
     }
   </style>
 </head>
 <body>
 
-<div class="auth-page-wrap">
-  <div class="auth-card">
+<div class="auth-page-container">
+  <div class="auth-card-wrap">
     <!-- Corner Theme Toggle -->
     <button type="button" class="theme-corner-toggle" id="auth-theme-toggle" title="Toggle theme">
-      <i data-lucide="sun-moon" style="width:16px;height:16px;"></i>
+      <i data-lucide="sun-moon" style="width:17px;height:17px;"></i>
     </button>
 
-    <div style="text-align:center;margin-bottom:24px;">
-      <div class="brand-icon-box" style="margin:0 auto 12px auto;display:flex;align-items:center;justify-content:center;">
-        <i data-lucide="wallet" style="width:20px;height:20px;"></i>
-      </div>
-      <h2 style="font-size:22px;font-weight:800;letter-spacing:-0.4px;color:var(--text-primary);margin:0 0 4px 0;">Welcome to MoneyLeak</h2>
-      <p style="font-size:12px;color:var(--text-secondary);margin:0;">Sign in to access your financial dashboard</p>
+    <!-- Header -->
+    <div class="auth-header">
+      <h1 class="auth-title">Welcome to MoneyLeak</h1>
+      <p class="auth-subtitle">Enter your email to sign in or instantly initialize your financial workspace.</p>
     </div>
 
     <!-- Flash notifications -->
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        <div style="margin-bottom:14px;">
+        <div style="margin-bottom:18px;">
           {% for category, message in messages %}
-            <div class="flash-alert {{ category }}">{{ message }}</div>
+            <div class="status-msg-box {% if category == 'danger' %}error{% elif category == 'success' %}success{% else %}info{% endif %}" style="display:block;">
+              {{ message }}
+            </div>
           {% endfor %}
         </div>
       {% endif %}
     {% endwith %}
 
-    <!-- Google Sign-In & Email OTP Quick Actions -->
-    <div>
-      <button type="button" class="btn btn-secondary auth-social-btn" id="btn-google-login">
-        <svg width="18" height="18" viewBox="0 0 24 24">
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-        </svg>
-        <span>Continue with Google</span>
-      </button>
+    <!-- Google Button (Opens Account Chooser & Consent Window) -->
+    <button type="button" class="btn-google-auth" id="btn-google-login">
+      <svg width="20" height="20" viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+      </svg>
+      <span>Continue with Google</span>
+    </button>
 
-      <button type="button" class="btn btn-secondary auth-social-btn" id="btn-otp-modal-trigger">
-        <i data-lucide="mail-check" style="width:16px;height:16px;color:#0284c7;"></i>
-        <span>Sign In with Email OTP</span>
-      </button>
-    </div>
-
+    <!-- Divider -->
     <div class="auth-divider">
-      <span>or with password</span>
+      <span>OR VERIFY WITH EMAIL & OTP</span>
     </div>
 
-    <!-- Password Form -->
-    <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <!-- Real-Time Auto-Detection Pill -->
+    <div id="detection-pill" class="detection-pill" style="display: none;"></div>
 
-      <div class="form-group" style="margin-bottom:12px;">
-        <label class="form-label" style="font-size:12px;">Email Address</label>
-        <input type="email" name="email" class="form-control" placeholder="you@domain.com" required autofocus>
+    <!-- Alert / Feedback Box -->
+    <div id="auth-status-box" class="status-msg-box"></div>
+
+    <!-- =================================================================== -->
+    <!-- UNIFIED AUTH FORM (AUTO-DETECTS NEW VS RETURNING USERS)             -->
+    <!-- =================================================================== -->
+    <div id="unified-auth-container">
+      
+      <!-- Field 1: Email Address -->
+      <div class="form-group" id="group-email">
+        <label class="form-label" for="auth-email-input">
+          <span>Work / Personal Email</span>
+          <span id="detection-mini-badge" style="font-size:11px;font-weight:700;"></span>
+        </label>
+        <input 
+          type="email" 
+          id="auth-email-input" 
+          class="auth-input" 
+          placeholder="name@example.com" 
+          autocomplete="email" 
+          required 
+          autofocus
+        >
       </div>
 
-      <div class="form-group" style="margin-bottom:14px;">
-        <label class="form-label" style="font-size:12px;">Password</label>
-        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+      <!-- Field 2: Full Name (Appears ONLY for new users) -->
+      <div class="form-group" id="group-name" style="display: none;">
+        <label class="form-label" for="auth-name-input">
+          <span>Your Full Name</span>
+          <span style="font-size:11px;color:#a5b4fc;">New Account Setup</span>
+        </label>
+        <input 
+          type="text" 
+          id="auth-name-input" 
+          class="auth-input" 
+          placeholder="e.g. Alex Johnson" 
+          autocomplete="name"
+        >
       </div>
 
-      <button type="submit" class="btn btn-primary" style="width:100%;padding:11px;font-size:14px;font-weight:700;">
-        Sign In
+      <!-- Field 3: 6-Digit OTP Verification Code (Revealed when code is sent) -->
+      <div class="form-group" id="group-otp-code" style="display: none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <label class="form-label" for="auth-otp-input" style="margin-bottom:0;">Enter 6-Digit OTP Code</label>
+          <span id="otp-destination-tag" style="font-size:11px; color:#818cf8; font-weight:600;"></span>
+        </div>
+        <input 
+          type="text" 
+          id="auth-otp-input" 
+          class="auth-input otp-code-input" 
+          maxlength="6" 
+          placeholder="123456" 
+          autocomplete="one-time-code"
+        >
+      </div>
+
+      <!-- Field 4: Optional Password (For existing users who prefer passwords) -->
+      <div class="form-group" id="group-password" style="display: none;">
+        <label class="form-label" for="auth-password-input">Account Password</label>
+        <input 
+          type="password" 
+          id="auth-password-input" 
+          class="auth-input" 
+          placeholder="••••••••" 
+          autocomplete="current-password"
+        >
+      </div>
+
+      <!-- Primary Action Button -->
+      <button type="button" id="btn-primary-action" class="btn-primary-action">
+        Continue with Email
       </button>
-    </form>
 
-    <div style="text-align:center;margin-top:20px;font-size:12px;color:var(--text-secondary);">
-      New to MoneyLeak? 
-      <a href="{{ url_for('auth.register') }}" style="color:var(--text-primary);font-weight:700;text-decoration:underline;">Create Account</a>
-    </div>
-
-    <div style="text-align:center;margin-top:14px;">
-      <a href="{{ url_for('dashboard.index') }}" style="font-size:12px;color:var(--text-muted);display:inline-flex;align-items:center;gap:4px;">
-        <i data-lucide="arrow-left" style="width:12px;height:12px;"></i> Back to Home
-      </a>
-    </div>
-  </div>
-</div>
-
-<!-- ========================================================================= -->
-<!-- EMAIL OTP AUTHENTICATION MODAL                                            -->
-<!-- ========================================================================= -->
-<div id="otp-modal" class="modal-backdrop">
-  <div class="modal-card" style="max-width:400px;padding:26px;">
-    <div class="modal-header" style="margin-bottom:16px;">
-      <div>
-        <div class="modal-title" style="font-size:18px;">Email OTP Authentication</div>
-        <div class="card-subtitle" style="font-size:12px;">No password required. Fast & secure sign-in.</div>
-      </div>
-      <button type="button" class="modal-close-btn" onclick="closeModal('otp-modal')">
-        <i data-lucide="x" style="width:16px;height:16px;"></i>
-      </button>
-    </div>
-
-    <div id="otp-status-msg" style="margin-bottom:12px;font-size:12px;"></div>
-
-    <!-- Step A: Enter Email -->
-    <div id="otp-step-email">
-      <div class="form-group">
-        <label class="form-label">Your Email Address</label>
-        <input type="email" id="otp-input-email" class="form-control" placeholder="you@domain.com" required>
-      </div>
-      <button type="button" id="btn-send-otp" class="btn btn-primary" style="width:100%;padding:10px;font-weight:700;">
-        Send 6-Digit Code
-      </button>
-    </div>
-
-    <!-- Step B: Enter Code -->
-    <div id="otp-step-code" style="display:none;">
-      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">
-        Code sent to <b id="otp-target-email-display" style="color:var(--text-primary);"></b>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Enter 6-Digit Verification Code</label>
-        <input type="text" id="otp-input-code" class="form-control" maxlength="6" placeholder="123456" style="font-size:20px;letter-spacing:4px;text-align:center;font-weight:800;font-variant-numeric:tabular-nums;">
-      </div>
-      <button type="button" id="btn-verify-otp" class="btn btn-primary" style="width:100%;padding:10px;font-weight:700;">
-        Verify & Sign In →
-      </button>
-      <div style="text-align:center;margin-top:12px;">
-        <button type="button" class="btn btn-link btn-sm" onclick="resendOtp()" style="font-size:11px;color:var(--text-muted);">
-          Didn't receive code? Resend
+      <!-- Sub Actions (Resend code / Change email) -->
+      <div id="otp-sub-actions" style="display:none; text-align:center; margin-top:14px;">
+        <button type="button" class="btn-text-link" id="btn-reset-email">
+          <i data-lucide="rotate-ccw" style="width:13px;height:13px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> 
+          Change email or resend code
         </button>
       </div>
+
+      <!-- Password toggle for existing accounts -->
+      <div id="password-toggle-wrap" style="text-align:center; margin-top: 16px; display: none;">
+        <button type="button" id="btn-toggle-password" class="btn-text-link">
+          Prefer password? Sign in with password
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Footer Links -->
+    <div class="auth-footer-links">
+      <div style="margin-top: 10px;">
+        <a href="{{ url_for('dashboard.index') }}" class="auth-back-link">
+          <i data-lucide="arrow-left" style="width:13px;height:13px;"></i> Back to Home
+        </a>
+      </div>
     </div>
   </div>
 </div>
 
 <!-- ========================================================================= -->
-<!-- GOOGLE SIGN-IN INTERACTIVE MODAL                                         -->
+<!-- AUTHENTIC GOOGLE SIGN-IN MODAL: 1. CHOOSER  ->  2. CONSENT WINDOW        -->
 <!-- ========================================================================= -->
 <div id="google-modal" class="modal-backdrop">
-  <div class="modal-card" style="max-width:420px;padding:26px;">
-    <div class="modal-header" style="margin-bottom:16px;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <svg width="22" height="22" viewBox="0 0 24 24">
+  <div class="google-oauth-window" id="google-window-container">
+    
+    <!-- Close button -->
+    <button type="button" class="google-modal-close" onclick="closeModal('google-modal')" title="Close">
+      <i data-lucide="x" style="width:18px;height:18px;"></i>
+    </button>
+
+    <!-- STEP 1: GOOGLE ACCOUNT CHOOSER ("Choose an account") -->
+    <div id="google-step-choose" style="display: block;">
+      <div style="text-align: center; margin-bottom: 22px;">
+        <svg width="32" height="32" viewBox="0 0 24 24" style="margin-bottom: 10px;">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
           <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
         </svg>
-        <div>
-          <div class="modal-title" style="font-size:18px;">Google Sign-In</div>
-          <div class="card-subtitle" style="font-size:11px;">Verified provider authentication</div>
+        <div style="font-size: 22px; font-weight: 500; letter-spacing: -0.2px;">Choose an account</div>
+        <div style="font-size: 13.5px; color: var(--google-dialog-subtext); margin-top: 4px;">to continue to <b style="color:var(--google-dialog-text);">MoneyLeak</b></div>
+      </div>
+
+      <!-- Accounts List -->
+      <div style="margin-bottom: 18px;">
+        
+        <!-- Account 1: Shailendra Thakur -->
+        <div class="google-account-item" onclick="selectGoogleAccount('Shailendra Thakur', 'shailendrathakur3008@gmail.com', '#1a73e8')">
+          <div class="google-account-avatar" style="background: #1a73e8;">S</div>
+          <div class="google-account-details">
+            <div class="google-account-name">Shailendra Thakur</div>
+            <div class="google-account-email">shailendrathakur3008@gmail.com</div>
+          </div>
+          <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--google-dialog-subtext);"></i>
+        </div>
+
+        <!-- Account 2: Tanu Sharma (Demo Profile) -->
+        <div class="google-account-item" onclick="selectGoogleAccount('Tanu Sharma', 'demo@moneyleak.app', '#059669')">
+          <div class="google-account-avatar" style="background: #059669;">T</div>
+          <div class="google-account-details">
+            <div class="google-account-name">
+              Tanu Sharma 
+              <span style="font-size:10.5px;background:rgba(5,150,105,0.18);color:#34d399;padding:1px 6px;border-radius:4px;margin-left:6px;font-weight:700;">Demo</span>
+            </div>
+            <div class="google-account-email">demo@moneyleak.app</div>
+          </div>
+          <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--google-dialog-subtext);"></i>
+        </div>
+
+        <!-- Option 3: Use another account -->
+        <div class="google-account-item" id="btn-use-another" onclick="toggleCustomGoogleInput()">
+          <div class="google-account-avatar" style="background: transparent; border: 1px solid var(--google-dialog-border); color: var(--google-dialog-text);">
+            <i data-lucide="user-plus" style="width:17px;height:17px;"></i>
+          </div>
+          <div class="google-account-details">
+            <div class="google-account-name" style="font-weight:600;">Use another account</div>
+          </div>
+          <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--google-dialog-subtext);"></i>
+        </div>
+
+        <!-- Collapsible Custom Account Entry Form -->
+        <div id="custom-google-box" style="display: none; padding: 14px; background: var(--google-dialog-input-bg); border-radius: 8px; margin-top: 8px; border: 1px solid var(--google-dialog-border);">
+          <div style="font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--google-dialog-text);">Enter your Google Account</div>
+          <input type="email" id="custom-google-email" class="google-dialog-input" placeholder="Email or phone" style="margin-bottom: 8px;">
+          <input type="text" id="custom-google-name" class="google-dialog-input" placeholder="Display Name (e.g. Alex Johnson)" style="margin-bottom: 12px;">
+          <button type="button" class="google-btn-primary" style="width: 100%;" onclick="submitCustomGoogleAccount()">Next →</button>
+        </div>
+
+      </div>
+
+      <div style="font-size: 11.5px; color: var(--google-dialog-subtext); line-height: 1.5; text-align: left; border-top: 1px solid var(--google-dialog-border); padding-top: 14px;">
+        To continue, Google will share your verified name, email address, and profile picture with MoneyLeak. Review MoneyLeak's Privacy Policy.
+      </div>
+    </div>
+
+    <!-- STEP 2: GOOGLE OAUTH CONSENT WINDOW ("MoneyLeak wants access to your Google Account") -->
+    <div id="google-step-consent" style="display: none;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+        <svg width="26" height="26" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        </svg>
+        <span style="font-size: 12px; color: var(--google-dialog-subtext); font-weight: 500;">Google Identity Services</span>
+      </div>
+
+      <!-- Selected Account Header Chip -->
+      <div class="google-active-account-chip" onclick="backToAccountChooser()" title="Click to switch account">
+        <div id="consent-avatar-chip" class="google-account-avatar" style="width:28px;height:28px;font-size:13px;background:#1a73e8;">S</div>
+        <div style="flex:1; min-width:0; text-align:left;">
+          <div id="consent-name-display" style="font-size:12.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Shailendra Thakur</div>
+          <div id="consent-email-display" style="font-size:11px; color:var(--google-dialog-subtext); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">shailendrathakur3008@gmail.com</div>
+        </div>
+        <span style="font-size:11px; color:#1a73e8; font-weight:600; cursor:pointer;">Switch</span>
+      </div>
+
+      <!-- Consent Title -->
+      <div style="margin: 18px 0 12px 0; text-align: left;">
+        <h2 style="font-size: 18px; font-weight: 600; margin: 0 0 6px 0; line-height: 1.35; color:var(--google-dialog-text);">
+          MoneyLeak wants access to your Google Account
+        </h2>
+        <p style="font-size: 12.5px; color: var(--google-dialog-subtext); margin: 0;">This will allow MoneyLeak to:</p>
+      </div>
+
+      <!-- Scopes / Permissions Box -->
+      <div class="google-scope-box">
+        <div class="google-scope-row">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2" style="flex-shrink:0;margin-top:2px;">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+          <div style="font-size: 12.5px; line-height: 1.4; text-align: left; color:var(--google-dialog-text);">
+            <b>See your personal info</b>, including any personal info you've made publicly available
+          </div>
+        </div>
+        <div class="google-scope-row" style="margin-top:10px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2" style="flex-shrink:0;margin-top:2px;">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+          </svg>
+          <div style="font-size: 12.5px; line-height: 1.4; text-align: left; color:var(--google-dialog-text);">
+            <b>See your primary Google Account email address</b> for authentication and restoring your workspace
+          </div>
         </div>
       </div>
-      <button type="button" class="modal-close-btn" onclick="closeModal('google-modal')">
-        <i data-lucide="x" style="width:16px;height:16px;"></i>
-      </button>
-    </div>
 
-    <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-bottom:16px;">
-      Automatically import your verified Google account name, email address, and profile photo into MoneyLeak.
-    </div>
-
-    <form id="google-auth-form">
-      <div class="form-group" style="margin-bottom:12px;">
-        <label class="form-label" style="font-size:12px;">Google Account Email</label>
-        <input type="email" id="google-email-input" class="form-control" value="shailendra.google@gmail.com" required>
+      <!-- Trust Disclosure -->
+      <div style="font-size: 11px; color: var(--google-dialog-subtext); text-align: left; line-height: 1.5; margin: 14px 0;">
+        Make sure you trust MoneyLeak. You may be sharing sensitive financial info with this app. Learn about how MoneyLeak protects your data.
       </div>
 
-      <div class="form-group" style="margin-bottom:16px;">
-        <label class="form-label" style="font-size:12px;">Account Display Name</label>
-        <input type="text" id="google-name-input" class="form-control" value="Shailendra Thakur" required>
+      <!-- Consent Actions -->
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
+        <button type="button" class="google-btn-cancel" onclick="closeModal('google-modal')">Cancel</button>
+        <button type="button" id="btn-google-consent-continue" class="google-btn-primary" onclick="executeGoogleLogin()">Continue</button>
       </div>
 
-      <button type="submit" id="btn-submit-google-login" class="btn btn-primary" style="width:100%;padding:11px;font-weight:700;">
-        Sign In with Google Account
-      </button>
-    </form>
+    </div>
+
   </div>
 </div>
 
@@ -297,6 +867,109 @@
     if (el) el.classList.remove('active');
   }
 
+  function showStatus(message, type = 'info') {
+    const box = document.getElementById('auth-status-box');
+    box.className = `status-msg-box ${type}`;
+    box.innerHTML = message;
+    box.style.display = 'block';
+  }
+
+  function clearStatus() {
+    const box = document.getElementById('auth-status-box');
+    box.style.display = 'none';
+    box.innerHTML = '';
+  }
+
+  // =========================================================================
+  // GOOGLE INTERACTIVE ACCOUNT CHOOSER & CONSENT CONTROLLER
+  // =========================================================================
+  let selectedGoogleAccount = {
+    name: 'Shailendra Thakur',
+    email: 'shailendrathakur3008@gmail.com',
+    color: '#1a73e8'
+  };
+
+  function selectGoogleAccount(name, email, color = '#1a73e8') {
+    selectedGoogleAccount = { name, email, color };
+    
+    // Update Consent Screen displays
+    document.getElementById('consent-name-display').innerText = name;
+    document.getElementById('consent-email-display').innerText = email;
+    const avatar = document.getElementById('consent-avatar-chip');
+    avatar.innerText = name.charAt(0).toUpperCase();
+    avatar.style.background = color;
+
+    // Transition from Chooser -> Consent Window
+    document.getElementById('google-step-choose').style.display = 'none';
+    document.getElementById('google-step-consent').style.display = 'block';
+  }
+
+  function backToAccountChooser() {
+    document.getElementById('google-step-consent').style.display = 'none';
+    document.getElementById('google-step-choose').style.display = 'block';
+  }
+
+  function toggleCustomGoogleInput() {
+    const box = document.getElementById('custom-google-box');
+    box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    if (box.style.display === 'block') {
+      document.getElementById('custom-google-email').focus();
+    }
+  }
+
+  function submitCustomGoogleAccount() {
+    const email = document.getElementById('custom-google-email').value.trim();
+    let name = document.getElementById('custom-google-name').value.trim();
+    if (!email || !email.includes('@')) {
+      alert('Please enter a valid Google Account email.');
+      return;
+    }
+    if (!name) {
+      name = email.split('@')[0].replace('.', ' ').replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+    selectGoogleAccount(name, email, '#6366f1');
+  }
+
+  async function executeGoogleLogin() {
+    const btn = document.getElementById('btn-google-consent-continue');
+    btn.disabled = true;
+    btn.innerText = 'Connecting to MoneyLeak...';
+
+    const account = selectedGoogleAccount;
+
+    try {
+      const res = await fetch('/auth/google', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF_TOKEN
+        },
+        body: JSON.stringify({
+          email: account.email,
+          name: account.name,
+          picture: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(account.name)}&backgroundColor=1a73e8&textColor=ffffff`,
+          sub: `google_${account.email.replace('@', '_').replace('.', '_')}`
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        btn.innerText = 'Redirecting...';
+        window.location.href = data.redirect || '/dashboard';
+      } else {
+        alert(data.error || 'Google authentication failed.');
+        btn.disabled = false;
+        btn.innerText = 'Continue';
+      }
+    } catch (err) {
+      alert('Network error connecting to Google Identity Services.');
+      btn.disabled = false;
+      btn.innerText = 'Continue';
+    }
+  }
+
+  // =========================================================================
+  // MAIN APP INIT
+  // =========================================================================
   document.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) window.lucide.createIcons();
 
@@ -304,83 +977,200 @@
     const themeToggle = document.getElementById('auth-theme-toggle');
     if (themeToggle) {
       themeToggle.addEventListener('click', () => {
-        const current = document.documentElement.getAttribute('data-theme') || 'light';
+        const current = document.documentElement.getAttribute('data-theme') || 'dark';
         const next = current === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', next);
         localStorage.setItem('moneyleak_theme', next);
       });
     }
 
-    // Google trigger
-    const googleBtn = document.getElementById('btn-google-login');
-    if (googleBtn) {
-      googleBtn.addEventListener('click', () => {
-        openModal('google-modal');
-      });
+    // Elements
+    const emailInput = document.getElementById('auth-email-input');
+    const nameGroup = document.getElementById('group-name');
+    const nameInput = document.getElementById('auth-name-input');
+    const otpGroup = document.getElementById('group-otp-code');
+    const otpInput = document.getElementById('auth-otp-input');
+    const passwordGroup = document.getElementById('group-password');
+    const passwordInput = document.getElementById('auth-password-input');
+    const btnAction = document.getElementById('btn-primary-action');
+    const detectionPill = document.getElementById('detection-pill');
+    const miniBadge = document.getElementById('detection-mini-badge');
+    const passwordToggleWrap = document.getElementById('password-toggle-wrap');
+    const btnTogglePassword = document.getElementById('btn-toggle-password');
+    const subActions = document.getElementById('otp-sub-actions');
+    const destinationTag = document.getElementById('otp-destination-tag');
+    const btnResetEmail = document.getElementById('btn-reset-email');
+
+    // State Variables
+    let userState = null;
+    let currentStep = 'EMAIL'; // 'EMAIL' | 'OTP' | 'PASSWORD'
+    let checkDebounceTimer = null;
+
+    // Real-Time Email Check Function
+    async function checkEmailExistence(email) {
+      if (!email || !email.includes('@') || email.indexOf('.') === -1) {
+        detectionPill.style.display = 'none';
+        miniBadge.innerText = '';
+        nameGroup.style.display = 'none';
+        passwordToggleWrap.style.display = 'none';
+        btnAction.innerText = 'Continue with Email';
+        userState = null;
+        return;
+      }
+
+      try {
+        const res = await fetch('/auth/check-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF_TOKEN
+          },
+          body: JSON.stringify({ email: email })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          if (data.is_existing) {
+            // EXISTING USER
+            userState = { exists: true, name: data.full_name, firstName: data.first_name, hasPassword: data.has_password };
+            detectionPill.className = 'detection-pill existing';
+            detectionPill.innerHTML = `<i data-lucide="user-check" style="width:15px;height:15px;"></i> <span><b>Returning User:</b> Welcome back, ${data.first_name}! Your existing workspace data will be restored.</span>`;
+            detectionPill.style.display = 'flex';
+            miniBadge.innerText = 'Existing Account';
+            miniBadge.style.color = '#4ade80';
+
+            nameGroup.style.display = 'none';
+            if (currentStep === 'EMAIL') {
+              btnAction.innerText = 'Send 6-Digit OTP Code';
+              if (data.has_password) {
+                passwordToggleWrap.style.display = 'block';
+                btnTogglePassword.innerText = 'Prefer password? Sign in with password';
+              } else {
+                passwordToggleWrap.style.display = 'none';
+              }
+            }
+          } else {
+            // NEW USER
+            userState = { exists: false };
+            detectionPill.className = 'detection-pill new-user';
+            detectionPill.innerHTML = `<i data-lucide="sparkles" style="width:15px;height:15px;"></i> <span><b>New Account:</b> Welcome to MoneyLeak! We'll initialize your personalized workspace.</span>`;
+            detectionPill.style.display = 'flex';
+            miniBadge.innerText = 'New User';
+            miniBadge.style.color = '#818cf8';
+
+            if (currentStep === 'EMAIL') {
+              nameGroup.style.display = 'block';
+              passwordToggleWrap.style.display = 'none';
+              btnAction.innerText = 'Send 6-Digit OTP Code';
+            }
+          }
+          if (window.lucide) window.lucide.createIcons();
+        }
+      } catch (e) {
+        // Soft fail
+      }
     }
 
-    // Google submit
-    const googleForm = document.getElementById('google-auth-form');
-    if (googleForm) {
-      googleForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('google-email-input').value.trim();
-        const name = document.getElementById('google-name-input').value.trim();
-        const btn = document.getElementById('btn-submit-google-login');
-        btn.disabled = true;
-        btn.innerText = 'Authenticating with Google...';
+    // Input listeners for debounced recognition
+    emailInput.addEventListener('input', (e) => {
+      clearTimeout(checkDebounceTimer);
+      checkDebounceTimer = setTimeout(() => {
+        checkEmailExistence(e.target.value.trim());
+      }, 350);
+    });
+
+    emailInput.addEventListener('blur', (e) => {
+      checkEmailExistence(e.target.value.trim());
+    });
+
+    // Password Mode Toggle
+    btnTogglePassword.addEventListener('click', () => {
+      if (currentStep === 'PASSWORD') {
+        currentStep = 'EMAIL';
+        passwordGroup.style.display = 'none';
+        btnAction.innerText = 'Send 6-Digit OTP Code';
+        btnTogglePassword.innerText = 'Prefer password? Sign in with password';
+      } else {
+        currentStep = 'PASSWORD';
+        passwordGroup.style.display = 'block';
+        otpGroup.style.display = 'none';
+        btnAction.innerText = 'Sign In with Password';
+        btnTogglePassword.innerText = 'Prefer OTP code? Verify via email instead';
+        passwordInput.focus();
+      }
+    });
+
+    // Reset to step 1
+    function resetForm() {
+      currentStep = 'EMAIL';
+      emailInput.disabled = false;
+      otpGroup.style.display = 'none';
+      passwordGroup.style.display = 'none';
+      subActions.style.display = 'none';
+      otpInput.value = '';
+      btnAction.disabled = false;
+      btnAction.innerText = 'Send 6-Digit OTP Code';
+      clearStatus();
+      checkEmailExistence(emailInput.value.trim());
+      emailInput.focus();
+    }
+    btnResetEmail.addEventListener('click', resetForm);
+
+    // Primary Action Button Handler
+    btnAction.addEventListener('click', async () => {
+      const email = emailInput.value.trim();
+      if (!email || !email.includes('@')) {
+        showStatus('Please enter a valid email address.', 'error');
+        emailInput.focus();
+        return;
+      }
+
+      // CASE 1: Password Login
+      if (currentStep === 'PASSWORD') {
+        const password = passwordInput.value;
+        if (!password) {
+          showStatus('Please enter your account password.', 'error');
+          passwordInput.focus();
+          return;
+        }
+
+        clearStatus();
+        btnAction.disabled = true;
+        btnAction.innerText = 'Signing In...';
 
         try {
-          const res = await fetch('/auth/google', {
+          const res = await fetch('/login', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'X-CSRFToken': CSRF_TOKEN
             },
-            body: JSON.stringify({
-              email: email,
-              name: name,
-              picture: `https://api.dicebear.com/7.x/initials/svg?seed=${name}&backgroundColor=161917&textColor=cbf432`,
-              sub: `google_${email.replace('@', '_').replace('.', '_')}`
-            })
+            body: JSON.stringify({ email: email, password: password })
           });
           const data = await res.json();
           if (data.success) {
-            window.location.href = data.redirect || '/dashboard';
+            showStatus('Authentication verified! Loading existing data...', 'success');
+            setTimeout(() => {
+              window.location.href = data.redirect || '/dashboard';
+            }, 300);
           } else {
-            alert(data.error || 'Google authentication failed.');
-            btn.disabled = false;
-            btn.innerText = 'Sign In with Google Account';
+            showStatus(data.error || 'Invalid email or password.', 'error');
+            btnAction.disabled = false;
+            btnAction.innerText = 'Sign In with Password';
           }
         } catch (err) {
-          alert('Network error during Google Sign-In.');
-          btn.disabled = false;
-          btn.innerText = 'Sign In with Google Account';
+          showStatus('Network connection error.', 'error');
+          btnAction.disabled = false;
+          btnAction.innerText = 'Sign In with Password';
         }
-      });
-    }
+        return;
+      }
 
-    // OTP trigger
-    const otpTrigger = document.getElementById('btn-otp-modal-trigger');
-    if (otpTrigger) {
-      otpTrigger.addEventListener('click', () => {
-        openModal('otp-modal');
-      });
-    }
-
-    // Send OTP
-    const sendOtpBtn = document.getElementById('btn-send-otp');
-    if (sendOtpBtn) {
-      sendOtpBtn.addEventListener('click', async () => {
-        const email = document.getElementById('otp-input-email').value.trim();
-        const statusDiv = document.getElementById('otp-status-msg');
-        if (!email || !email.includes('@')) {
-          statusDiv.innerHTML = '<span style="color:#ef4444;">Please enter a valid email address.</span>';
-          return;
-        }
-
-        sendOtpBtn.disabled = true;
-        sendOtpBtn.innerText = 'Sending Code...';
+      // CASE 2: Send OTP
+      if (currentStep === 'EMAIL') {
+        clearStatus();
+        btnAction.disabled = true;
+        btnAction.innerText = 'Sending 6-Digit Code...';
 
         try {
           const res = await fetch('/auth/send-otp', {
@@ -392,42 +1182,52 @@
             body: JSON.stringify({ email: email, purpose: 'login' })
           });
           const data = await res.json();
+
           if (data.success) {
-            document.getElementById('otp-step-email').style.display = 'none';
-            document.getElementById('otp-step-code').style.display = 'block';
-            document.getElementById('otp-target-email-display').innerText = email;
-            statusDiv.innerHTML = `<span style="color:#16a34a;">Code sent! ${data.dev_otp ? `(Code: <b>${data.dev_otp}</b>)` : ''}</span>`;
+            currentStep = 'OTP';
+            emailInput.disabled = true;
+            nameGroup.style.display = 'none';
+            passwordToggleWrap.style.display = 'none';
+            otpGroup.style.display = 'block';
+            subActions.style.display = 'block';
+            destinationTag.innerText = `Sent to ${email}`;
+            btnAction.disabled = false;
+            btnAction.innerText = data.is_existing ? 'Verify & Restore Workspace →' : 'Verify & Initialize Workspace →';
+
+            let msg = `Verification code sent to <b>${email}</b>.`;
             if (data.dev_otp) {
-              document.getElementById('otp-input-code').value = data.dev_otp;
+              msg += ` <span style="background:rgba(99,102,241,0.2);padding:2px 6px;border-radius:4px;margin-left:4px;">Dev Code: <b>${data.dev_otp}</b></span>`;
+              otpInput.value = data.dev_otp;
             }
+            showStatus(msg, 'success');
+            otpInput.focus();
           } else {
-            statusDiv.innerHTML = `<span style="color:#ef4444;">${data.error || 'Failed to send code.'}</span>`;
-            sendOtpBtn.disabled = false;
-            sendOtpBtn.innerText = 'Send 6-Digit Code';
+            showStatus(data.error || 'Could not send verification code.', 'error');
+            btnAction.disabled = false;
+            btnAction.innerText = 'Send 6-Digit OTP Code';
           }
         } catch (err) {
-          statusDiv.innerHTML = '<span style="color:#ef4444;">Network error. Please try again.</span>';
-          sendOtpBtn.disabled = false;
-          sendOtpBtn.innerText = 'Send 6-Digit Code';
+          showStatus('Network error while requesting code.', 'error');
+          btnAction.disabled = false;
+          btnAction.innerText = 'Send 6-Digit OTP Code';
         }
-      });
-    }
+        return;
+      }
 
-    // Verify OTP
-    const verifyOtpBtn = document.getElementById('btn-verify-otp');
-    if (verifyOtpBtn) {
-      verifyOtpBtn.addEventListener('click', async () => {
-        const email = document.getElementById('otp-input-email').value.trim();
-        const code = document.getElementById('otp-input-code').value.trim();
-        const statusDiv = document.getElementById('otp-status-msg');
-
+      // CASE 3: Verify OTP Code
+      if (currentStep === 'OTP') {
+        const code = otpInput.value.trim();
         if (!code || code.length < 6) {
-          statusDiv.innerHTML = '<span style="color:#ef4444;">Please enter the 6-digit code.</span>';
+          showStatus('Please enter the complete 6-digit verification code.', 'error');
+          otpInput.focus();
           return;
         }
 
-        verifyOtpBtn.disabled = true;
-        verifyOtpBtn.innerText = 'Verifying...';
+        clearStatus();
+        btnAction.disabled = true;
+        btnAction.innerText = 'Verifying Code...';
+
+        const customName = nameInput ? nameInput.value.trim() : '';
 
         try {
           const res = await fetch('/auth/verify-otp', {
@@ -436,32 +1236,61 @@
               'Content-Type': 'application/json',
               'X-CSRFToken': CSRF_TOKEN
             },
-            body: JSON.stringify({ email: email, otp_code: code, purpose: 'login' })
+            body: JSON.stringify({
+              email: email,
+              otp_code: code,
+              purpose: 'login',
+              full_name: customName
+            })
           });
           const data = await res.json();
+
           if (data.success) {
-            window.location.href = data.redirect || '/dashboard';
+            showStatus(data.message || 'Verified! Synchronizing workspace...', 'success');
+            setTimeout(() => {
+              window.location.href = data.redirect || '/dashboard';
+            }, 300);
           } else {
-            statusDiv.innerHTML = `<span style="color:#ef4444;">${data.error || 'Invalid code.'}</span>`;
-            verifyOtpBtn.disabled = false;
-            verifyOtpBtn.innerText = 'Verify & Sign In →';
+            showStatus(data.error || 'Invalid or expired verification code.', 'error');
+            btnAction.disabled = false;
+            btnAction.innerText = 'Verify & Enter Workspace →';
           }
         } catch (err) {
-          statusDiv.innerHTML = '<span style="color:#ef4444;">Network error. Please try again.</span>';
-          verifyOtpBtn.disabled = false;
-          verifyOtpBtn.innerText = 'Verify & Sign In →';
+          showStatus('Verification network error.', 'error');
+          btnAction.disabled = false;
+          btnAction.innerText = 'Verify & Enter Workspace →';
         }
+      }
+    });
+
+    // Auto-submit OTP when 6th digit is typed
+    otpInput.addEventListener('input', (e) => {
+      if (e.target.value.trim().length === 6 && currentStep === 'OTP') {
+        btnAction.click();
+      }
+    });
+
+    // Enter key triggers action
+    [emailInput, nameInput, passwordInput].forEach(el => {
+      if (el) {
+        el.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            btnAction.click();
+          }
+        });
+      }
+    });
+
+    // Google Sign-In Trigger (Opens Chooser)
+    const googleBtn = document.getElementById('btn-google-login');
+    if (googleBtn) {
+      googleBtn.addEventListener('click', () => {
+        backToAccountChooser();
+        openModal('google-modal');
       });
     }
   });
-
-  function resendOtp() {
-    document.getElementById('otp-step-code').style.display = 'none';
-    document.getElementById('otp-step-email').style.display = 'block';
-    const btn = document.getElementById('btn-send-otp');
-    btn.disabled = false;
-    btn.innerText = 'Send 6-Digit Code';
-  }
 </script>
 </body>
 </html>

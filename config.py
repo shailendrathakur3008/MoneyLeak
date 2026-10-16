@@ -17,6 +17,10 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'moneyleak-production-sec-key-7f9a12c8b4e05139')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = _raw_db_url
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+    } if _raw_db_url and _raw_db_url.startswith('postgresql') else {}
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
@@ -24,6 +28,11 @@ class Config:
     WTF_CSRF_ENABLED = True
     WTF_CSRF_TIME_LIMIT = 3600
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max for imports
+
+    # Supabase Configuration
+    SUPABASE_URL = os.environ.get('SUPABASE_URL')
+    SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY')
+    SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
 
 class DevelopmentConfig(Config):
     DEBUG = True
