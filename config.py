@@ -6,7 +6,10 @@ load_dotenv()
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-_raw_db_url = os.environ.get('DATABASE_URL', 'sqlite:///moneyleak.db')
+is_vercel = os.environ.get('VERCEL') == '1' or 'VERCEL' in os.environ
+default_sqlite = 'sqlite:////tmp/moneyleak.db' if is_vercel else 'sqlite:///moneyleak.db'
+
+_raw_db_url = os.environ.get('DATABASE_URL') or default_sqlite
 if _raw_db_url and _raw_db_url.startswith('postgres://'):
     _raw_db_url = _raw_db_url.replace('postgres://', 'postgresql://', 1)
 
