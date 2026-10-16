@@ -26,6 +26,9 @@ class Category(db.Model):
     transactions = db.relationship('Transaction', backref='category', lazy='dynamic')
     recurring_payments = db.relationship('RecurringPayment', backref='category', lazy='dynamic')
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -63,6 +66,9 @@ class CategoryPreference(db.Model):
 
     # Relationship
     default_category = db.relationship('Category', foreign_keys=[default_category_id])
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def to_dict(self):
         return {

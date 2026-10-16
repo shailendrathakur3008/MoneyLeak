@@ -69,6 +69,9 @@ class User(db.Model):
     alerts = db.relationship('FinancialAlert', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     simulations = db.relationship('Simulation', backref='user', lazy='dynamic', cascade='all, delete-orphan')
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def set_password(self, password: str):
         self.password_hash = generate_password_hash(password)
 

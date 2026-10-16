@@ -39,6 +39,9 @@ class Trip(db.Model):
     # Relationship to transactions
     transactions = db.relationship('Transaction', backref='trip', lazy=True)
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     @property
     def category_estimates(self) -> dict:
         try:
