@@ -1,0 +1,755 @@
+{% extends 'base.html' %}
+
+{% block title %}TripWise — Smart Trip Budget Planner — MoneyLeak{% endblock %}
+
+{% block content %}
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-greeting">
+    <div class="greeting-sup" style="display:flex;align-items:center;gap:6px;">
+      <span class="badge-pill badge-blue" style="display:inline-flex;align-items:center;gap:4px;">
+        <i data-lucide="plane" style="width:13px;height:13px;"></i> TripWise
+      </span>
+      <span style="font-size:12px;color:var(--text-secondary);">Smart Vacation & Getaway Intelligence</span>
+    </div>
+    <h1 style="font-size:20px;font-weight:800;letter-spacing:-0.4px;margin:2px 0;">
+      TripWise — Smart Trip Budget Planner
+    </h1>
+    <div class="greeting-sub">
+      Model spontaneous getaways and planned vacations, verify real affordability against live reserves, compare travel scenarios, and track expenses.
+    </div>
+  </div>
+
+  <div class="topbar-actions">
+    <button type="button" class="btn btn-primary" onclick="openModal('plan-trip-modal')" style="display:inline-flex;align-items:center;gap:6px;">
+      <i data-lucide="plane-takeoff" style="width:16px;height:16px;"></i>
+      <span>Plan a Trip</span>
+    </button>
+  </div>
+</div>
+
+<!-- TRIP SUMMARY KPI ROW -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;margin-bottom:20px;">
+  <!-- Total Trips -->
+  <div class="quick-stat-card card-pastel-blue" style="min-height:96px;padding:14px 16px;">
+    <div>
+      <div class="stat-card-top" style="color:var(--pastel-blue-accent);display:inline-flex;align-items:center;gap:6px;font-size:11px;">
+        <i data-lucide="map-pin" style="width:15px;height:15px;"></i>
+        <span>Trips Tracked</span>
+      </div>
+      <div class="stat-card-value" style="color:var(--pastel-blue-accent);font-size:20px;">{{ trips|length }}</div>
+      <div class="stat-card-sub" style="font-size:11px;">
+        {% if active_trip %}{{ active_trip.destination }} active{% else %}No active itineraries{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Planned Budget -->
+  <div class="quick-stat-card card-pastel-peach" style="min-height:96px;padding:14px 16px;">
+    <div>
+      <div class="stat-card-top" style="color:var(--pastel-peach-accent);display:inline-flex;align-items:center;gap:6px;font-size:11px;">
+        <i data-lucide="compass" style="width:15px;height:15px;"></i>
+        <span>Planned Trip Budget</span>
+      </div>
+      <div class="stat-card-value" style="color:var(--pastel-peach-accent);font-size:20px;">
+        {% if active_trip %}{{ active_trip.total_budget_minor_units|format_money(user.currency) }}{% else %}{{ 0|format_money(user.currency) }}{% endif %}
+      </div>
+      <div class="stat-card-sub" style="font-size:11px;">All-inclusive estimated cost</div>
+    </div>
+  </div>
+
+  <!-- Actual Outflow -->
+  <div class="quick-stat-card card-pastel-mint" style="min-height:96px;padding:14px 16px;">
+    <div>
+      <div class="stat-card-top" style="color:var(--pastel-mint-accent);display:inline-flex;align-items:center;gap:6px;font-size:11px;">
+        <i data-lucide="receipt" style="width:15px;height:15px;"></i>
+        <span>Recorded Trip Expenses</span>
+      </div>
+      <div class="stat-card-value" style="color:var(--pastel-mint-accent);font-size:20px;">
+        {% if active_trip %}{{ active_trip.actual_spending_minor_units|format_money(user.currency) }}{% else %}{{ 0|format_money(user.currency) }}{% endif %}
+      </div>
+      <div class="stat-card-sub" style="font-size:11px;">
+        {% if active_trip %}{{ active_trip.budget_progress_pct }}% of budget spent{% else %}No expenses logged{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Liquid Available Cash -->
+  <div class="quick-stat-card card-pastel-lavender" style="min-height:96px;padding:14px 16px;">
+    <div>
+      <div class="stat-card-top" style="color:var(--pastel-lavender-accent);display:inline-flex;align-items:center;gap:6px;font-size:11px;">
+        <i data-lucide="wallet" style="width:15px;height:15px;"></i>
+        <span>Liquid Discretionary Cash</span>
+      </div>
+      <div class="stat-card-value" style="color:var(--pastel-lavender-accent);font-size:20px;">
+        {{ current_available_cash|format_money(user.currency) }}
+      </div>
+      <div class="stat-card-sub" style="font-size:11px;">Balance + current monthly surplus</div>
+    </div>
+  </div>
+</div>
+
+{% if trips|length > 1 %}
+<!-- TRIP SELECTOR TABS -->
+<div style="display:flex;align-items:center;gap:8px;overflow-x:auto;padding-bottom:12px;margin-bottom:12px;">
+  <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.4px;">Your Trips:</span>
+  {% for t in trips %}
+    <a href="{{ url_for('trips.view_trips', trip_id=t.id) }}" 
+       class="btn {% if active_trip and active_trip.id == t.id %}btn-primary{% else %}btn-secondary{% endif %} btn-sm"
+       style="padding:5px 12px;font-size:12px;border-radius:var(--radius-pill);display:inline-flex;align-items:center;gap:5px;white-space:nowrap;">
+      <i data-lucide="map-pin" style="width:12px;height:12px;"></i>
+      <span>{{ t.destination }}</span>
+      <span style="opacity:0.75;font-size:10px;">({{ t.departure_date.strftime('%d %b') }})</span>
+    </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if active_trip %}
+<!-- MAIN TRIPWISE WORKSPACE GRID -->
+<div class="dashboard-grid">
+  <!-- LEFT COLUMN: BUDGET BREAKDOWN & SCENARIO COMPARISON -->
+  <div class="dashboard-col">
+    <!-- 1. ITINERARY OVERVIEW & CATEGORY BUDGET CARD -->
+    <div class="card">
+      <div class="card-header-flex" style="flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <h2 class="card-title" style="margin:0;font-size:16px;">{{ active_trip.name }}</h2>
+            <span class="badge-pill {% if active_trip.trip_nature == 'SPONTANEOUS' %}badge-peach{% else %}badge-blue{% endif %}" style="font-size:10px;">
+              {{ active_trip.trip_nature }}
+            </span>
+            <span class="badge-pill {% if active_trip.travel_style == 'BUDGET' %}badge-lime{% elif active_trip.travel_style == 'PREMIUM' %}badge-lavender{% else %}badge-dark{% endif %}" style="font-size:10px;">
+              {{ active_trip.travel_style }}
+            </span>
+          </div>
+          <div class="card-subtitle" style="margin-top:2px;">
+            {{ active_trip.starting_city }} → <strong>{{ active_trip.destination }}</strong> • 
+            {{ active_trip.duration_days }} Days ({{ active_trip.departure_date.strftime('%d %b %Y') }} to {{ active_trip.return_date.strftime('%d %b %Y') }}) • 
+            {{ active_trip.travellers_count }} Traveller{% if active_trip.travellers_count > 1 %}s{% endif %} • 
+            Via {{ active_trip.transport_mode|capitalize }}
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:6px;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="openEditTripModal()" style="font-size:11px;padding:4px 9px;">
+            <i data-lucide="edit-3" style="width:12px;height:12px;margin-right:3px;"></i>Edit Details
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="deleteActiveTrip({{ active_trip.id }})" style="color:var(--color-danger);font-size:11px;padding:4px 9px;" title="Delete Trip">
+            <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Category Budget Breakdown Table -->
+      <div style="margin-top:14px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);overflow:hidden;">
+        <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr 60px;padding:8px 12px;background:var(--bg-subtle);font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.4px;">
+          <div>Expense Category & Basis</div>
+          <div>Pricing Detail</div>
+          <div style="text-align:right;">Estimated Amount</div>
+          <div style="text-align:center;">Edit</div>
+        </div>
+
+        {% set estimates = active_trip.category_estimates %}
+        {% set cat_icons = {
+          'travel': 'navigation',
+          'accommodation': 'home',
+          'food': 'utensils',
+          'local_transport': 'car',
+          'activities': 'compass',
+          'tickets': 'ticket',
+          'tolls_parking': 'receipt',
+          'other': 'package',
+          'contingency': 'shield-alert'
+        } %}
+        {% set cat_names = {
+          'travel': 'Outbound & Return Transit',
+          'accommodation': 'Lodging & Accommodation',
+          'food': 'Food, Dining & Drinks',
+          'local_transport': 'Local Transit & Cabs',
+          'activities': 'Sightseeing & Activities',
+          'tickets': 'Entry Fees & Monument Passes',
+          'tolls_parking': 'Highway Tolls & Parking',
+          'other': 'Supplies & Travel Essentials',
+          'contingency': 'Emergency Contingency (10%)'
+        } %}
+
+        {% for k, name in cat_names.items() %}
+          {% set item = estimates.get(k, {}) %}
+          {% set item_minor = item.get('estimated_cost_minor', 0) %}
+          <div class="trip-cat-row" style="display:grid;grid-template-columns:1.5fr 1fr 1fr 60px;padding:10px 12px;border-top:1px solid var(--border-subtle);align-items:center;font-size:12px;background:{% if k=='contingency' %}var(--bg-subtle){% else %}var(--bg-surface){% endif %};">
+            <div>
+              <div style="font-weight:700;color:var(--text-primary);display:inline-flex;align-items:center;gap:6px;">
+                <i data-lucide="{{ cat_icons.get(k, 'tag') }}" style="width:13px;height:13px;color:var(--text-secondary);"></i>
+                <span>{{ name }}</span>
+              </div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+                {{ item.get('calculation_basis', 'Standard benchmark') }}
+              </div>
+            </div>
+
+            <div>
+              <span class="badge-pill badge-dark" style="font-size:9px;padding:1px 5px;">
+                {{ item.get('estimate_type', 'historical_estimate')|replace('_', ' ')|title }}
+              </span>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">
+                {{ item.get('data_source', 'MoneyLeak Benchmark') }}
+              </div>
+            </div>
+
+            <div style="text-align:right;">
+              <span id="cat-cost-{{ k }}" style="font-weight:800;font-size:13px;color:{% if k=='contingency' %}var(--pastel-lavender-accent){% else %}var(--text-primary){% endif %};font-variant-numeric:tabular-nums;">
+                {{ item_minor|format_money(user.currency) }}
+              </span>
+            </div>
+
+            <div style="text-align:center;">
+              <button type="button" class="btn btn-secondary btn-sm" 
+                      onclick="openEditCategoryModal('{{ k }}', '{{ name }}', {{ item_minor }})" 
+                      style="padding:3px 7px;font-size:10px;" title="Edit Amount">
+                <i data-lucide="edit-2" style="width:11px;height:11px;"></i>
+              </button>
+            </div>
+          </div>
+        {% endfor %}
+
+        <!-- Total Row -->
+        <div style="display:grid;grid-template-columns:2.5fr 1fr 60px;padding:12px 14px;background:var(--bg-subtle);border-top:2px solid var(--border-input);align-items:center;">
+          <div>
+            <strong style="font-size:13px;color:var(--text-primary);">Total Trip Budget</strong>
+            <div style="font-size:11px;color:var(--text-muted);">Sum of outbound & return transit, stays, food, entry fees & contingency</div>
+          </div>
+          <div style="text-align:right;">
+            <strong id="trip-total-display" style="font-size:16px;color:var(--brand-primary);font-variant-numeric:tabular-nums;">
+              {{ active_trip.total_budget_minor_units|format_money(user.currency) }}
+            </strong>
+          </div>
+          <div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. TRAVEL SCENARIOS COMPARISON (Budget vs Standard vs Premium) -->
+    <div class="card">
+      <div class="card-header-flex">
+        <div>
+          <div class="card-title">Travel Style & Scenario Comparison</div>
+          <div class="card-subtitle">Side-by-side practical alternatives for {{ active_trip.destination }}</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:10px;margin-top:12px;">
+        <!-- Budget Option -->
+        <div style="padding:12px 14px;background:var(--bg-subtle);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);display:flex;flex-direction:column;justify-content:space-between;">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="badge-pill badge-lime" style="font-size:9px;">Budget</span>
+              <span style="font-size:10px;color:var(--color-success);font-weight:700;">Lowest-Cost</span>
+            </div>
+            <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-top:6px;">Economical & Authentic</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+              Sleeper/3AC trains or state express buses, social hostel dorms, authentic street cuisine, and walking tours.
+            </div>
+          </div>
+          <div style="margin-top:12px;padding-top:8px;border-top:1px solid var(--border-subtle);">
+            <div style="font-size:10px;color:var(--text-muted);">Estimated Total:</div>
+            <div style="font-size:15px;font-weight:800;color:var(--pastel-mint-accent);font-variant-numeric:tabular-nums;">
+              {{ (active_trip.total_budget_minor_units * 0.55)|round|int|format_money(user.currency) }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Standard Option -->
+        <div style="padding:12px 14px;background:var(--bg-surface);border-radius:var(--radius-sm);border:2px solid var(--border-input);display:flex;flex-direction:column;justify-content:space-between;">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="badge-pill badge-blue" style="font-size:9px;">Standard</span>
+              <span style="font-size:10px;color:var(--text-secondary);font-weight:700;">Balanced Comfort</span>
+            </div>
+            <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-top:6px;">Comfort & Popular Highlights</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+              3AC/2AC train or advance flights, private 3★ hotels / Airbnbs, casual dining, and guided monument visits.
+            </div>
+          </div>
+          <div style="margin-top:12px;padding-top:8px;border-top:1px solid var(--border-subtle);">
+            <div style="font-size:10px;color:var(--text-muted);">Estimated Total:</div>
+            <div style="font-size:15px;font-weight:800;color:var(--brand-primary);font-variant-numeric:tabular-nums;">
+              {{ active_trip.total_budget_minor_units|format_money(user.currency) }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Premium Option -->
+        <div style="padding:12px 14px;background:var(--bg-subtle);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);display:flex;flex-direction:column;justify-content:space-between;">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="badge-pill badge-peach" style="font-size:9px;">Premium</span>
+              <span style="font-size:10px;color:var(--pastel-peach-accent);font-weight:700;">Luxury & Ease</span>
+            </div>
+            <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-top:6px;">Resort Stays & Chauffeur</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+              Economy/Premium flights or private SUV, 4-5★ luxury resorts with breakfast, fine dining, and private experiences.
+            </div>
+          </div>
+          <div style="margin-top:12px;padding-top:8px;border-top:1px solid var(--border-subtle);">
+            <div style="font-size:10px;color:var(--text-muted);">Estimated Total:</div>
+            <div style="font-size:15px;font-weight:800;color:var(--pastel-lavender-accent);font-variant-numeric:tabular-nums;">
+              {{ (active_trip.total_budget_minor_units * 2.15)|round|int|format_money(user.currency) }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN: AFFORDABILITY CHECKER, SUGGESTIONS & EXPENSE TRACKER -->
+  <div class="dashboard-col">
+    <!-- 3. TRIP AFFORDABILITY REALITY CHECK -->
+    {% if affordability %}
+    <div class="card">
+      <div class="card-header-flex">
+        <div>
+          <div class="card-title">Trip Affordability Checker</div>
+          <div class="card-subtitle">Validated against live balances, essential needs & reserve cushion</div>
+        </div>
+        <span class="badge-pill {% if affordability.status == 'COMFORTABLY_AFFORDABLE' %}badge-mint{% elif affordability.status == 'TIGHT_AFFORDABILITY' %}badge-peach{% else %}badge-red{% endif %}" style="font-size:11px;padding:3px 8px;">
+          {{ affordability.status_text }}
+        </span>
+      </div>
+
+      <div style="padding:12px 14px;background:var(--bg-subtle);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);margin-top:12px;">
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.4;">
+          {{ affordability.status_desc }}
+        </div>
+
+        <!-- Financial Math Flow -->
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;font-size:12px;">
+          <div style="display:flex;justify-content:space-between;">
+            <span style="color:var(--text-muted);">Current Available Cash</span>
+            <span style="font-weight:700;color:var(--text-primary);font-variant-numeric:tabular-nums;">{{ affordability.current_available_balance_formatted }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;color:var(--color-danger);">
+            <span>− Upcoming Essential Needs</span>
+            <span style="font-weight:700;font-variant-numeric:tabular-nums;">{{ affordability.upcoming_essential_expenses_formatted }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;color:var(--color-danger);">
+            <span>− Required Emergency Cushion</span>
+            <span style="font-weight:700;font-variant-numeric:tabular-nums;">{{ affordability.required_reserve_formatted }}</span>
+          </div>
+          {% if affordability.other_commitments_minor > 0 %}
+          <div style="display:flex;justify-content:space-between;color:var(--color-danger);">
+            <span>− Confirmed Goal Commitments</span>
+            <span style="font-weight:700;font-variant-numeric:tabular-nums;">{{ affordability.other_commitments_formatted }}</span>
+          </div>
+          {% endif %}
+          <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px dashed var(--border-subtle);font-weight:700;">
+            <span style="color:var(--text-primary);">= Available Liquid Trip Funds</span>
+            <span style="color:var(--pastel-blue-accent);font-variant-numeric:tabular-nums;">{{ affordability.available_trip_funds_formatted }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding-top:4px;">
+            <span style="color:var(--text-muted);">Estimated Trip Cost</span>
+            <span style="font-weight:700;color:var(--text-primary);font-variant-numeric:tabular-nums;">{{ affordability.estimated_trip_cost_formatted }}</span>
+          </div>
+
+          <!-- Bottom line Gap / Surplus -->
+          <div style="display:flex;justify-content:space-between;padding:8px 10px;border-radius:var(--radius-xs);margin-top:6px;background:{% if affordability.gap_minor > 0 %}rgba(239, 68, 68, 0.08){% else %}rgba(16, 185, 129, 0.08){% endif %};">
+            <span style="font-weight:800;color:{% if affordability.gap_minor > 0 %}var(--color-danger){% else %}var(--color-success){% endif %};">
+              {% if affordability.gap_minor > 0 %}Trip Budget Shortfall{% else %}Trip Cash Surplus{% endif %}
+            </span>
+            <span style="font-weight:800;font-variant-numeric:tabular-nums;color:{% if affordability.gap_minor > 0 %}var(--color-danger){% else %}var(--color-success){% endif %};">
+              {% if affordability.gap_minor > 0 %}{{ affordability.gap_formatted }}{% else %}+{{ affordability.surplus_formatted }}{% endif %}
+            </span>
+          </div>
+        </div>
+
+        {% if active_trip.trip_nature == 'SPONTANEOUS' %}
+          <div style="margin-top:10px;padding:8px 10px;background:var(--bg-surface);border-left:3px solid var(--pastel-peach-accent);border-radius:var(--radius-xs);font-size:11px;color:var(--text-secondary);">
+            <strong>Spontaneous Trip Notice:</strong> Because this trip is immediate, only cash currently in your account can fund it. Future monthly income cannot be treated as available now.
+          </div>
+        {% elif affordability.gap_minor > 0 and affordability.months_to_departure > 0 %}
+          <div style="margin-top:10px;padding:8px 10px;background:var(--bg-surface);border-left:3px solid var(--pastel-blue-accent);border-radius:var(--radius-xs);font-size:11px;color:var(--text-secondary);">
+            <strong>Departure Pace:</strong> Departing in ~{{ affordability.months_to_departure }} month{% if affordability.months_to_departure > 1 %}s{% endif %}. 
+            You need to save <strong>{{ affordability.monthly_savings_needed_formatted }}/mo</strong> to bridge this gap.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- 4. BUDGET ADJUSTMENT SUGGESTIONS -->
+    {% if suggestions %}
+    <div class="card">
+      <div class="card-header-flex">
+        <div>
+          <div class="card-title">Budget Adjustment Suggestions</div>
+          <div class="card-subtitle">Practical alternatives to lower costs without cutting essentials</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+        {% for s in suggestions %}
+          <div style="padding:10px 12px;background:var(--bg-subtle);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+            <div style="display:flex;gap:8px;">
+              <div style="width:24px;height:24px;border-radius:50%;background:rgba(203, 244, 50, 0.2);color:var(--brand-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+                <i data-lucide="{{ s.icon }}" style="width:13px;height:13px;"></i>
+              </div>
+              <div>
+                <div style="font-weight:700;font-size:12px;color:var(--text-primary);">{{ s.title }}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">{{ s.description }}</div>
+              </div>
+            </div>
+
+            <div style="text-align:right;flex-shrink:0;">
+              <span class="badge-pill badge-lime" style="font-size:10px;font-weight:800;">
+                Saves ~{{ s.estimated_savings_formatted }}
+              </span>
+              {% if s.link_url %}
+                <div style="margin-top:4px;">
+                  <a href="{{ s.link_url }}" class="btn btn-secondary btn-sm" style="padding:2px 8px;font-size:10px;">
+                    Explore in Simulator →
+                  </a>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+
+        {% if affordability and affordability.gap_minor > 0 %}
+          <div style="margin-top:6px;text-align:center;">
+            <a href="{{ url_for('simulations.view_simulator', target_trip_gap=affordability.gap_minor|to_major(user.currency), trip_name=active_trip.destination) }}" 
+               class="btn btn-primary btn-sm" style="width:100%;display:inline-flex;align-items:center;justify-content:center;gap:6px;">
+              <i data-lucide="piggy-bank" style="width:14px;height:14px;"></i>
+              <span>Explore Ways to Save for This Trip</span>
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- 5. TRIP EXPENSE TRACKER & LINKED TRANSACTIONS -->
+    <div class="card">
+      <div class="card-header-flex" style="flex-wrap:wrap;gap:8px;">
+        <div>
+          <div class="card-title">Trip Expense Tracking</div>
+          <div class="card-subtitle">Real expenses logged against planned budget</div>
+        </div>
+
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="openModal('link-transaction-modal')" style="padding:4px 8px;font-size:11px;">
+            <i data-lucide="link" style="width:12px;height:12px;margin-right:3px;"></i>Link Txn
+          </button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="openModal('log-trip-expense-modal')" style="padding:4px 8px;font-size:11px;">
+            <i data-lucide="plus" style="width:12px;height:12px;margin-right:3px;"></i>Log Expense
+          </button>
+        </div>
+      </div>
+
+      <!-- Spending Progress Bar -->
+      <div style="margin-top:12px;padding:12px;background:var(--bg-subtle);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:6px;">
+          <div>
+            <span style="color:var(--text-muted);">Spent: </span>
+            <strong style="color:var(--text-primary);font-variant-numeric:tabular-nums;">
+              {{ active_trip.actual_spending_minor_units|format_money(user.currency) }}
+            </strong>
+          </div>
+          <div>
+            <span style="color:var(--text-muted);">Remaining: </span>
+            <strong style="color:var(--pastel-mint-accent);font-variant-numeric:tabular-nums;">
+              {{ active_trip.remaining_budget_minor_units|format_money(user.currency) }}
+            </strong>
+          </div>
+        </div>
+
+        <div style="height:8px;background:var(--border-subtle);border-radius:var(--radius-pill);overflow:hidden;">
+          <div style="height:100%;width:{{ active_trip.budget_progress_pct }}%;background:{% if active_trip.budget_progress_pct > 100 %}var(--color-danger){% elif active_trip.budget_progress_pct > 80 %}var(--color-warning){% else %}var(--brand-lime){% endif %};transition:width 0.3s ease;"></div>
+        </div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:4px;text-align:right;">
+          {{ active_trip.budget_progress_pct }}% of {{ active_trip.total_budget_minor_units|format_money(user.currency) }} budget
+        </div>
+      </div>
+
+      <!-- Linked Transactions List -->
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.4px;">
+          Linked Ledger Expenses ({{ active_trip.transactions|length }})
+        </div>
+
+        {% for t in active_trip.transactions %}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg-surface);border-radius:var(--radius-xs);border:1px solid var(--border-subtle);font-size:12px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:24px;height:24px;border-radius:50%;background:var(--bg-subtle);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);">
+                <i data-lucide="receipt" style="width:12px;height:12px;"></i>
+              </div>
+              <div>
+                <div style="font-weight:700;color:var(--text-primary);">{{ t.description }}</div>
+                <div style="font-size:10px;color:var(--text-muted);">
+                  {{ t.transaction_date.strftime('%d %b %Y') }} • {{ t.category.name if t.category else 'Uncategorized' }}
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-weight:800;color:var(--text-primary);font-variant-numeric:tabular-nums;">
+                {{ t.amount_minor_units|format_money(user.currency) }}
+              </span>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="unlinkTripTransaction({{ active_trip.id }}, {{ t.id }})" style="padding:2px 6px;color:var(--color-danger);font-size:10px;" title="Unlink transaction">
+                <i data-lucide="unlink" style="width:11px;height:11px;"></i>
+              </button>
+            </div>
+          </div>
+        {% else %}
+          <div style="text-align:center;padding:16px;color:var(--text-muted);font-size:11px;background:var(--bg-subtle);border-radius:var(--radius-sm);">
+            <i data-lucide="receipt" style="width:20px;height:20px;opacity:0.5;margin-bottom:4px;"></i><br>
+            No expenses linked yet. Link existing transactions or log travel receipts above.
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
+<!-- EMPTY STATE WHEN NO TRIPS EXIST -->
+<div class="card" style="text-align:center;padding:48px 24px;margin-top:20px;">
+  <div style="width:64px;height:64px;border-radius:50%;background:rgba(203, 244, 50, 0.2);color:var(--brand-primary);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;">
+    <i data-lucide="plane-takeoff" style="width:32px;height:32px;"></i>
+  </div>
+  <h2 style="font-size:18px;font-weight:800;color:var(--text-primary);margin:0 0 6px 0;">No Trips Planned Yet</h2>
+  <p style="font-size:13px;color:var(--text-muted);max-width:480px;margin:0 auto 18px auto;">
+    Whether it's a spontaneous weekend road trip or an upcoming holiday, TripWise estimates your full transit, accommodation, and dining costs while checking your real affordability against emergency cushions.
+  </p>
+  <button type="button" class="btn btn-primary" onclick="openModal('plan-trip-modal')" style="display:inline-flex;align-items:center;gap:6px;">
+    <i data-lucide="plus" style="width:16px;height:16px;"></i>
+    <span>Plan Your First Trip</span>
+  </button>
+</div>
+{% endif %}
+
+<!-- ========================================================================
+     MODALS FOR TRIP PLANNING, EDITING, AND TRANSACTION LINKING
+     ======================================================================== -->
+
+<!-- 1. PLAN A TRIP MODAL -->
+<div id="plan-trip-modal" class="modal-backdrop">
+  <div class="modal-card" style="max-width:540px;">
+    <div class="modal-header">
+      <div>
+        <h3 style="font-weight:800;font-size:17px;color:var(--text-primary);margin:0 0 2px 0;">TripWise — Plan a Trip</h3>
+        <p style="font-size:12px;color:var(--text-muted);margin:0;">Estimate full travel budget & check live affordability</p>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeModal('plan-trip-modal')" aria-label="Close">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      </button>
+    </div>
+
+    <form id="plan-trip-form" style="margin-top:14px;display:flex;flex-direction:column;gap:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Starting City</label>
+          <input type="text" id="trip-origin" class="form-control" placeholder="e.g. Delhi, Mumbai, Bangalore" value="Delhi" required>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Destination City *</label>
+          <input type="text" id="trip-destination" class="form-control" placeholder="e.g. Jaipur, Goa, Manali, Ooty" required>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Departure Date *</label>
+          <input type="date" id="trip-dep-date" class="form-control" value="{{ today_iso }}" required>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Return Date (or Duration)</label>
+          <input type="date" id="trip-ret-date" class="form-control">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Travellers Count</label>
+          <input type="number" id="trip-travellers" class="form-control" min="1" max="20" value="1" required>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Trip Nature</label>
+          <select id="trip-nature" class="form-control">
+            <option value="SPONTANEOUS">Spontaneous (Sudden Getaway)</option>
+            <option value="PLANNED" selected>Planned (Future Trip)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Preferred Transport</label>
+          <select id="trip-transport" class="form-control">
+            <option value="TRAIN" selected>Train (Sleeper/3AC/2AC)</option>
+            <option value="BUS">Bus (AC Volvo / Sleeper)</option>
+            <option value="FLIGHT">Flight (Economy Domestic)</option>
+            <option value="CAR">Car (Self-Drive / Rental)</option>
+            <option value="TWO_WHEELER">Two-Wheeler (Motorbike)</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Travel Style</label>
+          <select id="trip-style" class="form-control">
+            <option value="BUDGET">Budget (Economical & Hostels)</option>
+            <option value="STANDARD" selected>Standard (Balanced 3★ Stays)</option>
+            <option value="PREMIUM">Premium (Luxury 4-5★ Resorts)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Accommodation Preference</label>
+        <select id="trip-accommodation" class="form-control">
+          <option value="STANDARD_HOTEL" selected>Standard Hotel / Airbnb</option>
+          <option value="HOSTEL_DORM">Hostel Dorm / Co-Living</option>
+          <option value="BUDGET_HOTEL">Budget Hotel / Guesthouse</option>
+          <option value="RESORT_LUXURY">Luxury Resort / 4-5★</option>
+          <option value="STAY_WITH_FRIENDS">Staying with Friends/Family (₹0)</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Total Target Budget (Optional Cap in {{ user.currency }})</label>
+        <input type="number" id="trip-custom-budget" class="form-control" placeholder="Leave blank for automatic estimation">
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border-subtle);">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('plan-trip-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm" id="btn-save-trip">
+          <i data-lucide="check" style="width:14px;height:14px;"></i> Generate & Save Trip
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 2. EDIT CATEGORY ESTIMATE MODAL -->
+<div id="edit-category-modal" class="modal-backdrop">
+  <div class="modal-card" style="max-width:400px;">
+    <div class="modal-header">
+      <div>
+        <h3 id="edit-cat-title" style="font-weight:800;font-size:16px;color:var(--text-primary);margin:0 0 2px 0;">Edit Category Cost</h3>
+        <p style="font-size:12px;color:var(--text-muted);margin:0;">Override with user-entered estimate</p>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeModal('edit-category-modal')" aria-label="Close">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      </button>
+    </div>
+
+    <form id="edit-category-form" style="margin-top:14px;">
+      <input type="hidden" id="edit-cat-key">
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Estimated Amount ({{ user.currency }})</label>
+        <input type="number" id="edit-cat-amount" class="form-control" min="0" step="0.01" required>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid var(--border-subtle);">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('edit-category-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i data-lucide="check" style="width:14px;height:14px;"></i> Update Category
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 3. LINK EXISTING TRANSACTION MODAL -->
+<div id="link-transaction-modal" class="modal-backdrop">
+  <div class="modal-card" style="max-width:480px;">
+    <div class="modal-header">
+      <div>
+        <h3 style="font-weight:800;font-size:16px;color:var(--text-primary);margin:0 0 2px 0;">Link Existing Ledger Transaction</h3>
+        <p style="font-size:12px;color:var(--text-muted);margin:0;">Tag an unlinked transaction to this trip without creating duplicates</p>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeModal('link-transaction-modal')" aria-label="Close">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      </button>
+    </div>
+
+    <form id="link-transaction-form" style="margin-top:14px;">
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Select Unlinked Transaction</label>
+        <select id="link-txn-select" class="form-control" required>
+          <option value="">-- Choose a transaction --</option>
+          {% for t in unlinked_transactions %}
+            <option value="{{ t.id }}">
+              {{ t.transaction_date.strftime('%d %b') }} • {{ t.description }} ({{ t.amount_minor_units|format_money(user.currency) }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid var(--border-subtle);">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('link-transaction-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i data-lucide="link" style="width:14px;height:14px;"></i> Link to Trip
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 4. LOG NEW TRIP EXPENSE MODAL -->
+<div id="log-trip-expense-modal" class="modal-backdrop">
+  <div class="modal-card" style="max-width:440px;">
+    <div class="modal-header">
+      <div>
+        <h3 style="font-weight:800;font-size:16px;color:var(--text-primary);margin:0 0 2px 0;">Log Trip Expense</h3>
+        <p style="font-size:12px;color:var(--text-muted);margin:0;">Records an expense directly to this trip and your general ledger</p>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeModal('log-trip-expense-modal')" aria-label="Close">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      </button>
+    </div>
+
+    <form id="log-trip-expense-form" style="margin-top:14px;display:flex;flex-direction:column;gap:10px;">
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Amount ({{ user.currency }}) *</label>
+        <input type="number" id="new-txn-amount" class="form-control" min="0.01" step="0.01" placeholder="e.g. 1500" required>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Description *</label>
+        <input type="text" id="new-txn-desc" class="form-control" placeholder="e.g. Hotel check-in or Train ticket" required>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Category</label>
+        <select id="new-txn-cat" class="form-control">
+          {% for c in expense_categories %}
+            <option value="{{ c.id }}">{{ c.name }} ({{ c.budget_group }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Transaction Date</label>
+        <input type="date" id="new-txn-date" class="form-control" value="{{ today_iso }}" required>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border-subtle);">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('log-trip-expense-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i data-lucide="check" style="width:14px;height:14px;"></i> Record Expense
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.TripWiseConfig = {
+    activeTripId: {% if active_trip %}{{ active_trip.id }}{% else %}null{% endif %},
+    activeTrip: {% if active_trip %}{{ active_trip.to_dict()|tojson }}{% else %}null{% endif %},
+    currency: {{ user.currency|tojson }},
+    currencySymbol: {{ (user.currency|currency_symbol)|tojson }}
+  };
+</script>
+<script src="{{ url_for('static', filename='js/trips.js') }}"></script>
+{% endblock %}

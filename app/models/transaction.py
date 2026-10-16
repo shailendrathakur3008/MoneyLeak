@@ -15,6 +15,7 @@ class Transaction(db.Model):
     merchant = db.Column(db.String(120), default='')
     notes = db.Column(db.Text, default='')
     recurring_rule_id = db.Column(db.Integer, db.ForeignKey('recurring_payments.id', ondelete='SET NULL'), nullable=True)
+    trip_id = db.Column(db.Integer, db.ForeignKey('trips.id', ondelete='SET NULL'), nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -32,5 +33,6 @@ class Transaction(db.Model):
             'merchant': self.merchant,
             'notes': self.notes,
             'recurring_rule_id': self.recurring_rule_id,
+            'trip_id': self.trip_id,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }

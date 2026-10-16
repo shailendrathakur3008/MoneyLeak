@@ -17,6 +17,34 @@
   </div>
 </div>
 
+<!-- TRIPWISE FUNDING TARGET BANNER (When linked from TripWise) -->
+{% set target_trip_gap = request.args.get('target_trip_gap') %}
+{% set trip_name = request.args.get('trip_name') %}
+{% if target_trip_gap %}
+<div class="card card-pastel-blue" style="margin-bottom:16px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div style="width:36px;height:36px;border-radius:50%;background:var(--pastel-blue-accent);color:#ffffff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <i data-lucide="plane" style="width:18px;height:18px;"></i>
+    </div>
+    <div>
+      <div style="font-size:13px;font-weight:800;color:var(--text-primary);">
+        TripWise Funding Target: {% if trip_name %}{{ trip_name }}{% else %}Trip Vacation{% endif %}
+      </div>
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">
+        Target Shortfall to Fund: <strong style="color:var(--pastel-blue-accent);font-variant-numeric:tabular-nums;">{{ user.currency|currency_symbol }} {{ target_trip_gap }}</strong>. 
+        Adjust category trims below to model how monthly savings can close this gap.
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <a href="{{ url_for('trips.view_trips') }}" class="btn btn-secondary btn-sm" style="font-size:11px;display:inline-flex;align-items:center;gap:4px;">
+      <i data-lucide="arrow-left" style="width:12px;height:12px;"></i>
+      <span>Back to TripWise</span>
+    </a>
+  </div>
+</div>
+{% endif %}
+
 <!-- SIMULATOR KPI SUMMARY ROW -->
 <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;margin-bottom:20px;">
   <!-- Total Reduction -->
@@ -55,59 +83,143 @@
     </div>
   </div>
 
-  <!-- Annualized Extra Wealth -->
+  <!-- Projected Annual Savings -->
   <div class="quick-stat-card card-pastel-lavender" style="min-height:96px;padding:14px 16px;">
     <div>
       <div class="stat-card-top" style="color:var(--pastel-lavender-accent);display:inline-flex;align-items:center;gap:6px;font-size:11px;">
         <i data-lucide="trending-up" style="width:15px;height:15px;"></i>
-        <span>Annual Extra Wealth</span>
+        <span>Projected Annual Savings</span>
       </div>
       <div id="sim-annualized-savings" class="stat-card-value" style="color:var(--pastel-lavender-accent);font-size:20px;">0.00</div>
-      <div class="stat-card-sub" style="font-size:11px;">12-month extra cashflow</div>
+      <div class="stat-card-sub" style="font-size:11px;">12-month projection • Not guaranteed</div>
     </div>
   </div>
 </div>
 
 <div class="dashboard-grid">
-  <!-- LEFT: CATEGORY SLIDERS -->
+  <!-- LEFT: CATEGORY CONTROLS -->
   <div class="dashboard-col">
     <div class="card">
-      <div class="card-header-flex">
+      <div class="card-header-flex" style="flex-wrap:wrap;gap:8px;">
         <div>
           <div class="card-title">Adjust Category Reductions</div>
-          <div class="card-subtitle">Select discretionary categories to simulate reduction targets</div>
+          <div class="card-subtitle">Enter exact amounts or adjust sliders to model expense cuts</div>
         </div>
-        <span class="badge-pill badge-lime" style="font-size:11px;">Simulated Rate: <span id="sim-revised-rate" style="font-weight:800;">{{ baseline.savings_rate }}%</span></span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button type="button" 
+                  id="btn-reset-reductions" 
+                  class="btn btn-secondary btn-sm" 
+                  style="padding:5px 11px;font-size:11px;display:inline-flex;align-items:center;gap:5px;" 
+                  title="Reset all category reductions to zero"
+                  aria-label="Reset Reductions">
+            <i data-lucide="rotate-ccw" style="width:13px;height:13px;"></i>
+            <span>Reset Reductions</span>
+          </button>
+          <span class="badge-pill badge-lime" style="font-size:11px;">Simulated Rate: <span id="sim-revised-rate" style="font-weight:800;">{{ baseline.savings_rate }}%</span></span>
+        </div>
+      </div>
+
+      <!-- Categories Summary Strip -->
+      <div class="sim-meta-bar">
+        <div>
+          <span>Categories Adjusted: </span>
+          <strong id="sim-categories-count" style="color:var(--text-primary);font-variant-numeric:tabular-nums;">0</strong> / {{ baseline.category_breakdown|length }}
+        </div>
+        <div>
+          <span>Total Monthly Savings: </span>
+          <strong id="sim-category-total-trim" style="color:var(--brand-primary);font-variant-numeric:tabular-nums;">{{ user.currency|currency_symbol }} 0</strong>
+        </div>
       </div>
 
       <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+        {% set curr_symbol = user.currency|currency_symbol %}
+        {% set curr_decimals = user.currency|currency_decimals %}
+        {% set step_val = '1' if curr_decimals == 0 else ('0.01' if curr_decimals == 2 else '0.1') %}
+        
         {% for cat in baseline.category_breakdown %}
-          {% set max_trim = (cat.total_minor / 100)|round(0)|int %}
-          <div style="padding:12px 14px;background:var(--bg-subtle);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-              <div>
+          {% set orig_major = cat.total_minor|to_major(user.currency) %}
+          {% set is_zero_spend = cat.total_minor <= 0 %}
+          <div class="sim-cat-card {% if is_zero_spend %}is-zero-spend{% endif %}" 
+               id="sim-cat-card-{{ cat.id }}" 
+               data-cat-id="{{ cat.id }}"
+               data-original-minor="{{ cat.total_minor }}"
+               data-original-major="{{ orig_major }}"
+               data-is-zero="{{ '1' if is_zero_spend else '0' }}">
+            
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <i data-lucide="{{ cat.icon or 'tag' }}" style="width:14px;height:14px;color:var(--text-secondary);"></i>
                 <strong style="font-size:13px;color:var(--text-primary);">{{ cat.name }}</strong>
-                <span class="badge-pill {% if cat.group=='WANTS' %}badge-peach{% elif cat.group=='NEEDS' %}badge-blue{% else %}badge-lime{% endif %}" style="font-size:9px;padding:1px 6px;margin-left:4px;">
+                <span class="badge-pill {% if cat.group=='WANTS' %}badge-peach{% elif cat.group=='NEEDS' %}badge-blue{% else %}badge-lime{% endif %}" style="font-size:9px;padding:1px 6px;">
                   {{ cat.group }}
                 </span>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:1px;">Spend: {{ cat.formatted_amount }}</div>
+                {% if is_zero_spend %}
+                  <span class="badge-pill badge-dark" style="font-size:9px;padding:1px 6px;opacity:0.75;">Zero Spend</span>
+                {% endif %}
               </div>
-              <div style="text-align:right;">
-                <span style="font-size:11px;color:var(--text-secondary);">Trim: </span>
-                <span style="font-weight:800;font-size:14px;color:var(--brand-primary);font-variant-numeric:tabular-nums;">
-                  {{ user.currency }} <span id="reduction-val-{{ cat.id }}">0</span>
-                </span>
+              <div style="font-size:11px;color:var(--text-muted);font-variant-numeric:tabular-nums;">
+                <span id="reduction-pct-{{ cat.id }}" style="font-weight:700;color:var(--text-secondary);">0%</span> cut
               </div>
             </div>
 
-            <input type="range"
-              class="sim-reduction-input"
-              data-cat-id="{{ cat.id }}"
-              min="0"
-              max="{{ max_trim }}"
-              step="50"
-              value="0"
-              style="width:100%;accent-color:var(--brand-primary);">
+            <!-- 3-Column Metrics: Current Monthly Spending, Reduce Spending By, Proposed Monthly Spending -->
+            <div class="sim-metrics-grid">
+              <!-- Current Monthly Spending -->
+              <div class="sim-metric-col">
+                <span class="sim-metric-label">Current Monthly Spending</span>
+                <span class="sim-metric-val">{{ cat.formatted_amount }}</span>
+              </div>
+
+              <!-- Reduce Spending By (Manual Input) -->
+              <div class="sim-metric-col">
+                <label for="manual-reduction-{{ cat.id }}" class="sim-metric-label">Reduce Spending By</label>
+                <div class="sim-input-prefix-wrapper">
+                  <span class="sim-input-symbol">{{ curr_symbol }}</span>
+                  <input type="number"
+                         id="manual-reduction-{{ cat.id }}"
+                         class="form-control sim-manual-input"
+                         data-cat-id="{{ cat.id }}"
+                         min="0"
+                         max="{{ orig_major }}"
+                         step="{{ step_val }}"
+                         value="0"
+                         placeholder="0"
+                         inputmode="decimal"
+                         {% if is_zero_spend %}disabled title="Category has zero spending in current period"{% endif %}
+                         aria-label="Reduce spending amount for {{ cat.name }}">
+                </div>
+              </div>
+
+              <!-- Proposed Monthly Spending -->
+              <div class="sim-metric-col" style="text-align:right;">
+                <span class="sim-metric-label">Proposed Monthly Spending</span>
+                <span id="proposed-spend-{{ cat.id }}" class="sim-metric-val proposed-spend-val">{{ cat.formatted_amount }}</span>
+              </div>
+            </div>
+
+            <!-- Inline Validation Error -->
+            <div id="reduction-error-{{ cat.id }}" 
+                 class="sim-reduction-error" 
+                 role="alert" 
+                 aria-live="polite"></div>
+
+            <!-- Secondary Control: Synchronised Slider -->
+            <div class="sim-slider-container">
+              <input type="range"
+                     id="slider-reduction-{{ cat.id }}"
+                     class="sim-reduction-input"
+                     data-cat-id="{{ cat.id }}"
+                     min="0"
+                     max="{{ orig_major }}"
+                     step="{{ step_val }}"
+                     value="0"
+                     {% if is_zero_spend %}disabled{% endif %}
+                     aria-label="Reduction slider for {{ cat.name }}">
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);font-variant-numeric:tabular-nums;">
+                <span>{{ curr_symbol }} 0</span>
+                <span>Max: {{ cat.formatted_amount }}</span>
+              </div>
+            </div>
           </div>
         {% else %}
           <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;">
@@ -202,6 +314,17 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+  window.MoneyLeakSimulatorConfig = {
+    currency: {{ user.currency|tojson }},
+    currencySymbol: {{ (user.currency|currency_symbol)|tojson }},
+    currencyDecimals: {{ (user.currency|currency_decimals)|tojson }},
+    baselineExpensesMinor: {{ baseline.expenses.minor }},
+    baselineExpensesFormatted: {{ baseline.expenses.formatted|tojson }},
+    baselineSurplusMinor: {{ baseline.surplus.minor }},
+    baselineSurplusFormatted: {{ baseline.surplus.formatted|tojson }}
+  };
+</script>
 <script src="{{ url_for('static', filename='js/simulator.js') }}"></script>
 <script>
   async function deleteScenario(id) {

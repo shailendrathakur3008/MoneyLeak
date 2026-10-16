@@ -57,6 +57,12 @@
       </form>
     </div>
 
+    <!-- Plan a Trip Action -->
+    <a href="{{ url_for('trips.view_trips') }}" class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;">
+      <i data-lucide="plane" style="width:15px;height:15px;"></i>
+      <span>Plan a Trip</span>
+    </a>
+
     <!-- Quick Add Button -->
     <button type="button" class="btn btn-primary" onclick="openModal('quick-add-modal')" style="display:inline-flex;align-items:center;">
       <i data-lucide="plus" style="width:16px;height:16px;margin-right:6px;"></i>
@@ -258,6 +264,20 @@
         <div class="banner-sub">Test trimming just 15% of your discretionary dining & subscriptions in the Savings Simulator.</div>
       </div>
       <div class="banner-circle-btn">→</div>
+    </a>
+
+    <!-- TRIPWISE — SMART TRIP BUDGET PLANNER BANNER -->
+    <a href="{{ url_for('trips.view_trips') }}" class="motivational-banner" style="background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%);color:#ffffff;margin-top:0;">
+      <div class="banner-content">
+        <div class="banner-headline" style="display:inline-flex;align-items:center;gap:6px;color:#ffffff;">
+          <span>TripWise — Smart Trip Budget Planner</span>
+          <i data-lucide="plane" style="width:18px;height:18px;"></i>
+        </div>
+        <div class="banner-sub" style="color:rgba(255,255,255,0.85);">
+          Planning a sudden getaway or vacation? Estimate costs, check affordability against cash & emergency buffers, and track expenses.
+        </div>
+      </div>
+      <div class="banner-circle-btn" style="background:#ffffff;color:#0369a1;">→</div>
     </a>
 
     <!-- 4. RECENT TRANSACTIONS -->

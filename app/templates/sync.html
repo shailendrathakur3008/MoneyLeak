@@ -1,0 +1,1222 @@
+{% extends "base.html" %}
+
+{% block title %}Universal Expense Sync — Automatic Bank & UPI Tracking | MoneyLeak{% endblock %}
+
+{% block head_extra %}
+<style>
+  .sync-hero-card {
+    background: var(--bg-dark-card);
+    border-radius: var(--radius-xl);
+    padding: 28px 32px;
+    color: var(--text-on-dark);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .sync-hero-card::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(203, 244, 50, 0.15) 0%, rgba(203, 244, 50, 0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .sync-tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 24px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .sync-tab-btn {
+    background: none;
+    border: none;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  .sync-tab-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-surface-hover);
+  }
+  .sync-tab-btn.active {
+    color: var(--brand-lime-text);
+    background: var(--brand-lime);
+  }
+  .source-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    transition: var(--transition-normal);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .source-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-input-focus);
+  }
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .status-active { background: #dcfce7; color: #15803d; }
+  .status-pending { background: #fef3c7; color: #b45309; }
+  .status-error { background: #fee2e2; color: #b91c1c; }
+  .status-config { background: #f3e8ff; color: #7e22ce; }
+  
+  .method-badge {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+  .method-upi { background: #e0f2fe; color: #0369a1; }
+  .method-card { background: #fef08a; color: #854d0e; }
+  .method-netbank { background: #f3e8ff; color: #6b21a8; }
+  .method-neft { background: #dcfce7; color: #166534; }
+  
+  .confidence-tag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: var(--radius-xs);
+  }
+  .conf-high { background: #dcfce7; color: #166534; }
+  .conf-medium { background: #fef9c3; color: #854d0e; }
+  .conf-low { background: #fee2e2; color: #991b1b; }
+
+  .drag-drop-area {
+    border: 2px dashed var(--border-input);
+    border-radius: var(--radius-lg);
+    padding: 40px 20px;
+    text-align: center;
+    background: var(--bg-surface-hover);
+    transition: var(--transition-fast);
+    cursor: pointer;
+  }
+  .drag-drop-area:hover, .drag-drop-area.dragover {
+    border-color: var(--brand-lime);
+    background: var(--brand-lime-light);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container" style="max-width: 1200px; margin: 0 auto; padding: 24px 16px;">
+
+  <!-- TOP HERO HEADER -->
+  <div class="sync-hero-card">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px; position: relative; z-index: 2;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+          <span class="badge-pill badge-lime" style="font-size: 11px; font-weight: 800; padding: 3px 8px;">
+            <i data-lucide="zap" style="width: 12px; height: 12px; margin-right: 4px;"></i> RBI AA & BANK SYNC
+          </span>
+          <span style="font-size: 12px; color: var(--text-on-dark-muted);">
+            {% if overview.provider_info.mode == 'LIVE_API' %}
+              • <span style="color: #4ade80; font-weight: 700;">Live Setu Production</span>
+            {% else %}
+              • <span style="color: #fbbf24; font-weight: 700;">Verified Sandbox Simulator</span>
+            {% endif %}
+          </span>
+        </div>
+        <h1 style="font-size: 28px; font-weight: 900; margin: 0 0 6px 0; color: #ffffff;">Universal Expense Sync</h1>
+        <p style="font-size: 13px; color: var(--text-on-dark-muted); margin: 0; max-width: 600px; line-height: 1.5;">
+          Automatically capture transactions across <strong>Google Pay, PhonePe, Paytm, Cards, and Net Banking</strong>.
+          Powered by India's Account Aggregator framework with deterministic categorization and deduplication.
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button type="button" class="btn btn-secondary" onclick="openConnectModal()" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: #fff;">
+          <i data-lucide="plus" style="width: 16px; height: 16px; margin-right: 6px;"></i> Connect Bank
+        </button>
+        <button type="button" class="btn btn-primary" onclick="syncAllNow()" id="btn-sync-all">
+          <i data-lucide="refresh-cw" id="icon-sync-all" style="width: 16px; height: 16px; margin-right: 6px;"></i> Sync Now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI SUMMARY CARDS -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <!-- KPI 1: Active Institutions -->
+    <div style="background: var(--pastel-mint); border: 1px solid var(--pastel-mint-border); border-radius: var(--radius-lg); padding: 18px 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 12px; font-weight: 700; color: var(--pastel-mint-accent); text-transform: uppercase;">Connected Sources</span>
+        <i data-lucide="landmark" style="width: 18px; height: 18px; color: var(--pastel-mint-accent);"></i>
+      </div>
+      <div style="font-size: 26px; font-weight: 900; color: var(--text-primary); margin-bottom: 4px;">
+        {{ overview.active_connections_count or 0 }}
+      </div>
+      <div style="font-size: 12px; color: var(--text-secondary);">
+        {{ overview.total_connections_count or 0 }} total registered
+      </div>
+    </div>
+
+    <!-- KPI 2: Total Synced -->
+    <div style="background: var(--pastel-blue); border: 1px solid var(--pastel-blue-border); border-radius: var(--radius-lg); padding: 18px 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 12px; font-weight: 700; color: var(--pastel-blue-accent); text-transform: uppercase;">Imported Transactions</span>
+        <i data-lucide="receipt" style="width: 18px; height: 18px; color: var(--pastel-blue-accent);"></i>
+      </div>
+      <div style="font-size: 26px; font-weight: 900; color: var(--text-primary); margin-bottom: 4px;">
+        {{ overview.total_synced_transactions or 0 }}
+      </div>
+      <div style="font-size: 12px; color: var(--text-secondary);">
+        Tracked in core 50/30/20 budget
+      </div>
+    </div>
+
+    <!-- KPI 3: Review Queue -->
+    <div style="background: var(--pastel-peach); border: 1px solid var(--pastel-peach-border); border-radius: var(--radius-lg); padding: 18px 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 12px; font-weight: 700; color: var(--pastel-peach-accent); text-transform: uppercase;">Awaiting Review</span>
+        <i data-lucide="shield-alert" style="width: 18px; height: 18px; color: var(--pastel-peach-accent);"></i>
+      </div>
+      <div style="font-size: 26px; font-weight: 900; color: var(--text-primary); margin-bottom: 4px;">
+        {{ overview.pending_review_count or 0 }}
+      </div>
+      <div style="font-size: 12px; color: var(--text-secondary);">
+        {{ overview.potential_duplicates_count or 0 }} potential duplicates detected
+      </div>
+    </div>
+
+    <!-- KPI 4: Last Sync & Health -->
+    <div style="background: var(--pastel-lavender); border: 1px solid var(--pastel-lavender-border); border-radius: var(--radius-lg); padding: 18px 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 12px; font-weight: 700; color: var(--pastel-lavender-accent); text-transform: uppercase;">Last Synchronized</span>
+        <i data-lucide="clock" style="width: 18px; height: 18px; color: var(--pastel-lavender-accent);"></i>
+      </div>
+      <div style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin-bottom: 4px; padding-top: 6px;">
+        {% if overview.last_sync_at %}
+          {{ overview.last_sync_at[:16].replace('T', ' ') }}
+        {% else %}
+          Not yet synced
+        {% endif %}
+      </div>
+      <div style="font-size: 12px; color: var(--text-secondary);">
+        Status: <span style="font-weight: 700; color: var(--pastel-lavender-accent);">{{ overview.overall_status }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVIGATION TABS -->
+  <div class="sync-tabs">
+    <button class="sync-tab-btn active" onclick="switchTab('sources-tab', this)">
+      <i data-lucide="landmark" style="width: 16px; height: 16px;"></i> Connected Sources ({{ connections|length }})
+    </button>
+    <button class="sync-tab-btn" onclick="switchTab('review-tab', this)">
+      <i data-lucide="check-square" style="width: 16px; height: 16px;"></i> Review Queue
+      {% if overview.pending_review_count > 0 %}
+        <span class="badge-pill" style="background:#f97316;color:#fff;font-size:10px;padding:1px 6px;">{{ overview.pending_review_count }}</span>
+      {% endif %}
+    </button>
+    <button class="sync-tab-btn" onclick="switchTab('ledger-tab', this)">
+      <i data-lucide="list" style="width: 16px; height: 16px;"></i> All Synced Transactions
+    </button>
+    <button class="sync-tab-btn" onclick="switchTab('statement-tab', this)">
+      <i data-lucide="file-up" style="width: 16px; height: 16px;"></i> Statement Import
+    </button>
+    <button class="sync-tab-btn" onclick="switchTab('receipt-tab', this)">
+      <i data-lucide="scan-line" style="width: 16px; height: 16px;"></i> Smart Receipt Matcher
+    </button>
+    <button class="sync-tab-btn" onclick="switchTab('audit-tab', this)">
+      <i data-lucide="history" style="width: 16px; height: 16px;"></i> Audit History & Privacy
+    </button>
+  </div>
+
+  <!-- TAB 1: CONNECTED SOURCES -->
+  <div id="sources-tab" class="tab-pane active">
+    {% if not connections %}
+      <div style="background: var(--bg-card); border: 1px dashed var(--border-card); border-radius: var(--radius-xl); padding: 48px 24px; text-align: center; margin-bottom: 24px;">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--brand-lime-light); color: var(--brand-lime-text); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+          <i data-lucide="landmark" style="width: 28px; height: 28px;"></i>
+        </div>
+        <h3 style="font-size: 18px; font-weight: 800; margin: 0 0 8px 0; color: var(--text-primary);">No Bank Accounts Connected</h3>
+        <p style="font-size: 13px; color: var(--text-secondary); max-width: 480px; margin: 0 auto 20px auto; line-height: 1.5;">
+          Connect your bank using India's certified Account Aggregator (AA) framework to automatically fetch UPI, card, and net banking transactions without manual entry.
+        </p>
+        <button type="button" class="btn btn-primary" onclick="openConnectModal()">
+          <i data-lucide="plus" style="width: 16px; height: 16px; margin-right: 6px;"></i> Connect First Bank
+        </button>
+      </div>
+    {% else %}
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; margin-bottom: 24px;">
+        {% for conn in connections %}
+          <div class="source-card">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="width: 38px; height: 38px; border-radius: var(--radius-md); background: var(--bg-surface-hover); display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-subtle);">
+                    <i data-lucide="landmark" style="width: 20px; height: 20px; color: var(--text-primary);"></i>
+                  </div>
+                  <div>
+                    <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: var(--text-primary);">{{ conn.institution_name }}</h4>
+                    <span style="font-size: 12px; color: var(--text-muted);">{{ conn.account_type }} • {{ conn.account_mask }}</span>
+                  </div>
+                </div>
+                <span class="status-pill {% if conn.status == 'CONNECTED' %}status-active{% elif conn.status == 'SYNCING' %}status-pending{% else %}status-error{% endif %}">
+                  {{ conn.status }}
+                </span>
+              </div>
+
+              <div style="background: var(--bg-surface-hover); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 14px; font-size: 12px; color: var(--text-secondary);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                  <span>Framework:</span>
+                  <strong style="color: var(--text-primary);">{{ conn.provider.replace('_', ' ') }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                  <span>Consent Status:</span>
+                  <strong style="color: #16a34a;">{{ conn.consent_status }} (Active)</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Last Synced:</span>
+                  <span>{{ conn.last_sync_at.strftime('%d %b, %H:%M') if conn.last_sync_at else 'Never' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid var(--border-subtle); padding-top: 12px;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="syncSingleConnection({{ conn.id }}, this)">
+                <i data-lucide="refresh-cw" style="width: 14px; height: 14px; margin-right: 4px;"></i> Sync
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" style="color: var(--color-danger); border-color: rgba(239,68,68,0.2);" onclick="disconnectConnection({{ conn.id }})">
+                <i data-lucide="trash-2" style="width: 14px; height: 14px; margin-right: 4px;"></i> Disconnect
+              </button>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- Integration Methods & Architecture Guide -->
+    <div style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: var(--radius-xl); padding: 24px;">
+      <h3 style="font-size: 16px; font-weight: 800; margin: 0 0 14px 0; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="info" style="width: 18px; height: 18px; color: var(--brand-lime-text);"></i> Supported Financial Integrations & Privacy
+      </h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
+        <div style="background: var(--bg-surface-hover); padding: 14px; border-radius: var(--radius-md);">
+          <strong style="color: var(--text-primary); display: block; margin-bottom: 4px;">1. Account Aggregator (AA) Ecosystem</strong>
+          Regulated by RBI under NBFC-AA Master Directions. Provides secure, read-only data sharing with user explicit OTP consent. Never requests net banking passwords, ATM PINs, or UPI PINs.
+        </div>
+        <div style="background: var(--bg-surface-hover); padding: 14px; border-radius: var(--radius-md);">
+          <strong style="color: var(--text-primary); display: block; margin-bottom: 4px;">2. Universal UPI & Card Coverage</strong>
+          UPI payments initiated through Google Pay, PhonePe, Paytm, BHIM, or merchant checkout settle in the linked bank account and are recognized accurately by narration analysis.
+        </div>
+        <div style="background: var(--bg-surface-hover); padding: 14px; border-radius: var(--radius-md);">
+          <strong style="color: var(--text-primary); display: block; margin-bottom: 4px;">3. Deduplication & Zero-Double-Counting</strong>
+          Credit card bill payments (CRED, net banking transfers) are treated as transfers, and mutual fund SIPs are mapped to Savings Contributions, never as consumption expenses.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: REVIEW QUEUE -->
+  <div id="review-tab" class="tab-pane" style="display: none;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+      <div>
+        <h3 style="font-size: 17px; font-weight: 800; margin: 0; color: var(--text-primary);">Transactions Awaiting Review</h3>
+        <p style="font-size: 12px; color: var(--text-secondary); margin: 2px 0 0 0;">
+          Low-confidence classifications or potential duplicates that require your confirmation.
+        </p>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="bulkApproveHighConfidence()">
+        <i data-lucide="check-check" style="width: 14px; height: 14px; margin-right: 4px;"></i> Bulk Approve High Confidence
+      </button>
+    </div>
+
+    <div style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: var(--radius-lg); overflow: hidden;">
+      <div id="review-table-container" style="overflow-x: auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <thead>
+            <tr style="background: var(--bg-surface-hover); border-bottom: 1px solid var(--border-subtle); text-align: left;">
+              <th style="padding: 12px 16px;">Date</th>
+              <th style="padding: 12px 16px;">Merchant & Narration</th>
+              <th style="padding: 12px 16px;">Method</th>
+              <th style="padding: 12px 16px;">Amount</th>
+              <th style="padding: 12px 16px;">Suggested Category</th>
+              <th style="padding: 12px 16px;">Status / Reason</th>
+              <th style="padding: 12px 16px; text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="review-table-body">
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 32px; color: var(--text-muted);">
+                Loading review queue...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: LEDGER (ALL SYNCED TRANSACTIONS) -->
+  <div id="ledger-tab" class="tab-pane" style="display: none;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+      <div style="display: flex; gap: 8px; flex-grow: 1; max-width: 400px;">
+        <input type="text" id="sync-ledger-search" class="form-control form-control-sm" placeholder="Search merchant, narration, UTR..." onkeyup="debounceLedgerSearch()">
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <select id="sync-ledger-filter-status" class="form-control form-control-sm" onchange="loadSyncedLedger(1)">
+          <option value="ALL">All Statuses</option>
+          <option value="APPROVED">Approved</option>
+          <option value="PENDING_REVIEW">Pending Review</option>
+          <option value="POTENTIAL_DUPLICATE">Potential Duplicate</option>
+          <option value="LINKED">Linked</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: var(--radius-lg); overflow: hidden;">
+      <div style="overflow-x: auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <thead>
+            <tr style="background: var(--bg-surface-hover); border-bottom: 1px solid var(--border-subtle); text-align: left;">
+              <th style="padding: 12px 16px;">Date</th>
+              <th style="padding: 12px 16px;">Merchant</th>
+              <th style="padding: 12px 16px;">Method</th>
+              <th style="padding: 12px 16px;">Type</th>
+              <th style="padding: 12px 16px;">Amount</th>
+              <th style="padding: 12px 16px;">Category</th>
+              <th style="padding: 12px 16px;">Status</th>
+            </tr>
+          </thead>
+          <tbody id="ledger-table-body">
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 32px; color: var(--text-muted);">
+                Loading ledger records...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="ledger-pagination" style="padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); font-size: 12px; color: var(--text-secondary);">
+        <!-- Pagination controls -->
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: STATEMENT IMPORT -->
+  <div id="statement-tab" class="tab-pane" style="display: none;">
+    <div style="max-width: 760px; margin: 0 auto;">
+      <div style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: var(--radius-xl); padding: 28px; margin-bottom: 24px;">
+        <h3 style="font-size: 18px; font-weight: 800; margin: 0 0 6px 0; color: var(--text-primary);">Manual Bank Statement Import</h3>
+        <p style="font-size: 13px; color: var(--text-secondary); margin: 0 0 20px 0; line-height: 1.5;">
+          For unsupported institutions or historical offline statements. Supports standard Indian bank statements:
+          <strong>HDFC Bank, SBI, ICICI, Axis Bank, and generic CSV</strong> with full deduplication.
+        </p>
+
+        <form id="statement-upload-form" onsubmit="handleStatementUpload(event)">
+          <div style="margin-bottom: 16px;">
+            <label class="form-label" style="font-weight: 700; font-size: 12px;">Select Bank Format (Optional)</label>
+            <select id="statement-bank-hint" class="form-control">
+              <option value="AUTO">Auto-Detect Header & Format</option>
+              <option value="HDFC">HDFC Bank</option>
+              <option value="SBI">State Bank of India (SBI)</option>
+              <option value="ICICI">ICICI Bank</option>
+              <option value="AXIS">Axis Bank</option>
+              <option value="GENERIC">Generic CSV (Date, Narration, Amount)</option>
+            </select>
+          </div>
+
+          <div class="drag-drop-area" id="statement-drop-zone" onclick="document.getElementById('statement-file-input').click()">
+            <input type="file" id="statement-file-input" accept=".csv,.txt" style="display: none;" onchange="updateSelectedFileLabel(this)">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--bg-surface); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; color: var(--brand-lime-text);">
+              <i data-lucide="upload-cloud" style="width: 24px; height: 24px;"></i>
+            </div>
+            <div style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;" id="statement-file-label">
+              Click or drag bank statement CSV here
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted);">
+              Supports .csv and text formats (up to 16 MB)
+            </div>
+          </div>
+
+          <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="previewStatement()">
+              <i data-lucide="eye" style="width: 15px; height: 15px; margin-right: 5px;"></i> Preview Statement
+            </button>
+            <button type="submit" class="btn btn-primary" id="btn-submit-statement">
+              <i data-lucide="file-check" style="width: 15px; height: 15px; margin-right: 5px;"></i> Import Transactions
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Preview Results Container -->
+      <div id="statement-preview-container" style="display: none; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: var(--radius-xl); padding: 24px;">
+        <h4 style="font-size: 15px; font-weight: 800; margin: 0 0 12px 0; color: var(--text-primary);" id="statement-preview-title">
+          Statement Preview
+        </h4>
+        <div style="overflow-x: auto; max-height: 320px;">
+          <table class="table" style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+              <tr style="background: var(--bg-surface-hover); text-align: left;">
+                <th style="padding: 8px 12px;">Date</th>
+                <th style="padding: 8px 12px;">Narration</th>
+                <th style="padding: 8px 12px;">Type</th>
+                <th style="padding: 8px 12px;">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="statement-preview-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 5: SMART RECEIPT MATCHER -->
+  <div id="receipt-tab" class="tab-pane" style="display: none;">
+    <div style="max-width: 760px; margin: 0 auto;">
+      <div style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: var(--radius-xl); padding: 28px; margin-bottom: 24px;">
+        <h3 style="font-size: 18px; font-weight: 800; margin: 0 0 6px 0; color: var(--text-primary);">Smart Receipt & Order Matcher</h3>
+        <p style="font-size: 13px; color: var(--text-secondary); margin: 0 0 20px 0; line-height: 1.5;">
+          Paste email invoice text or upload receipts from <strong>Swiggy, Zomato, Amazon India, Blinkit, Zepto, or Uber</strong>.
+          The engine will extract order details and automatically match them with your bank debit.
+        </p>
+
+        <form id="receipt-upload-form" onsubmit="handleReceiptUpload(event)">
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label" style="font-weight: 700; font-size: 12px;">Paste Receipt / Order Confirmation Text</label>
+            <textarea id="receipt-text-input" class="form-control" rows="6" placeholder="Paste your order confirmation email or invoice text here... e.g. 'Your Swiggy order #19283742 for ₹420.00 has been placed.'"></textarea>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end;">
+            <button type="submit" class="btn btn-primary" id="btn-parse-receipt">
+              <i data-lucide="scan" style="width: 16px; height: 16px; margin-right: 6px;"></i> Match with Bank Debit
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Receipt Matching Result -->
+      <div id="receipt-result-container" style="display: none; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: var(--radius-xl); padding: 24px;">
+        <h4 style="font-size: 15px; font-weight: 800; margin: 0 0 10px 0; color: var(--text-primary);">Matching Results</h4>
+        <div id="receipt-result-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 6: AUDIT HISTORY & PRIVACY -->
+  <div id="audit-tab" class="tab-pane" style="display: none;">
+    <div style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: var(--radius-xl); padding: 24px; margin-bottom: 24px;">
+      <h3 style="font-size: 17px; font-weight: 800; margin: 0 0 4px 0; color: var(--text-primary);">Synchronization Audit Trail</h3>
+      <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 16px 0;">
+        Immutable audit logs of all automated syncs, manual fetches, and statement imports.
+      </p>
+
+      <div style="overflow-x: auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse; font-size: 12px;">
+          <thead>
+            <tr style="background: var(--bg-surface-hover); text-align: left;">
+              <th style="padding: 10px 14px;">Timestamp</th>
+              <th style="padding: 10px 14px;">Source</th>
+              <th style="padding: 10px 14px;">Type</th>
+              <th style="padding: 10px 14px;">Status</th>
+              <th style="padding: 10px 14px;">Fetched</th>
+              <th style="padding: 10px 14px;">Imported</th>
+              <th style="padding: 10px 14px;">Duplicates</th>
+            </tr>
+          </thead>
+          <tbody id="audit-table-body">
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 24px; color: var(--text-muted);">Loading audit logs...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Security & Consent Privacy Panel -->
+    <div style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: var(--radius-xl); padding: 24px;">
+      <h4 style="font-size: 15px; font-weight: 800; margin: 0 0 12px 0; color: var(--text-primary);">Consent & Data Protection Policies</h4>
+      <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+        <p>• <strong>Zero Credential Storage</strong>: MoneyLeak never asks for or stores your net banking password, debit card PIN, UPI MPIN, or banking OTP.</p>
+        <p>• <strong>Strict Read-Only Mode</strong>: The integration layer is strictly read-only for transaction tracking and cannot execute payments or move funds.</p>
+        <p>• <strong>Instant Revocation</strong>: Disconnecting any source immediately revokes the Account Aggregator consent token and severs all API communication.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL: CONNECT BANK (ACCOUNT AGGREGATOR) -->
+<div id="connect-bank-modal" class="modal-backdrop">
+  <div class="modal-card" style="max-width: 520px;">
+    <div class="modal-header">
+      <div>
+        <h3 style="font-weight: 800; font-size: 17px; margin: 0 0 2px 0; color: var(--text-primary);">Connect Bank Account</h3>
+        <p style="font-size: 12px; color: var(--text-muted); margin: 0;">RBI Account Aggregator framework integration</p>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeModal('connect-bank-modal')">
+        <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+      </button>
+    </div>
+
+    <form id="connect-bank-form" onsubmit="handleConnectBank(event)" style="margin-top: 16px;">
+      <div class="form-group" style="margin-bottom: 14px;">
+        <label class="form-label" style="font-weight: 700; font-size: 12px;">Select Financial Institution</label>
+        <select id="connect-fip-code" class="form-control" required>
+          {% for fip in supported_fips %}
+            <option value="{{ fip.code }}">{{ fip.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 14px;">
+        <label class="form-label" style="font-weight: 700; font-size: 12px;">Registered Mobile Number (for AA OTP)</label>
+        <input type="tel" id="connect-phone" class="form-control" value="{{ user.phone_number or '9876543210' }}" required>
+        <small style="font-size: 11px; color: var(--text-muted);">Used by the Account Aggregator to discover your linked bank accounts.</small>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 20px;">
+        <label class="form-label" style="font-weight: 700; font-size: 12px;">Account Types</label>
+        <div style="display: flex; gap: 16px; font-size: 13px;">
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+            <input type="checkbox" name="acc_types" value="SAVINGS" checked> Savings Account
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+            <input type="checkbox" name="acc_types" value="CURRENT"> Current Account
+          </label>
+        </div>
+      </div>
+
+      <div style="background: var(--bg-surface-hover); border-radius: var(--radius-sm); padding: 12px; font-size: 12px; color: var(--text-secondary); margin-bottom: 18px;">
+        <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">
+          <i data-lucide="shield-check" style="width: 14px; height: 14px; color: #16a34a;"></i> 100% Encrypted & RBI Regulated
+        </div>
+        Your financial institution authorizes read-only access. You can revoke access at any time with 1 click.
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('connect-bank-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="btn-submit-connect">
+          <i data-lucide="link-2" style="width: 15px; height: 15px; margin-right: 5px;"></i> Authorize & Link
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: REVIEW TRANSACTION -->
+<div id="review-modal" class="modal-backdrop">
+  <div class="modal-card" style="max-width: 500px;">
+    <div class="modal-header">
+      <div>
+        <h3 style="font-weight: 800; font-size: 17px; margin: 0 0 2px 0; color: var(--text-primary);">Review & Confirm Transaction</h3>
+        <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Adjust category or resolve duplicate conflicts</p>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeModal('review-modal')">
+        <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+      </button>
+    </div>
+
+    <form id="review-action-form" onsubmit="submitReviewAction(event)" style="margin-top: 14px;">
+      <input type="hidden" id="modal-review-id">
+
+      <div style="background: var(--bg-surface-hover); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+        <div style="font-size: 18px; font-weight: 900; color: var(--text-primary); margin-bottom: 4px;" id="modal-review-amount">₹0.00</div>
+        <div style="font-size: 13px; font-weight: 700; color: var(--text-primary);" id="modal-review-merchant">Merchant Name</div>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; word-break: break-all;" id="modal-review-narration">Raw Narration</div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 14px;">
+        <label class="form-label" style="font-weight: 700; font-size: 12px;">Assigned Category</label>
+        <select id="modal-review-category" class="form-control">
+          {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.name }} ({{ cat.budget_group }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+          <input type="checkbox" id="modal-save-preference" checked>
+          <span>Always remember this category for this merchant</span>
+        </label>
+      </div>
+
+      <div id="modal-duplicate-box" style="display: none; background: #fff7ed; border: 1px solid #fed7aa; border-radius: var(--radius-md); padding: 12px; margin-bottom: 16px; font-size: 12px; color: #9a3412;">
+        <strong style="display: block; margin-bottom: 4px;">Potential Duplicate Detected</strong>
+        <p style="margin: 0 0 8px 0;">This purchase matches an existing entry in your ledger. Would you like to link them or import as a distinct transaction?</p>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-link-duplicate" onclick="linkDuplicateEntry()" style="background:#fff;">
+          Link to Existing Entry
+        </button>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; gap: 10px;">
+        <button type="button" class="btn btn-secondary" onclick="rejectCurrentReview()" style="color: var(--color-danger);">
+          Dismiss
+        </button>
+        <button type="submit" class="btn btn-primary">
+          <i data-lucide="check" style="width: 15px; height: 15px; margin-right: 5px;"></i> Approve & Import
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+  let currentReviewTxn = null;
+
+  function switchTab(tabId, btn) {
+    document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.sync-tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(tabId).style.display = 'block';
+    btn.classList.add('active');
+
+    if (tabId === 'review-tab') {
+      loadReviewQueue();
+    } else if (tabId === 'ledger-tab') {
+      loadSyncedLedger(1);
+    } else if (tabId === 'audit-tab') {
+      loadAuditLogs();
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function openConnectModal() {
+    openModal('connect-bank-modal');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  async function handleConnectBank(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-submit-connect');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader" class="spin" style="width:15px;height:15px;margin-right:5px;"></i> Linking...';
+
+    const fipCode = document.getElementById('connect-fip-code').value;
+    const phone = document.getElementById('connect-phone').value;
+
+    try {
+      const res = await fetch('/api/sync/connections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+        body: JSON.stringify({ fip_code: fipCode, phone: phone })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message, 'success');
+        closeModal('connect-bank-modal');
+        setTimeout(() => window.location.reload(), 1200);
+      } else {
+        showToast(data.error || 'Failed to connect institution', 'error');
+      }
+    } catch (err) {
+      showToast('Network error while connecting bank', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="link-2" style="width:15px;height:15px;margin-right:5px;"></i> Authorize & Link';
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+
+  async function syncAllNow() {
+    const btn = document.getElementById('btn-sync-all');
+    const icon = document.getElementById('icon-sync-all');
+    btn.disabled = true;
+    icon.classList.add('spin');
+
+    try {
+      const res = await fetch('/api/sync/all/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' }
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`Sync complete! ${data.total_imported} imported, ${data.total_review} for review.`, 'success');
+        setTimeout(() => window.location.reload(), 1200);
+      } else {
+        showToast(data.error || 'Sync failed', 'error');
+      }
+    } catch (err) {
+      showToast('Failed to contact sync service', 'error');
+    } finally {
+      btn.disabled = false;
+      icon.classList.remove('spin');
+    }
+  }
+
+  async function syncSingleConnection(connId, btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader" class="spin" style="width:14px;height:14px;"></i>';
+    try {
+      const res = await fetch(`/api/sync/connections/${connId}/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' }
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`Synced! ${data.imported_count} imported, ${data.review_count} for review.`, 'success');
+        setTimeout(() => window.location.reload(), 1200);
+      } else {
+        showToast(data.error || 'Sync failed', 'error');
+      }
+    } catch (err) {
+      showToast('Error syncing connection', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="refresh-cw" style="width:14px;height:14px;margin-right:4px;"></i> Sync';
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+
+  async function disconnectConnection(connId) {
+    if (!confirm('Are you sure you want to disconnect this bank and revoke its Account Aggregator consent?')) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/sync/connections/${connId}`, {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message, 'success');
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        showToast(data.error || 'Failed to disconnect', 'error');
+      }
+    } catch (err) {
+      showToast('Error disconnecting institution', 'error');
+    }
+  }
+
+  // Load Review Queue
+  async function loadReviewQueue() {
+    const tbody = document.getElementById('review-table-body');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;">Loading review queue...</td></tr>';
+
+    try {
+      const res = await fetch('/api/sync/transactions?status=PENDING_REVIEW');
+      const data = await res.json();
+      if (!data.transactions || data.transactions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted);"><i data-lucide="check-circle" style="width:24px;height:24px;display:block;margin:0 auto 8px auto;color:#16a34a;"></i>All caught up! No transactions awaiting review.</td></tr>';
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+
+      let html = '';
+      data.transactions.forEach(t => {
+        const methodClass = t.payment_method === 'UPI' ? 'method-upi' : (t.payment_method === 'CARD' ? 'method-card' : 'method-netbank');
+        const confClass = t.confidence_level === 'HIGH' ? 'conf-high' : (t.confidence_level === 'MEDIUM' ? 'conf-medium' : 'conf-low');
+
+        html += `
+          <tr style="border-bottom:1px solid var(--border-subtle);">
+            <td style="padding:12px 16px;white-space:nowrap;">${t.raw_date}</td>
+            <td style="padding:12px 16px;">
+              <strong style="color:var(--text-primary);display:block;">${t.normalized_merchant}</strong>
+              <small style="color:var(--text-muted);">${t.raw_narration.substring(0, 45)}...</small>
+            </td>
+            <td style="padding:12px 16px;">
+              <span class="method-badge ${methodClass}">${t.payment_method}</span>
+            </td>
+            <td style="padding:12px 16px;font-weight:700;color:${t.direction === 'CREDIT' ? '#16a34a' : 'var(--text-primary)'};">
+              ${t.direction === 'CREDIT' ? '+' : ''}${t.formatted_amount}
+            </td>
+            <td style="padding:12px 16px;">
+              <span style="display:inline-block;padding:2px 8px;border-radius:var(--radius-xs);background:var(--bg-surface-hover);font-weight:600;">
+                ${t.suggested_category_name || 'Uncategorized'}
+              </span>
+            </td>
+            <td style="padding:12px 16px;">
+              <span class="confidence-tag ${confClass}">${t.confidence_level}</span>
+            </td>
+            <td style="padding:12px 16px;text-align:right;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="openReviewModal(${JSON.stringify(t).replace(/"/g, '&quot;')})">
+                Review
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+      if (window.lucide) lucide.createIcons();
+    } catch (err) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--color-danger);padding:24px;">Failed to load transactions.</td></tr>';
+    }
+  }
+
+  function openReviewModal(txn) {
+    currentReviewTxn = txn;
+    document.getElementById('modal-review-id').value = txn.id;
+    document.getElementById('modal-review-amount').innerText = txn.formatted_amount;
+    document.getElementById('modal-review-merchant').innerText = txn.normalized_merchant;
+    document.getElementById('modal-review-narration').innerText = txn.raw_narration;
+
+    if (txn.suggested_category_id) {
+      document.getElementById('modal-review-category').value = txn.suggested_category_id;
+    }
+
+    const dupBox = document.getElementById('modal-duplicate-box');
+    if (txn.review_status === 'POTENTIAL_DUPLICATE' && txn.duplicate_of_id) {
+      dupBox.style.display = 'block';
+    } else {
+      dupBox.style.display = 'none';
+    }
+
+    openModal('review-modal');
+  }
+
+  async function submitReviewAction(e) {
+    e.preventDefault();
+    if (!currentReviewTxn) return;
+
+    const catId = document.getElementById('modal-review-category').value;
+    const savePref = document.getElementById('modal-save-preference').checked;
+
+    try {
+      const res = await fetch(`/api/sync/transactions/${currentReviewTxn.id}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+        body: JSON.stringify({ category_id: parseInt(catId), save_preference: savePref })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Transaction approved and recorded in budget.', 'success');
+        closeModal('review-modal');
+        loadReviewQueue();
+      } else {
+        showToast(data.error || 'Failed to approve', 'error');
+      }
+    } catch (err) {
+      showToast('Network error approving transaction', 'error');
+    }
+  }
+
+  async function linkDuplicateEntry() {
+    if (!currentReviewTxn || !currentReviewTxn.duplicate_of_id) return;
+    try {
+      const res = await fetch(`/api/sync/transactions/${currentReviewTxn.id}/link`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+        body: JSON.stringify({ existing_txn_id: currentReviewTxn.duplicate_of_id })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Successfully linked transaction!', 'success');
+        closeModal('review-modal');
+        loadReviewQueue();
+      } else {
+        showToast(data.error || 'Failed to link', 'error');
+      }
+    } catch (err) {
+      showToast('Error linking duplicate', 'error');
+    }
+  }
+
+  async function rejectCurrentReview() {
+    if (!currentReviewTxn) return;
+    try {
+      const res = await fetch(`/api/sync/transactions/${currentReviewTxn.id}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' }
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Transaction excluded', 'info');
+        closeModal('review-modal');
+        loadReviewQueue();
+      }
+    } catch (err) {
+      showToast('Error excluding transaction', 'error');
+    }
+  }
+
+  async function bulkApproveHighConfidence() {
+    try {
+      const res = await fetch('/api/sync/transactions/bulk-approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' }
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`Approved ${data.approved_count} high-confidence transactions!`, 'success');
+        loadReviewQueue();
+      }
+    } catch (err) {
+      showToast('Error bulk approving', 'error');
+    }
+  }
+
+  // Load All Synced Ledger
+  async function loadSyncedLedger(page = 1) {
+    const tbody = document.getElementById('ledger-table-body');
+    const search = document.getElementById('sync-ledger-search').value;
+    const status = document.getElementById('sync-ledger-filter-status').value;
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;">Loading ledger...</td></tr>';
+
+    try {
+      const res = await fetch(`/api/sync/transactions?page=${page}&status=${status}&search=${encodeURIComponent(search)}`);
+      const data = await res.json();
+      if (!data.transactions || data.transactions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted);">No transactions found matching criteria.</td></tr>';
+        return;
+      }
+
+      let html = '';
+      data.transactions.forEach(t => {
+        html += `
+          <tr style="border-bottom:1px solid var(--border-subtle);">
+            <td style="padding:10px 14px;">${t.raw_date}</td>
+            <td style="padding:10px 14px;">
+              <strong>${t.normalized_merchant}</strong>
+              <div style="font-size:11px;color:var(--text-muted);">${t.raw_narration.substring(0, 35)}</div>
+            </td>
+            <td style="padding:10px 14px;"><span class="method-badge method-${t.payment_method.toLowerCase()}">${t.payment_method}</span></td>
+            <td style="padding:10px 14px;font-size:11px;font-weight:700;">${t.transaction_type}</td>
+            <td style="padding:10px 14px;font-weight:700;color:${t.direction === 'CREDIT' ? '#16a34a' : 'var(--text-primary)'};">${t.direction === 'CREDIT' ? '+' : ''}${t.formatted_amount}</td>
+            <td style="padding:10px 14px;"><span class="badge-pill" style="font-size:11px;">${t.suggested_category_name || 'General'}</span></td>
+            <td style="padding:10px 14px;"><span class="status-pill status-${t.review_status === 'APPROVED' ? 'active' : 'pending'}">${t.review_status}</span></td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+      document.getElementById('ledger-pagination').innerHTML = `<span>Page ${data.page} of ${data.pages || 1} (${data.total} total)</span>`;
+    } catch (err) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--color-danger);padding:24px;">Failed to load ledger records.</td></tr>';
+    }
+  }
+
+  let searchTimeout = null;
+  function debounceLedgerSearch() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => loadSyncedLedger(1), 300);
+  }
+
+  // Statement Parsing & Preview
+  function updateSelectedFileLabel(input) {
+    if (input.files && input.files[0]) {
+      document.getElementById('statement-file-label').innerText = input.files[0].name;
+    }
+  }
+
+  async function previewStatement() {
+    const fileInput = document.getElementById('statement-file-input');
+    if (!fileInput.files || !fileInput.files[0]) {
+      showToast('Please select a CSV statement file first', 'warning');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('mode', 'preview');
+    formData.append('bank_hint', document.getElementById('statement-bank-hint').value);
+
+    try {
+      const res = await fetch('/api/sync/import-statement', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('statement-preview-container').style.display = 'block';
+        document.getElementById('statement-preview-title').innerText = `Detected ${data.bank_detected} format: ${data.total_detected} transactions found`;
+        
+        let rows = '';
+        data.preview_transactions.forEach(pt => {
+          rows += `<tr>
+            <td style="padding:6px 10px;">${pt.date}</td>
+            <td style="padding:6px 10px;">${pt.narration.substring(0, 40)}</td>
+            <td style="padding:6px 10px;">${pt.direction}</td>
+            <td style="padding:6px 10px;font-weight:700;">${pt.formatted_amount}</td>
+          </tr>`;
+        });
+        document.getElementById('statement-preview-body').innerHTML = rows;
+      } else {
+        showToast(data.error || 'Could not parse statement', 'error');
+      }
+    } catch (err) {
+      showToast('Failed to preview statement', 'error');
+    }
+  }
+
+  async function handleStatementUpload(e) {
+    e.preventDefault();
+    const fileInput = document.getElementById('statement-file-input');
+    if (!fileInput.files || !fileInput.files[0]) {
+      showToast('Please select a bank statement file to import', 'warning');
+      return;
+    }
+
+    const btn = document.getElementById('btn-submit-statement');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader" class="spin" style="width:14px;height:14px;margin-right:4px;"></i> Importing...';
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('mode', 'commit');
+    formData.append('bank_hint', document.getElementById('statement-bank-hint').value);
+
+    try {
+      const res = await fetch('/api/sync/import-statement', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message, 'success');
+        fileInput.value = '';
+        document.getElementById('statement-file-label').innerText = 'Click or drag bank statement CSV here';
+        document.getElementById('statement-preview-container').style.display = 'none';
+        setTimeout(() => switchTab('review-tab', document.querySelectorAll('.sync-tab-btn')[1]), 1000);
+      } else {
+        showToast(data.error || 'Import failed', 'error');
+      }
+    } catch (err) {
+      showToast('Network error importing statement', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="file-check" style="width:15px;height:15px;margin-right:5px;"></i> Import Transactions';
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+
+  // Receipt Matching
+  async function handleReceiptUpload(e) {
+    e.preventDefault();
+    const text = document.getElementById('receipt-text-input').value.strip ? document.getElementById('receipt-text-input').value.trim() : '';
+    if (!text) {
+      showToast('Please paste invoice or receipt text', 'warning');
+      return;
+    }
+
+    const btn = document.getElementById('btn-parse-receipt');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader" class="spin" style="width:14px;height:14px;margin-right:4px;"></i> Matching...';
+
+    const formData = new FormData();
+    formData.append('receipt_text', text);
+
+    try {
+      const res = await fetch('/api/sync/upload-receipt', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('receipt-result-container').style.display = 'block';
+        let matchHtml = `
+          <div style="background:var(--bg-surface-hover);padding:14px;border-radius:var(--radius-md);margin-bottom:12px;">
+            <div style="font-size:16px;font-weight:800;color:var(--text-primary);">${data.receipt.merchant_name} — ${data.formatted_total}</div>
+            <div style="font-size:12px;color:var(--text-muted);">Order ID: ${data.receipt.order_id} • Date: ${data.receipt.receipt_date}</div>
+          </div>
+        `;
+        if (data.matches_found > 0) {
+          matchHtml += `<div style="color:#16a34a;font-weight:700;font-size:13px;margin-bottom:8px;">✓ Found ${data.matches_found} matching bank debit in your ledger!</div>`;
+          data.matching_transactions.forEach(m => {
+            matchHtml += `<div style="font-size:12px;padding:8px;background:var(--pastel-mint);border-radius:var(--radius-xs);margin-bottom:4px;">
+              Matched with: <strong>${m.merchant}</strong> on ${m.date}
+            </div>`;
+          });
+        } else {
+          matchHtml += `<div style="color:var(--text-muted);font-size:12px;">Receipt recorded. Awaiting corresponding bank debit sync.</div>`;
+        }
+        document.getElementById('receipt-result-content').innerHTML = matchHtml;
+        showToast('Receipt parsed successfully!', 'success');
+      } else {
+        showToast(data.error || 'Could not parse receipt', 'error');
+      }
+    } catch (err) {
+      showToast('Error parsing receipt', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="scan" style="width:16px;height:16px;margin-right:6px;"></i> Match with Bank Debit';
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+
+  // Audit Logs
+  async function loadAuditLogs() {
+    const tbody = document.getElementById('audit-table-body');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;">Loading logs...</td></tr>';
+    try {
+      const res = await fetch('/api/sync/audit-logs');
+      const data = await res.json();
+      if (!data.logs || data.logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">No audit logs yet.</td></tr>';
+        return;
+      }
+      let html = '';
+      data.logs.forEach(l => {
+        html += `
+          <tr style="border-bottom:1px solid var(--border-subtle);">
+            <td style="padding:8px 12px;">${l.created_at.substring(0, 16).replace('T', ' ')}</td>
+            <td style="padding:8px 12px;"><strong>${l.institution_name}</strong></td>
+            <td style="padding:8px 12px;font-size:11px;">${l.sync_type}</td>
+            <td style="padding:8px 12px;"><span class="status-pill status-${l.status === 'SUCCESS' ? 'active' : 'error'}">${l.status}</span></td>
+            <td style="padding:8px 12px;">${l.records_fetched}</td>
+            <td style="padding:8px 12px;font-weight:700;color:#16a34a;">${l.records_imported}</td>
+            <td style="padding:8px 12px;color:var(--text-muted);">${l.records_duplicates}</td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    } catch (err) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--color-danger);padding:24px;">Failed to load logs.</td></tr>';
+    }
+  }
+
+  // Setup drag-and-drop
+  const dropZone = document.getElementById('statement-drop-zone');
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropZone.addEventListener(eventName, e => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    }, false);
+  });
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, e => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+    }, false);
+  });
+  dropZone.addEventListener('drop', e => {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    if (files && files.length > 0) {
+      document.getElementById('statement-file-input').files = files;
+      updateSelectedFileLabel(document.getElementById('statement-file-input'));
+    }
+  });
+
+  // Initialize Lucide icons on load
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.lucide) lucide.createIcons();
+  });
+</script>
+{% endblock %}

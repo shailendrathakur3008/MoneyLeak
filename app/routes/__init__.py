@@ -12,11 +12,14 @@ from app.routes.settings import settings_bp
 from app.routes.tools import tools_bp
 from app.routes.assistant import assistant_bp
 from app.routes.locations import locations_bp
+from app.routes.trips import trips_bp
+from app.routes.sync import sync_bp
 
 def register_blueprints(app):
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(transactions_bp)
+    app.register_blueprint(sync_bp)
     app.register_blueprint(income_bp)
     app.register_blueprint(categories_bp)
     app.register_blueprint(budget_bp)
@@ -28,3 +31,4 @@ def register_blueprints(app):
     app.register_blueprint(tools_bp)
     app.register_blueprint(assistant_bp)
     app.register_blueprint(locations_bp)
+    app.register_blueprint(trips_bp)

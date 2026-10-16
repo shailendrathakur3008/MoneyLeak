@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: moneyleak
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: "pip install --upgrade pip && pip install -r requirements.txt"
+    startCommand: "gunicorn run:app"
+    healthCheckPath: /
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
+      - key: DATABASE_URL
+        value: sqlite:///moneyleak.db
+      - key: AA_ENVIRONMENT
+        value: sandbox
+      - key: PYTHON_VERSION
+        value: 3.11.9

@@ -101,6 +101,23 @@ MoneyLeak/
 
 ---
 
+## ⚡ Universal Expense Sync (Account Aggregator & Bank Feeds)
+
+MoneyLeak provides **Universal Expense Sync**, a secure automatic transaction-tracking system compliant with India's **Account Aggregator (AA)** ecosystem (RBI NBFC-AA framework regulated via Sahamati standards / Setu AA):
+
+* **Multi-App UPI & Card Ingestion**: Captures transactions across Google Pay, PhonePe, Paytm, BHIM, Debit/Credit Cards, and Net Banking by normalizing underlying bank account narrations.
+* **Deterministic Merchant Normalization**: Classifies merchants across Food & Dining (Swiggy, Zomato), Groceries (Blinkit, Zepto, BigBasket), Shopping (Amazon, Flipkart, Myntra), Commute (Uber, Ola, Rapido), Utilities, and Subscriptions.
+* **Intelligent Accounting**:
+  - `REFUND`: Automatically linked to original spending to offset category consumption.
+  - `TRANSFER`: Self-account transfers and credit card bill payments (CRED, Cheq) are recognized as liability settlements, preventing double-counting.
+  - `SAVINGS_CONTRIBUTION`: Mutual fund SIPs (Zerodha, Groww) are credited to savings, never inflated as consumption expenses.
+* **Robust Deduplication**: Prevents duplicate records across bank feeds and manual entries using external UTR/RRN hashing, exact coordinates, and $\pm 2$ day fuzzy window detection.
+* **Review Queue & User Preference Memory**: Low-confidence transactions and potential duplicates are staged in a dedicated review queue. Category adjustments are remembered for future syncs.
+* **Multi-Bank Statement Fallback**: High-fidelity CSV statement parser supporting HDFC Bank, SBI, ICICI Bank, Axis Bank, and Generic CSV formats with full preview and validation.
+* **Smart Digital Receipt Matcher**: Extracts order metadata from Swiggy, Zomato, Amazon, Blinkit, Zepto, and Uber receipts to enrich bank debits without fabricating line items.
+
+---
+
 ## 🚀 Installation & Setup
 
 ### Prerequisites

@@ -4,7 +4,7 @@ from flask_wtf.csrf import generate_csrf
 from config import config_by_name
 from app.extensions import db, migrate, csrf
 from app.routes import register_blueprints
-from app.services.money import format_money, from_minor_units
+from app.services.money import format_money, from_minor_units, get_currency_symbol, get_currency_decimals
 
 
 def create_app(config_name=None):
@@ -37,9 +37,21 @@ def create_app(config_name=None):
     def to_major_filter(minor_units, currency='INR'):
         return from_minor_units(minor_units, currency)
 
+    @app.template_filter('currency_symbol')
+    def currency_symbol_filter(currency='INR'):
+        return get_currency_symbol(currency)
+
+    @app.template_filter('currency_decimals')
+    def currency_decimals_filter(currency='INR'):
+        return get_currency_decimals(currency)
+
     @app.context_processor
-    def inject_csrf_token():
-        return dict(csrf_token=generate_csrf)
+    def inject_context_helpers():
+        return dict(
+            csrf_token=generate_csrf,
+            get_currency_symbol=get_currency_symbol,
+            get_currency_decimals=get_currency_decimals
+        )
 
     # CSRF error handler for clean AJAX / API responses
     @app.errorhandler(400)
@@ -57,14 +69,23 @@ def create_app(config_name=None):
 
     # Import models for db.create_all()
     from app.models.auth_otp import EmailOTP  # noqa: F401
+    from app.models.trip import Trip  # noqa: F401
+    from app.models.sync import (  # noqa: F401
+        FinancialConnection,
+        SyncedTransaction,
+        MerchantCategoryPreference,
+        SyncAuditLog,
+        ReceiptRecord
+    )
 
-    # Create tables automatically for local setup
+    # Create tables automatically for local & production setup
     with app.app_context():
         db.create_all()
         try:
-            with db.engine.connect() as conn:
-                # Check categories table
-                res = conn.execute(db.text("PRAGMA table_info(categories)")).fetchall()
+            if db.engine.dialect.name == 'sqlite':
+                with db.engine.connect() as conn:
+                    # Check categories table
+                    res = conn.execute(db.text("PRAGMA table_info(categories)")).fetchall()
                 existing_cols = {row[1] for row in res}
                 cols_to_add = [
                     ('transaction_type', "VARCHAR(30) DEFAULT 'EXPENSE' NOT NULL"),
@@ -77,6 +98,12 @@ def create_app(config_name=None):
                 for col_name, col_def in cols_to_add:
                     if col_name not in existing_cols:
                         conn.execute(db.text(f"ALTER TABLE categories ADD COLUMN {col_name} {col_def}"))
+
+                # Check transactions table columns
+                res_t = conn.execute(db.text("PRAGMA table_info(transactions)")).fetchall()
+                txn_cols = {row[1] for row in res_t}
+                if 'trip_id' not in txn_cols:
+                    conn.execute(db.text("ALTER TABLE transactions ADD COLUMN trip_id INTEGER"))
 
                 # Check users table columns
                 res_u = conn.execute(db.text("PRAGMA table_info(users)")).fetchall()

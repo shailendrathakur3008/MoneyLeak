@@ -77,6 +77,13 @@
         </a>
       </li>
       <li>
+        <a href="{{ url_for('sync.view_sync') }}" class="nav-item-link {% if request.endpoint and request.endpoint.startswith('sync.') %}active{% endif %}">
+          <span class="nav-icon"><i data-lucide="refresh-cw"></i></span>
+          <span>Universal Sync</span>
+          <span class="badge-pill badge-lime" style="font-size:9px;padding:1px 5px;margin-left:auto;">Auto</span>
+        </a>
+      </li>
+      <li>
         <a href="{{ url_for('budget.view_budget') }}" class="nav-item-link {% if request.endpoint == 'budget.view_budget' %}active{% endif %}">
           <span class="nav-icon"><i data-lucide="wallet"></i></span>
           <span>50/30/20 Budget</span>
@@ -99,6 +106,13 @@
         <a href="{{ url_for('goals.view_goals') }}" class="nav-item-link {% if request.endpoint == 'goals.view_goals' %}active{% endif %}">
           <span class="nav-icon"><i data-lucide="target"></i></span>
           <span>Goals Planner</span>
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('trips.view_trips') }}" class="nav-item-link {% if request.endpoint and request.endpoint.startswith('trips.') %}active{% endif %}">
+          <span class="nav-icon"><i data-lucide="plane"></i></span>
+          <span>TripWise</span>
+          <span class="badge-pill badge-lime" style="font-size:9px;padding:1px 5px;margin-left:auto;">Planner</span>
         </a>
       </li>
       <li>

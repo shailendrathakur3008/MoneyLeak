@@ -21,6 +21,7 @@ from app.models.user import User
 from app.models.transaction import Transaction
 from app.models.category import Category
 from app.models.goal import SavingsGoal
+from app.models.trip import Trip
 from app.services.budget_engine import calculate_budget_summary, get_month_date_range
 from app.services.leak_detection import run_leak_detection
 from app.services.spendsense_service import get_spendsense_analysis
@@ -35,6 +36,12 @@ from app.services.money import format_money
 # APPLICATION NAVIGATION DIRECTORY
 # -----------------------------------------------------------------------------
 APP_ROUTES_DIRECTORY = {
+    "trips": {
+        "title": "TripWise — Smart Trip Budget Planner",
+        "url": "/trips",
+        "description": "Smart vacation budget estimation, affordability checks against live funds, and expense tracking.",
+        "icon": "plane"
+    },
     "dashboard": {
         "title": "Dashboard",
         "url": "/dashboard",
@@ -188,6 +195,15 @@ ASSISTANT_MODULES = [
         "icon": "shield-check",
         "action_label": "Generate Audit",
         "related_url": "/reports"
+    },
+    {
+        "id": "trip_planner",
+        "group": "Trip Planning",
+        "title": "TripWise Budget Planner",
+        "description": "Estimates travel, accommodation, and food costs, checks affordability, and prevents vacation budget overruns.",
+        "icon": "plane",
+        "action_label": "Plan a Trip",
+        "related_url": "/trips"
     }
 ]
 
@@ -220,6 +236,7 @@ def get_user_financial_context(user: User) -> Dict[str, Any]:
     food_delivery_name = food_delivery_c.get('name') if food_delivery_c else 'Food Delivery'
 
     return {
+        "user_id": user.id,
         "user_name": user.full_name,
         "user_type": user.user_type or "salaried",
         "currency": user.currency,
@@ -305,6 +322,7 @@ def call_gemini_api(user_message: str, user_context: Dict[str, Any], page_contex
         f"   - Primary Goal: {user_context['primary_goal'] or 'None'}\n\n"
         "2. Application Routes:\n"
         "   - Dashboard: /dashboard (50/30/20 summary, outflow track, recent transactions)\n"
+        "   - TripWise: /trips (Smart Trip Budget Planner, affordability check, travel options, expense tracking)\n"
         "   - Transactions: /transactions (ledger, filtering, export)\n"
         "   - 50/30/20 Budget: /budget (Needs, Wants, Savings caps and allocations)\n"
         "   - Leak Detector: /analysis (subscription tracking, leak anomalies)\n"
@@ -625,15 +643,28 @@ def generate_deterministic_assistant_response(user_message: str, user_context: D
         return {"response": reply, "actions": actions}
 
     # 6. 50/30/20 BUDGET EXPLANATION & HELP
-    if any(k in msg for k in ['50/30/20', 'budget', 'needs vs wants', 'allocation', 'understand my budget', 'explain my budget', 'monthly budget', 'remaining budget']):
+    if 'trip' not in msg and 'travel' not in msg and any(k in msg for k in ['50/30/20', 'budget', 'needs vs wants', 'allocation', 'understand my budget', 'explain my budget', 'monthly budget', 'remaining budget']):
+        needs_tgt_pct = user_context.get('needs_target_pct', 50)
+        needs_tgt = user_context.get('needs_target', '₹0.00')
+        needs_act = user_context.get('needs_actual', '₹0.00')
+        needs_act_pct = user_context.get('needs_actual_pct', 0)
+        wants_tgt_pct = user_context.get('wants_target_pct', 30)
+        wants_tgt = user_context.get('wants_target', '₹0.00')
+        wants_act = user_context.get('wants_actual', '₹0.00')
+        wants_act_pct = user_context.get('wants_actual_pct', 0)
+        sav_tgt_pct = user_context.get('savings_target_pct', 20)
+        sav_tgt = user_context.get('savings_target', '₹0.00')
+        sav_act = user_context.get('savings_actual', '₹0.00')
+        sav_act_pct = user_context.get('savings_actual_pct', 0)
+
         reply = (
             "The **50/30/20 Rule** is the foundational budget framework in MoneyLeak:\n\n"
-            f"1. **Needs ({user_context['needs_target_pct']}%):** Essential survival expenses such as rent, groceries, utilities, and healthcare.\n"
-            f"   - Target: {user_context['needs_target']} | Actual: {user_context['needs_actual']} ({user_context['needs_actual_pct']}% of income)\n\n"
-            f"2. **Wants ({user_context['wants_target_pct']}%):** Discretionary lifestyle spending such as dining out, shopping, and entertainment.\n"
-            f"   - Target: {user_context['wants_target']} | Actual: {user_context['wants_actual']} ({user_context['wants_actual_pct']}% of income)\n\n"
-            f"3. **Savings & Debt ({user_context['savings_target_pct']}%):** Wealth generation, emergency fund deposits, SIPs, and investments.\n"
-            f"   - Target: {user_context['savings_target']} | Actual: {user_context['savings_actual']} ({user_context['savings_actual_pct']}% of income)\n\n"
+            f"1. **Needs ({needs_tgt_pct}%):** Essential survival expenses such as rent, groceries, utilities, and healthcare.\n"
+            f"   - Target: {needs_tgt} | Actual: {needs_act} ({needs_act_pct}% of income)\n\n"
+            f"2. **Wants ({wants_tgt_pct}%):** Discretionary lifestyle spending such as dining out, shopping, and entertainment.\n"
+            f"   - Target: {wants_tgt} | Actual: {wants_act} ({wants_act_pct}% of income)\n\n"
+            f"3. **Savings & Debt ({sav_tgt_pct}%):** Wealth generation, emergency fund deposits, SIPs, and investments.\n"
+            f"   - Target: {sav_tgt} | Actual: {sav_act} ({sav_act_pct}% of income)\n\n"
             "You can customize your percentage targets and set monthly caps on specific categories in the Budget section."
         )
         actions = [
@@ -711,7 +742,167 @@ def generate_deterministic_assistant_response(user_message: str, user_context: D
         ]
         return {"response": reply, "actions": actions}
 
-    # 11. GENERAL / ASSISTANT OVERVIEW FALLBACK
+    # 11. TRIPWISE — SMART TRIP BUDGET PLANNER QUERIES
+    # 11a. Can I afford a trip this weekend?
+    if any(k in msg for k in ['afford a trip', 'afford this trip', 'afford a vacation', 'can i afford a trip', 'trip this weekend', 'can i travel']):
+        user_id = user_context.get('user_id')
+        curr = user_context.get('currency', 'INR')
+        opening_bal = user_context.get('opening_balance') or f"{curr} 0.00"
+        surplus_amt = user_context.get('surplus', f"{curr} 0.00")
+        needs_amt = user_context.get('needs_actual', f"{curr} 0.00")
+        month_lbl = user_context.get('month_label', 'This Month')
+        user_nm = user_context.get('user_name', 'Traveler')
+        needs_tgt = user_context.get('needs_target', f"{curr} 0.00")
+        reply = (
+            f"Here is your verified **Trip Affordability Assessment** for **{month_lbl}**, **{user_nm}**:\n\n"
+            f"• **Net Cashflow Surplus:** {surplus_amt} currently available above total recorded outflows.\n"
+            f"• **Opening Liquid Balance:** {opening_bal} configured in your baseline profile.\n"
+            f"• **Upcoming Essential Needs:** {needs_amt} allocated to essential rent, bills, and groceries (Target: {needs_tgt}).\n\n"
+            "**Affordability Rule:** For sudden or spontaneous trips departing this weekend, you can only safely spend discretionary funds "
+            "remaining *after* reserving 1 month of essential expenses and near-term bills. Never treat future unearned income or future savings as immediate cash.\n\n"
+            "Use **TripWise** to estimate your exact destination costs (travel, stay, food, contingency) and run a full affordability audit."
+        )
+        actions = [
+            {"label": "Plan Trip in TripWise", "url": "/trips"},
+            {"label": "Check Cashflow", "url": "/dashboard"}
+        ]
+        return {"response": reply, "actions": actions}
+
+    # 11b. Create a budget for a three-day trip
+    if any(k in msg for k in ['three-day trip', '3-day trip', 'three day trip', 'budget for a 3-day', 'budget for a three-day']):
+        reply = (
+            f"Here is a verified **Standard 3-Day Trip Budget (2 Nights)** for 1 traveller in **{user_context['currency']}**:\n\n"
+            "• **Outbound & Return Transit:** ~₹1,800 (Superfast 3AC Train round-trip)\n"
+            "• **Accommodation (2 Nights):** ~₹4,800 (3★ Comfort Hotel / Airbnb at ₹2,400/night)\n"
+            "• **Food & Dining (3 Days):** ~₹3,300 (₹1,100/day for casual meals & beverages)\n"
+            "• **Local Transport:** ~₹1,500 (Local autos, cabs & metro passes)\n"
+            "• **Sightseeing & Entry Fees:** ~₹2,200 (Heritage monument passes & experiences)\n"
+            "• **Travel Essentials & Misc:** ~₹1,200 (Snacks, water, pharmacy)\n"
+            "• **Emergency Contingency (10%):** ~₹1,480 (Buffer for surges or unexpected expenses)\n\n"
+            "**Total Standard Budget:** **~₹16,280** (or **~₹8,200** if choosing the Budget / Hostel style).\n\n"
+            "*Source:* MoneyLeak Travel Benchmark v2026.10. You can customize cities, transport modes, and traveller counts in TripWise."
+        )
+        actions = [
+            {"label": "Customize in TripWise", "url": "/trips"},
+            {"label": "Compare Scenarios", "url": "/trips"}
+        ]
+        return {"response": reply, "actions": actions}
+
+    # 11c. How much should I reserve for accommodation?
+    if any(k in msg for k in ['reserve for accommodation', 'accommodation budget', 'hotel budget', 'hotel cost', 'how much for accommodation', 'lodging cost']):
+        reply = (
+            "Here is the standard financial rule of thumb for **Trip Accommodation**:\n\n"
+            "• **Proportion:** Stays should ideally account for **28% to 38%** of your total trip budget.\n"
+            "• **Benchmark Nightly Rates (India / Regional):**\n"
+            "  - **Budget (Hostels / Co-living):** ₹600 – ₹1,000 / bed/night (Great for solo trips & backpackers)\n"
+            "  - **Standard (3★ Boutique Hotel / Airbnb):** ₹2,000 – ₹3,200 / room/night (Balancing cleanliness, Wi-Fi & central location)\n"
+            "  - **Premium (4-5★ Luxury Resort):** ₹6,000 – ₹12,000+ / room/night (Pools, curated amenities & breakfast)\n\n"
+            "**Smart Tip:** Booking 2–3 weeks early typically saves 25%–35% compared to surge rates for spontaneous check-ins."
+        )
+        actions = [
+            {"label": "Model Stays in TripWise", "url": "/trips"}
+        ]
+        return {"response": reply, "actions": actions}
+
+    # 11d. How can I reduce this trip's cost?
+    if any(k in msg for k in ['reduce this trip', 'reduce trip cost', 'reduce the cost', 'cut trip cost', 'cheaper trip', 'lower trip cost', 'how can i reduce']):
+        reply = (
+            "Here are **5 practical, proven ways to reduce trip expenses** without sacrificing enjoyment:\n\n"
+            "1. **Switch Transit Modes:** Booking a superfast 3AC train or AC Volvo bus instead of last-minute flights cuts travel costs by up to 55%.\n"
+            "2. **Stay Slightly Off-Center:** Choosing a high-rated stay 15 minutes outside the central tourist hub (near a metro or bus line) saves 30%–45% per night.\n"
+            "3. **Cap Daily Food Spending:** Budgeting ₹600/day for authentic local street cuisine and reserving sit-down dinners for special evenings prevents restaurant overruns.\n"
+            "4. **Compress Trip Duration:** An intensive 3-day itinerary delivers nearly all destination highlights at 25% lower cost than a 4-day trip.\n"
+            "5. **Trim SpendSense Leaks:** Check SpendSense for dormant subscriptions or food delivery habits to redirect leak cashflow towards your vacation."
+        )
+        actions = [
+            {"label": "Explore Scenarios in TripWise", "url": "/trips"},
+            {"label": "Simulate Trims in Simulator", "url": "/simulator"}
+        ]
+        return {"response": reply, "actions": actions}
+
+    # 11e. What is the difference between budget and standard travel options?
+    if any(k in msg for k in ['difference between the budget and standard', 'difference between budget and standard', 'budget vs standard', 'budget and standard travel options']):
+        reply = (
+            "Here is a side-by-side comparison of **Budget vs Standard** in TripWise:\n\n"
+            "• **Transport:**\n"
+            "  - *Budget:* Sleeper / 3AC Trains or State Express buses. Economical, authentic, and functional.\n"
+            "  - *Standard:* 3AC / 2AC Trains, AC Volvo coaches, or advance economy flights for faster transit.\n\n"
+            "• **Accommodation:**\n"
+            "  - *Budget:* Clean hostel dorm beds or budget guesthouses (~₹750/bed/night).\n"
+            "  - *Standard:* Private 3★ comfort hotels or vetted Airbnbs (~₹2,400/room/night) with en-suite amenities.\n\n"
+            "• **Food & Activities:**\n"
+            "  - *Budget:* Local street delicacies, self-guided walking tours, and free monument days (~₹800/day).\n"
+            "  - *Standard:* Popular cafes, guided tours, and museum passes (~₹1,900/day).\n\n"
+            "• **Cost Impact:** The Budget style typically costs **40% to 55% less** than the Standard scenario for the same destination."
+        )
+        actions = [
+            {"label": "Compare Scenarios in TripWise", "url": "/trips"}
+        ]
+        return {"response": reply, "actions": actions}
+
+    # 11f. How much money do I need to save before departure?
+    if any(k in msg for k in ['save before departure', 'how much money do i need to save', 'money to save before departure', 'savings needed for trip']):
+        reply = (
+            "To calculate **How Much Money You Need to Save Before Departure**:\n\n"
+            "$$\\text{Total Required Savings} = \\text{Estimated Trip Cost} - \\text{Current Available Discretionary Funds}$$\n"
+            "$$\\text{Monthly Savings Pace} = \\frac{\\text{Total Required Savings}}{\\text{Months Remaining until Departure}}$$\n\n"
+            "**Key Rules:**\n"
+            "• **Spontaneous Trips (Departing Soon):** You cannot rely on future savings. Every rupee must come from cash currently in your account after preserving your emergency cushion.\n"
+            "• **Planned Trips (Future Months):** Divide the budget gap by the number of months. You can model exact category expense trims in the Savings Simulator to hit this target comfortably."
+        )
+        actions = [
+            {"label": "Check Gap in TripWise", "url": "/trips"},
+            {"label": "Open Savings Simulator", "url": "/simulator"}
+        ]
+        return {"response": reply, "actions": actions}
+
+    # 11g. How much of my trip budget remains?
+    if any(k in msg for k in ['trip budget remains', 'how much of my trip budget', 'remaining trip budget', 'trip budget remaining', 'my trip expenses']):
+        user_id = user_context.get('user_id')
+        active_trip = Trip.query.filter_by(user_id=user_id, status='ACTIVE').first() if user_id else None
+        if not active_trip and user_id:
+            active_trip = Trip.query.filter_by(user_id=user_id).order_by(Trip.departure_date.asc()).first()
+
+        if active_trip:
+            spent_fmt = format_money(active_trip.actual_spending_minor_units, user_context['currency'])
+            planned_fmt = format_money(active_trip.total_budget_minor_units, user_context['currency'])
+            remaining_fmt = format_money(active_trip.remaining_budget_minor_units, user_context['currency'])
+            progress = active_trip.budget_progress_pct
+            reply = (
+                f"For your trip to **{active_trip.destination}** (**{active_trip.name}**):\n\n"
+                f"• **Planned Budget:** {planned_fmt}\n"
+                f"• **Actual Recorded Expenses:** {spent_fmt} ({progress}% utilized)\n"
+                f"• **Remaining Trip Budget:** **{remaining_fmt}**\n\n"
+                f"You have linked **{len(active_trip.transactions)} transactions** to this trip. "
+                "You can link additional transactions or log receipts in TripWise anytime."
+            )
+        else:
+            reply = (
+                "You do not have an active trip planned yet in TripWise.\n\n"
+                "You can create a trip plan in seconds to set a planned budget, generate estimates, and link your actual travel expenses."
+            )
+        actions = [
+            {"label": "View TripWise Tracker", "url": "/trips"},
+            {"label": "Plan a Trip", "url": "/trips"}
+        ]
+        return {"response": reply, "actions": actions}
+
+    # 11h. General Trip / Travel query
+    if any(k in msg for k in ['trip', 'travel', 'vacation', 'holiday', 'tripwise', 'flight', 'hotel', 'tour']):
+        reply = (
+            "MoneyLeak includes **TripWise — Smart Trip Budget Planner** (`/trips`) to help you plan spontaneous and future getaways:\n\n"
+            "• **Automatic Budget Breakdown:** Estimates transit, stays, meals, local transport, entry tickets, and contingency.\n"
+            "• **Affordability Reality Check:** Compares trip costs against your real available liquid cash, upcoming essential needs, and emergency cushion.\n"
+            "• **Scenario Comparisons:** Compare Budget, Standard, and Premium travel options side by side.\n"
+            "• **Expense Tracking:** Link real transactions to your trip and watch your remaining budget update live without duplicate counting."
+        )
+        actions = [
+            {"label": "Open TripWise", "url": "/trips"},
+            {"label": "Plan a Trip", "url": "/trips"}
+        ]
+        return {"response": reply, "actions": actions}
+
+    # 12. GENERAL / ASSISTANT OVERVIEW FALLBACK
     actions = [
         {"label": "Dashboard", "url": "/dashboard"},
         {"label": "Budget", "url": "/budget"},
@@ -960,6 +1151,28 @@ def run_assistant_module(user: User, module_id: str) -> Dict[str, Any]:
             ],
             "action_url": "/reports",
             "action_text": "Download Full Audit PDF"
+        }
+
+    elif module_id == "trip_planner":
+        trips = Trip.query.filter_by(user_id=user.id).order_by(Trip.departure_date.asc()).all()
+        active_trip = next((t for t in trips if t.status in ('PLANNING', 'ACTIVE')), None)
+        if active_trip:
+            status_desc = f"Destination: {active_trip.destination} • Planned: {format_money(active_trip.total_budget_minor_units, user.currency)} • Spent: {format_money(active_trip.actual_spending_minor_units, user.currency)}"
+        else:
+            status_desc = "No trips currently planned. Model your next sudden getaway or holiday."
+
+        return {
+            "module_id": module_id,
+            "title": "TripWise — Smart Trip Budget Planner",
+            "metric_highlight": f"{len(trips)} Trips Tracked",
+            "status": "good" if trips else "info",
+            "details": [
+                {"title": "Active Trip Itinerary", "description": status_desc},
+                {"title": "Affordability Integration", "description": "Checks costs against liquid surplus, 50% essentials & emergency cushions."},
+                {"title": "Travel Scenarios", "description": "Compare Budget, Standard & Premium options side by side."}
+            ],
+            "action_url": "/trips",
+            "action_text": "Launch TripWise Planner"
         }
 
     return {

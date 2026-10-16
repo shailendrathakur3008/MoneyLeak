@@ -7,6 +7,14 @@ from app.models.goal import SavingsGoal, GoalContribution
 from app.models.recurring_payment import RecurringPayment
 from app.models.alert import FinancialAlert
 from app.models.simulation import Simulation
+from app.models.trip import Trip
+from app.models.sync import (
+    FinancialConnection,
+    SyncedTransaction,
+    MerchantCategoryPreference,
+    SyncAuditLog,
+    ReceiptRecord
+)
 
 __all__ = [
     'User',
@@ -19,5 +27,11 @@ __all__ = [
     'GoalContribution',
     'RecurringPayment',
     'FinancialAlert',
-    'Simulation'
+    'Simulation',
+    'Trip',
+    'FinancialConnection',
+    'SyncedTransaction',
+    'MerchantCategoryPreference',
+    'SyncAuditLog',
+    'ReceiptRecord'
 ]
