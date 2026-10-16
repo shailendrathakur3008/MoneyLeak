@@ -7,7 +7,7 @@
   <style>
     /* Reset & Base styles for universal email client compatibility */
     body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    table, td { border-collapse: collapse; }
     img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
     body {
       margin: 0 !important;
@@ -19,6 +19,11 @@
       color: #121614;
     }
   </style>
+  <!--[if mso]>
+  <style type="text/css">
+    table, td { mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; }
+  </style>
+  <![endif]-->
 </head>
 <body style="margin: 0; padding: 0; background-color: #f4f6f2;">
 
