@@ -353,8 +353,8 @@ def verify_otp():
     custom_name = (data.get('full_name') or '').strip()
     client_token = (data.get('otp_token') or '').strip()
 
-    if not email or not otp_code:
-        return jsonify({'success': False, 'error': 'Email and verification code are required.'}), 400
+    if not email or not otp_code or len(otp_code) != 6:
+        return jsonify({'success': False, 'error': 'Please enter a valid 6-digit verification code.'}), 400
 
     # 1. Try real Supabase token verification first
     is_valid_token, supabase_data = verify_real_otp_token(email, otp_code)

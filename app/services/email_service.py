@@ -238,8 +238,8 @@ def send_real_verification_email(email: str, otp_code: str) -> EmailDispatchResu
 
 def verify_real_otp_token(email: str, otp_code: str) -> tuple[bool, dict | None]:
     """
-    Verifies the OTP token against Supabase Auth API if available.
-    Supports 6 to 10 character tokens and tests verification types ('magiclink', 'signup', 'email').
+    Verifies the 6-digit OTP token against Supabase Auth API if available.
+    Tests verification token types ('magiclink', 'signup', 'email').
     Returns (True, user_payload) if verified, (False, None) otherwise.
     """
     email = email.strip().lower()
@@ -248,7 +248,7 @@ def verify_real_otp_token(email: str, otp_code: str) -> tuple[bool, dict | None]
     supabase_url = (os.environ.get('SUPABASE_URL') or DEFAULT_SUPABASE_URL).rstrip('/')
     supabase_anon = os.environ.get('SUPABASE_ANON_KEY') or DEFAULT_SUPABASE_ANON_KEY
 
-    if supabase_url and supabase_anon and (6 <= len(otp_code) <= 10):
+    if supabase_url and supabase_anon and len(otp_code) == 6:
         for verify_type in ('magiclink', 'signup', 'email'):
             try:
                 req_url = f"{supabase_url}/auth/v1/verify"
