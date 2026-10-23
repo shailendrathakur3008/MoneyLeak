@@ -65,7 +65,7 @@ class SyncEngine:
             'potential_duplicates_count': potential_duplicates,
             'last_sync_at': last_sync.isoformat() if last_sync else None,
             'provider_info': provider_info,
-            'overall_status': 'ACTIVE' if active_connections else ('CONFIG_REQUIRED' if not aa_client.is_configured() else 'IDLE')
+            'overall_status': 'ACTIVE' if active_connections else ('SANDBOX_READY' if not aa_client.is_configured() else 'IDLE')
         }
 
     @staticmethod

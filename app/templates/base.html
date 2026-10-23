@@ -46,6 +46,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/chat_assistant.css') }}">
   {% block extra_head %}{% endblock %}
+  {% block head_extra %}{% endblock %}
 </head>
 <body>
 
@@ -535,6 +536,7 @@
   });
 </script>
 {% block extra_js %}{% endblock %}
+{% block scripts_extra %}{% endblock %}
 </body>
 </html>
 

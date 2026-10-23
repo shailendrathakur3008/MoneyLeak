@@ -44,6 +44,32 @@ git push origin main
 | `SECRET_KEY` | *(Enter a random 32-character string)* | Session encryption key |
 | `SESSION_COOKIE_SECURE` | `true` | Secure HTTPS cookies |
 | `AA_ENVIRONMENT` | `sandbox` | Universal Sync test mode |
+| `RESEND_API_KEY` | *(Optional, e.g. `re_...`)* | **Real Email Delivery** via Resend (3,000 free emails/mo) |
+| `SMTP_USER` | *(Optional, e.g. `yourname@gmail.com`)* | Direct SMTP username |
+| `SMTP_PASS` | *(Optional, Google App Password)* | 16-character Google App Password |
+| `SHOW_DEV_OTP` | `true` | Instant access code on screen when email unconfigured |
+
+### ✉️ Setting Up Real Email OTP Delivery on Vercel
+
+To ensure users receive OTP verification emails directly in their inbox:
+
+#### Option 1: Resend (Recommended for Vercel — 100% Free, 3,000 emails/mo)
+1. Sign up for free at **[resend.com](https://resend.com/)**.
+2. Create an API Key in your Resend Dashboard.
+3. In your Vercel Project Settings → **Environment Variables**, add:
+   - **Key**: `RESEND_API_KEY`
+   - **Value**: `re_your_api_key_here`
+4. Redeploy. Resend delivers emails directly via HTTP REST API with zero SMTP timeout or firewall issues!
+
+#### Option 2: Gmail SMTP (Using Google App Password)
+1. Go to **[Google Account Security](https://myaccount.google.com/security)** and ensure 2-Step Verification is ON.
+2. Go to **[App Passwords](https://myaccount.google.com/apppasswords)**.
+3. Generate a 16-character password (e.g., `abcd efgh ijkl mnop`).
+4. In your Vercel Project Settings → **Environment Variables**, add:
+   - `SMTP_HOST`: `smtp.gmail.com`
+   - `SMTP_PORT`: `587`
+   - `SMTP_USER`: `your_email@gmail.com`
+   - `SMTP_PASS`: `your 16-character app password`
 
 6. Click **Deploy**.
 

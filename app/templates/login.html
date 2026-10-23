@@ -825,6 +825,100 @@
     [data-theme="dark"] .google-btn-cancel {
       color: #8ab4f8;
     }
+
+    /* Dev / Instant Access OTP Banner */
+    .dev-otp-banner {
+      background: rgba(203, 244, 50, 0.12);
+      border: 1px solid rgba(203, 244, 50, 0.45);
+      border-radius: 14px;
+      padding: 13px 15px;
+      margin-bottom: 16px;
+      animation: fadeIn 0.25s ease-out;
+    }
+    .dev-otp-banner-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .dev-otp-badge {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      color: #15803d;
+      background: rgba(22, 163, 74, 0.14);
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .dev-otp-sub {
+      font-size: 11px;
+      color: var(--ml-text-secondary);
+      font-weight: 600;
+    }
+    .dev-otp-banner-body {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      background: var(--ml-card);
+      border: 1px solid var(--ml-card-border);
+      border-radius: 10px;
+      padding: 8px 12px;
+    }
+    .dev-otp-digits {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: 6px;
+      color: var(--ml-text-primary);
+    }
+    .btn-autofill-otp {
+      background: var(--ml-primary-lime);
+      color: var(--ml-primary-lime-text);
+      border: none;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn-autofill-otp:hover {
+      background: var(--ml-primary-lime-hover);
+      transform: translateY(-1px);
+    }
+    .dev-otp-banner-footer {
+      font-size: 11px;
+      color: var(--ml-text-secondary);
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+    .dev-otp-banner-footer code {
+      background: rgba(0,0,0,0.06);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-weight: 700;
+      color: var(--ml-text-primary);
+    }
+
+    [data-theme="dark"] .dev-otp-banner {
+      background: rgba(203, 244, 50, 0.08);
+      border-color: rgba(203, 244, 50, 0.25);
+    }
+    [data-theme="dark"] .dev-otp-badge {
+      color: #cbf432;
+      background: rgba(203, 244, 50, 0.18);
+    }
+    [data-theme="dark"] .dev-otp-banner-footer code {
+      background: rgba(255, 255, 255, 0.12);
+    }
   </style>
 </head>
 <body>
@@ -989,6 +1083,26 @@
             >
           </div>
 
+          <!-- Dev / Instant Access OTP Card -->
+          <div id="dev-otp-card" class="dev-otp-banner" style="display: none;">
+            <div class="dev-otp-banner-header">
+              <span class="dev-otp-badge">
+                <i data-lucide="zap" style="width:13px;height:13px;display:inline-block;vertical-align:middle;margin-right:3px;"></i>
+                Instant Access Code
+              </span>
+              <span class="dev-otp-sub" id="dev-otp-provider-label">Dev / Sandbox Mode</span>
+            </div>
+            <div class="dev-otp-banner-body">
+              <span class="dev-otp-digits" id="dev-otp-display">------</span>
+              <button type="button" class="btn-autofill-otp" id="btn-autofill-otp">
+                Auto-Fill & Enter →
+              </button>
+            </div>
+            <div class="dev-otp-banner-footer" id="dev-otp-footer-text">
+              Real inbox delivery is active when <code>RESEND_API_KEY</code> or <code>SMTP_USER</code> is set.
+            </div>
+          </div>
+
           <!-- Field 3: 6-Digit OTP Verification Code (Clean empty input) -->
           <div class="form-group" id="group-otp-code" style="display: none;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -1024,10 +1138,17 @@
 
           <!-- Sub Actions (Resend code / Change email) -->
           <div id="otp-sub-actions" style="display:none; text-align:center; margin-top:14px;">
-            <button type="button" class="btn-text-link" id="btn-reset-email">
-              <i data-lucide="rotate-ccw" style="width:13px;height:13px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> 
-              Change email or resend code
-            </button>
+            <div style="display:flex; justify-content:center; align-items:center; gap:14px; flex-wrap:wrap;">
+              <button type="button" class="btn-text-link" id="btn-resend-otp">
+                <i data-lucide="refresh-cw" style="width:13px;height:13px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> 
+                <span id="btn-resend-otp-text">Resend code</span>
+              </button>
+              <span style="color:var(--ml-text-muted);font-size:12px;">•</span>
+              <button type="button" class="btn-text-link" id="btn-reset-email">
+                <i data-lucide="edit-3" style="width:13px;height:13px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> 
+                Change email
+              </button>
+            </div>
           </div>
 
           <!-- Password toggle for existing accounts -->
@@ -1342,11 +1463,21 @@
     const subActions = document.getElementById('otp-sub-actions');
     const destinationTag = document.getElementById('otp-destination-tag');
     const btnResetEmail = document.getElementById('btn-reset-email');
+    const btnResendOtp = document.getElementById('btn-resend-otp');
+    const btnResendText = document.getElementById('btn-resend-otp-text');
+    const devOtpCard = document.getElementById('dev-otp-card');
+    const devOtpDisplay = document.getElementById('dev-otp-display');
+    const devOtpProvider = document.getElementById('dev-otp-provider-label');
+    const devOtpFooter = document.getElementById('dev-otp-footer-text');
+    const btnAutofill = document.getElementById('btn-autofill-otp');
 
     // State Variables
     let userState = null;
     let currentStep = 'EMAIL'; // 'EMAIL' | 'OTP' | 'PASSWORD'
     let checkDebounceTimer = null;
+    let currentOtpToken = '';
+    let resendCooldownTimer = null;
+    let resendSeconds = 0;
 
     // Real-Time Email Check Function
     async function checkEmailExistence(email) {
@@ -1445,6 +1576,14 @@
     // Reset to step 1
     function resetForm() {
       currentStep = 'EMAIL';
+      clearInterval(resendCooldownTimer);
+      resendSeconds = 0;
+      currentOtpToken = '';
+      if (devOtpCard) devOtpCard.style.display = 'none';
+      if (btnResendOtp) {
+        btnResendOtp.disabled = false;
+        btnResendText.innerText = 'Resend code';
+      }
       emailInput.disabled = false;
       otpGroup.style.display = 'none';
       passwordGroup.style.display = 'none';
@@ -1457,6 +1596,95 @@
       emailInput.focus();
     }
     btnResetEmail.addEventListener('click', resetForm);
+
+    // Auto-fill OTP from Dev Card
+    if (btnAutofill) {
+      btnAutofill.addEventListener('click', () => {
+        const devVal = devOtpDisplay.innerText.trim();
+        if (devVal && devVal.length === 6 && !devVal.includes('-')) {
+          otpInput.value = devVal;
+          btnAction.click();
+        }
+      });
+    }
+
+    // Resend OTP Countdown & Trigger
+    function startResendCountdown(seconds) {
+      clearInterval(resendCooldownTimer);
+      resendSeconds = seconds;
+      if (btnResendOtp) {
+        btnResendOtp.disabled = true;
+        btnResendText.innerText = `Resend code (${resendSeconds}s)`;
+      }
+
+      resendCooldownTimer = setInterval(() => {
+        resendSeconds--;
+        if (resendSeconds <= 0) {
+          clearInterval(resendCooldownTimer);
+          if (btnResendOtp) {
+            btnResendOtp.disabled = false;
+            btnResendText.innerText = 'Resend code';
+          }
+        } else {
+          if (btnResendText) {
+            btnResendText.innerText = `Resend code (${resendSeconds}s)`;
+          }
+        }
+      }, 1000);
+    }
+
+    async function triggerResendOtp() {
+      if (resendSeconds > 0) return;
+      const email = emailInput.value.trim();
+      if (!email || !email.includes('@')) return;
+
+      if (btnResendOtp) btnResendOtp.disabled = true;
+      if (btnResendText) btnResendText.innerText = 'Sending...';
+
+      try {
+        const res = await fetch('/auth/send-otp', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF_TOKEN
+          },
+          body: JSON.stringify({ email: email, purpose: 'login' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          currentOtpToken = data.otp_token || '';
+          if (data.dev_otp && devOtpCard) {
+            devOtpDisplay.innerText = data.dev_otp;
+            if (data.email_delivered) {
+              devOtpProvider.innerText = `Dispatched via ${data.provider || 'Email'}`;
+              devOtpFooter.innerHTML = `✓ Real email sent to <b>${email}</b>. If you don't receive it shortly, use the access code above.`;
+            } else {
+              devOtpProvider.innerText = 'Email service not configured';
+              devOtpFooter.innerHTML = `Real inbox delivery requires configuring <code>RESEND_API_KEY</code> or <code>SMTP_USER</code> in environment. Use the code above to enter.`;
+            }
+            devOtpCard.style.display = 'block';
+          }
+          let msg = data.email_delivered
+            ? `New verification code sent to <b>${email}</b>. Please check your inbox.`
+            : `New instant access code generated for <b>${email}</b>.`;
+          showStatus(msg, 'success');
+          otpInput.value = '';
+          otpInput.focus();
+          startResendCountdown(20);
+        } else {
+          showStatus(data.error || 'Could not resend code. Please wait a moment.', 'error');
+          startResendCountdown(10);
+        }
+      } catch (err) {
+        showStatus('Network error while requesting new code.', 'error');
+        if (btnResendOtp) btnResendOtp.disabled = false;
+        if (btnResendText) btnResendText.innerText = 'Resend code';
+      }
+    }
+
+    if (btnResendOtp) {
+      btnResendOtp.addEventListener('click', triggerResendOtp);
+    }
 
     // Primary Action Button Handler
     btnAction.addEventListener('click', async () => {
@@ -1527,6 +1755,7 @@
 
           if (data.success) {
             currentStep = 'OTP';
+            currentOtpToken = data.otp_token || '';
             emailInput.disabled = true;
             nameGroup.style.display = 'none';
             passwordToggleWrap.style.display = 'none';
@@ -1536,10 +1765,27 @@
             btnAction.disabled = false;
             btnAction.innerText = data.is_existing ? 'Verify & Restore Workspace →' : 'Verify & Initialize Workspace →';
 
-            let msg = `Verification code sent to <b>${email}</b>. Please check your inbox.`;
+            if (data.dev_otp && devOtpCard) {
+              devOtpDisplay.innerText = data.dev_otp;
+              if (data.email_delivered) {
+                devOtpProvider.innerText = `Dispatched via ${data.provider || 'Email'}`;
+                devOtpFooter.innerHTML = `✓ Real email sent to <b>${email}</b>. If you don't receive it shortly, use the access code above.`;
+              } else {
+                devOtpProvider.innerText = 'Email service not configured';
+                devOtpFooter.innerHTML = `Real inbox delivery requires configuring <code>RESEND_API_KEY</code> or <code>SMTP_USER</code> in environment. Use the code above to enter.`;
+              }
+              devOtpCard.style.display = 'block';
+            } else if (devOtpCard) {
+              devOtpCard.style.display = 'none';
+            }
+
+            let msg = data.email_delivered
+              ? `Verification code sent to <b>${email}</b>. Please check your inbox and spam folder.`
+              : `Instant verification code generated for <b>${email}</b>. Click Auto-Fill below to enter.`;
             showStatus(msg, 'success');
             otpInput.value = '';
             otpInput.focus();
+            startResendCountdown(20);
           } else {
             showStatus(data.error || 'Could not send verification code.', 'error');
             btnAction.disabled = false;
@@ -1578,6 +1824,7 @@
             body: JSON.stringify({
               email: email,
               otp_code: code,
+              otp_token: currentOtpToken,
               purpose: 'login',
               full_name: customName
             })
@@ -1629,6 +1876,54 @@
         openModal('google-modal');
       });
     }
+
+    // Auto-detect magic link / confirmation link redirect from email
+    (function handleEmailTokenRedirect() {
+      const hash = window.location.hash || '';
+      const search = window.location.search || '';
+      let accessToken = null;
+
+      if (hash.includes('access_token=')) {
+        const params = new URLSearchParams(hash.substring(1));
+        accessToken = params.get('access_token');
+      } else if (search.includes('access_token=')) {
+        const params = new URLSearchParams(search);
+        accessToken = params.get('access_token');
+      }
+
+      if (accessToken) {
+        showStatus('Verifying email link... Entering workspace...', 'success');
+        btnAction.disabled = true;
+        btnAction.innerText = 'Verifying link...';
+
+        fetch('/auth/token-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF_TOKEN
+          },
+          body: JSON.stringify({ access_token: accessToken })
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            showStatus(data.message || 'Verified! Synchronizing workspace...', 'success');
+            setTimeout(() => {
+              window.location.href = data.redirect || '/dashboard';
+            }, 300);
+          } else {
+            showStatus(data.error || 'Authentication link expired. Please enter your email to get a new code.', 'error');
+            btnAction.disabled = false;
+            btnAction.innerText = 'Continue with Email';
+          }
+        })
+        .catch(() => {
+          showStatus('Network error verifying link.', 'error');
+          btnAction.disabled = false;
+          btnAction.innerText = 'Continue with Email';
+        });
+      }
+    })();
   });
 </script>
 </body>

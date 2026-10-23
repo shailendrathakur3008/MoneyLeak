@@ -2,17 +2,18 @@
 
 {% block title %}Universal Expense Sync — Automatic Bank & UPI Tracking | MoneyLeak{% endblock %}
 
-{% block head_extra %}
+{% block extra_head %}
 <style>
   .sync-hero-card {
-    background: var(--bg-dark-card);
+    background: #161917 !important;
     border-radius: var(--radius-xl);
     padding: 28px 32px;
-    color: var(--text-on-dark);
+    color: #ffffff !important;
     position: relative;
     overflow: hidden;
     margin-bottom: 24px;
     border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.25);
   }
   .sync-hero-card::after {
     content: '';
@@ -153,7 +154,7 @@
       </div>
 
       <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <button type="button" class="btn btn-secondary" onclick="openConnectModal()" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: #fff;">
+        <button type="button" class="btn" onclick="openConnectModal()" style="background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.25); color: #ffffff; font-weight: 700; cursor: pointer;">
           <i data-lucide="plus" style="width: 16px; height: 16px; margin-right: 6px;"></i> Connect Bank
         </button>
         <button type="button" class="btn btn-primary" onclick="syncAllNow()" id="btn-sync-all">
@@ -221,7 +222,15 @@
         {% endif %}
       </div>
       <div style="font-size: 12px; color: var(--text-secondary);">
-        Status: <span style="font-weight: 700; color: var(--pastel-lavender-accent);">{{ overview.overall_status }}</span>
+        Status: <span style="font-weight: 700; color: {% if overview.overall_status == 'ACTIVE' %}#16a34a{% elif overview.overall_status in ('CONFIG_REQUIRED', 'SANDBOX_READY') %}#d97706{% else %}var(--text-secondary){% endif %};">
+          {% if overview.overall_status == 'ACTIVE' %}
+            Active (Connected)
+          {% elif overview.overall_status in ('CONFIG_REQUIRED', 'SANDBOX_READY') %}
+            Ready to Link (Simulator)
+          {% else %}
+            Idle
+          {% endif %}
+        </span>
       </div>
     </div>
   </div>
@@ -438,10 +447,13 @@
             <label class="form-label" style="font-weight: 700; font-size: 12px;">Select Bank Format (Optional)</label>
             <select id="statement-bank-hint" class="form-control">
               <option value="AUTO">Auto-Detect Header & Format</option>
-              <option value="HDFC">HDFC Bank</option>
+              <option value="UNION">Union Bank of India</option>
               <option value="SBI">State Bank of India (SBI)</option>
+              <option value="HDFC">HDFC Bank</option>
               <option value="ICICI">ICICI Bank</option>
               <option value="AXIS">Axis Bank</option>
+              <option value="PNB">Punjab National Bank (PNB)</option>
+              <option value="BARB">Bank of Baroda</option>
               <option value="GENERIC">Generic CSV (Date, Narration, Amount)</option>
             </select>
           </div>
@@ -685,7 +697,7 @@
 
 {% endblock %}
 
-{% block scripts_extra %}
+{% block extra_js %}
 <script>
   let currentReviewTxn = null;
 
@@ -793,11 +805,11 @@
   }
 
   async function disconnectConnection(connId) {
-    if (!confirm('Are you sure you want to disconnect this bank and revoke its Account Aggregator consent?')) {
+    if (!confirm('Are you sure you want to disconnect this bank and remove its imported transactions?')) {
       return;
     }
     try {
-      const res = await fetch(`/api/sync/connections/${connId}`, {
+      const res = await fetch(`/api/sync/connections/${connId}?delete_data=true`, {
         method: 'DELETE',
         headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
       });

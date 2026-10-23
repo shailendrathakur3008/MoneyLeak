@@ -6,6 +6,9 @@ import re
 import json
 import base64
 import secrets
+import hmac
+import hashlib
+import time
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import (
@@ -239,6 +242,20 @@ def check_email():
         })
 
 
+def _generate_otp_signature(email: str, code: str, exp_timestamp: int, secret_key: str) -> str:
+    """Generates an HMAC SHA-256 signature for stateless OTP verification."""
+    msg = f"{email.strip().lower()}:{code.strip()}:{exp_timestamp}".encode('utf-8')
+    return hmac.new(secret_key.encode('utf-8'), msg, hashlib.sha256).hexdigest()
+
+
+def _verify_otp_signature(email: str, code: str, exp_timestamp: int, signature: str, secret_key: str) -> bool:
+    """Verifies that the HMAC SHA-256 signature is valid and not expired."""
+    if time.time() > exp_timestamp:
+        return False
+    expected = _generate_otp_signature(email, code, exp_timestamp, secret_key)
+    return hmac.compare_digest(expected, signature)
+
+
 @auth_bp.route('/auth/send-otp', methods=['POST'])
 @csrf.exempt
 def send_otp():
@@ -253,14 +270,16 @@ def send_otp():
     # Rate limit: allow maximum 1 OTP per 20 seconds for the same email
     recent_otp = EmailOTP.query.filter_by(email=email).order_by(EmailOTP.created_at.desc()).first()
     if recent_otp and (datetime.utcnow() - recent_otp.created_at).total_seconds() < 20:
+        remaining = int(20 - (datetime.utcnow() - recent_otp.created_at).total_seconds())
         return jsonify({
             'success': False,
-            'error': 'Please wait a few seconds before requesting another code.'
+            'error': f'Please wait {remaining} seconds before requesting another code.'
         }), 429
 
     # Generate 6-digit cryptographic code
     code = f"{secrets.randbelow(900000) + 100000}"
     expires_at = datetime.utcnow() + timedelta(minutes=10)
+    exp_timestamp = int(expires_at.timestamp())
 
     otp_record = EmailOTP(
         email=email,
@@ -271,21 +290,61 @@ def send_otp():
     db.session.add(otp_record)
     db.session.commit()
 
-    # Dispatch real verification email via Supabase Auth / SMTP
+    secret_key = current_app.config.get('SECRET_KEY', 'moneyleak-production-sec-key-7f9a12c8b4e05139')
+    sig = _generate_otp_signature(email, code, exp_timestamp, secret_key)
+    otp_token = f"{exp_timestamp}:{sig}"
+
+    # Store in session as stateless fallback for multi-instance / serverless
+    session['pending_otp'] = {
+        'email': email,
+        'code': code,
+        'exp': exp_timestamp,
+        'sig': sig,
+        'purpose': purpose
+    }
+    session.permanent = True
+    session.modified = True
+
+    # Dispatch real verification email via Resend / SMTP / Supabase
+    dispatch_result = None
     try:
-        send_real_verification_email(email, code)
+        dispatch_result = send_real_verification_email(email, code)
     except Exception as e:
         print(f"[auth.send_otp] Email dispatch warning: {e}")
+
+    is_delivered = bool(dispatch_result and getattr(dispatch_result, 'delivered', False))
+    provider_name = getattr(dispatch_result, 'provider', '') if dispatch_result else ''
+
+    # Share dev_otp if:
+    # 1. Real email could not be delivered to inbox (e.g. unconfigured provider on Vercel)
+    # 2. Testing / Debug mode
+    # 3. Explicit env flag SHOW_DEV_OTP / DEMO_MODE
+    is_dev_or_testing = (
+        current_app.config.get('TESTING') or
+        current_app.config.get('DEBUG') or
+        os.environ.get('FLASK_ENV') == 'development' or
+        os.environ.get('SHOW_DEV_OTP', '').lower() in ('true', '1') or
+        os.environ.get('DEMO_MODE', '').lower() in ('true', '1')
+    )
+    show_dev_otp = (not is_delivered) or is_dev_or_testing
 
     existing_user = User.query.filter_by(email=email).first()
 
     resp_payload = {
         'success': True,
-        'message': f'Verification code sent to {email}. Please check your inbox.',
+        'email_delivered': is_delivered,
+        'provider': provider_name,
+        'otp_token': otp_token,
         'is_existing': bool(existing_user),
         'user_name': existing_user.full_name if existing_user else None
     }
-    if current_app.config.get('TESTING'):
+
+    if is_delivered:
+        resp_payload['message'] = f'Verification code sent to {email}. Please check your inbox and spam folder.'
+    else:
+        resp_payload['message'] = f'Email delivery not configured. Use the instant access code below.'
+
+    if show_dev_otp:
         resp_payload['dev_otp'] = code
 
     return jsonify(resp_payload)
@@ -301,6 +360,7 @@ def verify_otp():
     purpose = data.get('purpose', 'login').strip()
     new_email = (data.get('new_email') or '').strip().lower()
     custom_name = (data.get('full_name') or '').strip()
+    client_token = (data.get('otp_token') or '').strip()
 
     if not email or not otp_code:
         return jsonify({'success': False, 'error': 'Email and verification code are required.'}), 400
@@ -313,13 +373,36 @@ def verify_otp():
         email=email,
         is_used=False
     ).order_by(EmailOTP.created_at.desc()).first()
+    is_db_valid = otp_record.is_valid(otp_code) if otp_record else False
 
-    if not is_valid_token:
-        if not otp_record or not otp_record.is_valid(otp_code):
-            return jsonify({'success': False, 'error': 'Invalid or expired verification code. Please check your email.'}), 400
+    # 3. Stateless session / HMAC token fallback (for serverless Vercel cold starts)
+    is_session_valid = False
+    pending = session.get('pending_otp')
+    if pending and isinstance(pending, dict):
+        if pending.get('email') == email and pending.get('code') == otp_code:
+            if time.time() <= pending.get('exp', 0):
+                is_session_valid = True
+
+    is_token_valid = False
+    if client_token and ':' in client_token:
+        try:
+            parts = client_token.split(':', 1)
+            token_exp = int(parts[0])
+            token_sig = parts[1]
+            secret_key = current_app.config.get('SECRET_KEY', 'moneyleak-production-sec-key-7f9a12c8b4e05139')
+            if _verify_otp_signature(email, otp_code, token_exp, token_sig, secret_key):
+                is_token_valid = True
+        except Exception:
+            pass
+
+    is_verified = is_valid_token or is_db_valid or is_session_valid or is_token_valid
+
+    if not is_verified:
+        return jsonify({'success': False, 'error': 'Invalid or expired verification code. Please check your email.'}), 400
 
     if otp_record:
         otp_record.is_used = True
+    session.pop('pending_otp', None)
 
     # Case A: Email change for authenticated user
     if purpose == 'email_change':
@@ -394,6 +477,93 @@ def verify_otp():
         'redirect': dest,
         'message': f'Welcome back, {user.full_name}! Your existing data has been loaded.' if not is_new_user else 'Welcome to MoneyLeak! Initializing your workspace...'
     })
+
+
+@auth_bp.route('/auth/token-login', methods=['POST'])
+@csrf.exempt
+def token_login():
+    """Authenticates a user via Supabase access token (e.g. from magic link redirect)."""
+    import urllib.request
+    data = request.get_json() if request.is_json else request.form
+    access_token = (data.get('access_token') or '').strip()
+
+    if not access_token:
+        return jsonify({'success': False, 'error': 'Access token is required.'}), 400
+
+    supabase_url = os.environ.get('SUPABASE_URL', '').rstrip('/')
+    supabase_anon = os.environ.get('SUPABASE_ANON_KEY', '')
+
+    if not (supabase_url and supabase_anon):
+        return jsonify({'success': False, 'error': 'Supabase auth is not configured.'}), 500
+
+    try:
+        req_url = f"{supabase_url}/auth/v1/user"
+        headers = {
+            'apikey': supabase_anon,
+            'Authorization': f'Bearer {access_token}',
+            'Content-Type': 'application/json'
+        }
+        req = urllib.request.Request(req_url, headers=headers)
+        with urllib.request.urlopen(req, timeout=10) as res:
+            if res.status in (200, 201):
+                raw = res.read().decode('utf-8')
+                user_info = json.loads(raw) if raw else {}
+                email = (user_info.get('email') or '').strip().lower()
+                supabase_id = user_info.get('id')
+
+                if not email:
+                    return jsonify({'success': False, 'error': 'Email not found in token.'}), 400
+
+                user = User.query.filter_by(email=email).first()
+                is_new_user = False
+                if not user:
+                    is_new_user = True
+                    default_name = email.split('@')[0].replace('.', ' ').replace('_', ' ').title()
+                    user = User(
+                        full_name=default_name,
+                        email=email,
+                        auth_provider='supabase',
+                        provider_user_id=supabase_id,
+                        email_verified=True,
+                        country='India',
+                        currency='INR',
+                        onboarding_completed=False,
+                        onboarding_step=1
+                    )
+                    user.set_password(secrets.token_urlsafe(32))
+                    db.session.add(user)
+                    db.session.flush()
+
+                    default_budget = Budget(
+                        user_id=user.id,
+                        needs_percentage=50.0,
+                        wants_percentage=30.0,
+                        savings_percentage=20.0
+                    )
+                    db.session.add(default_budget)
+                    seed_default_categories(user)
+                else:
+                    user.email_verified = True
+                    if supabase_id and not user.provider_user_id:
+                        user.provider_user_id = supabase_id
+                        user.auth_provider = 'supabase'
+
+                db.session.commit()
+                session['user_id'] = user.id
+                session.permanent = True
+
+                dest = url_for('dashboard.view_dashboard') if user.onboarding_completed else url_for('auth.onboarding')
+                return jsonify({
+                    'success': True,
+                    'is_new_user': is_new_user,
+                    'user_name': user.full_name,
+                    'redirect': dest,
+                    'message': f'Welcome back, {user.full_name}! Workspace access granted.'
+                })
+    except Exception as e:
+        print(f"[auth.token_login] Token verification failed: {e}")
+
+    return jsonify({'success': False, 'error': 'Invalid or expired authentication link.'}), 400
 
 
 # -----------------------------------------------------------------------------

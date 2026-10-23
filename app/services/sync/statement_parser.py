@@ -119,6 +119,10 @@ class StatementParser:
             if 'particulars' in row_text and ('dr' in row or 'cr' in row):
                 return idx, [f.strip() for f in csv.reader([line]).__next__()], 'AXIS'
 
+            # Check for Union Bank signature
+            if 'union' in row_text or ('remarks' in row_text and ('debit' in row_text or 'withdrawal' in row_text)):
+                return idx, [f.strip() for f in csv.reader([line]).__next__()], 'UNION_BANK'
+
             # Check Generic signature
             if 'date' in row_text and ('amount' in row_text or 'debit' in row_text or 'description' in row_text):
                 return idx, [f.strip() for f in csv.reader([line]).__next__()], bank

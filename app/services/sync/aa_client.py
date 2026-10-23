@@ -17,12 +17,12 @@ logger = logging.getLogger(__name__)
 # Supported Indian FIPs (Financial Information Providers) in the AA Ecosystem
 SUPPORTED_FIPS = [
     {
-        'id': 'HDFC',
-        'name': 'HDFC Bank',
-        'code': 'HDFC',
-        'fip_id': 'HDFC-FIP',
+        'id': 'UBIN',
+        'name': 'Union Bank of India',
+        'code': 'UBIN',
+        'fip_id': 'UNION-FIP',
         'icon': 'landmark',
-        'supported_types': ['SAVINGS', 'CURRENT', 'DEPOSIT'],
+        'supported_types': ['SAVINGS', 'CURRENT'],
         'status': 'LIVE'
     },
     {
@@ -32,6 +32,15 @@ SUPPORTED_FIPS = [
         'fip_id': 'SBI-FIP',
         'icon': 'landmark',
         'supported_types': ['SAVINGS', 'CURRENT'],
+        'status': 'LIVE'
+    },
+    {
+        'id': 'HDFC',
+        'name': 'HDFC Bank',
+        'code': 'HDFC',
+        'fip_id': 'HDFC-FIP',
+        'icon': 'landmark',
+        'supported_types': ['SAVINGS', 'CURRENT', 'DEPOSIT'],
         'status': 'LIVE'
     },
     {
@@ -57,6 +66,24 @@ SUPPORTED_FIPS = [
         'name': 'Kotak Mahindra Bank',
         'code': 'KKBK',
         'fip_id': 'KOTAK-FIP',
+        'icon': 'landmark',
+        'supported_types': ['SAVINGS', 'CURRENT'],
+        'status': 'LIVE'
+    },
+    {
+        'id': 'PUNB',
+        'name': 'Punjab National Bank (PNB)',
+        'code': 'PUNB',
+        'fip_id': 'PNB-FIP',
+        'icon': 'landmark',
+        'supported_types': ['SAVINGS', 'CURRENT'],
+        'status': 'LIVE'
+    },
+    {
+        'id': 'BARB',
+        'name': 'Bank of Baroda',
+        'code': 'BARB',
+        'fip_id': 'BARB-FIP',
         'icon': 'landmark',
         'supported_types': ['SAVINGS', 'CURRENT'],
         'status': 'LIVE'
