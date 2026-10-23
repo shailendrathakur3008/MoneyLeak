@@ -30,9 +30,9 @@ class Config:
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max for imports
 
     # Supabase Configuration
-    SUPABASE_URL = os.environ.get('SUPABASE_URL')
-    SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY')
-    SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
+    SUPABASE_URL = os.environ.get('SUPABASE_URL') or 'https://roxyqqtfgzrbwqthvrnt.supabase.co'
+    SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY') or 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJveHlxcXRmZ3pyYndxdGh2cm50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxNDcxNzQsImV4cCI6MjEwNzcyMzE3NH0.osUI_k9rWSEK2EwzDIbnxMEhrYEmBLe1zLhC1baUAXI'
+    SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJveHlxcXRmZ3pyYndxdGh2cm50Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjE0NzE3NCwiZXhwIjoyMTA3NzIzMTc0fQ.u04NN6RrpDtK52FeePRvEYLcNorLomNhzric1ERvhhY'
 
 class DevelopmentConfig(Config):
     DEBUG = True

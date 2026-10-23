@@ -1,10 +1,10 @@
 """
 Real Email & OTP Dispatch Service for MoneyLeak.
 
-Dispatches real OTP verification emails using:
-1. Resend API (HTTP REST — recommended for Vercel serverless & zero port blocking)
-2. Direct Python SMTP / TLS delivery (Gmail App Password, Brevo, SendGrid, custom SMTP)
-3. Supabase Auth Email Delivery (with rate limit detection)
+Dispatches real OTP verification emails directly using:
+1. Supabase Auth Email Delivery (Priority 1 — Direct Supabase Auth & Gmail SMTP)
+2. Resend API (HTTP REST fallback)
+3. Direct Python SMTP / TLS delivery
 """
 import os
 import json
@@ -14,6 +14,9 @@ import urllib.error
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from flask import render_template
+
+DEFAULT_SUPABASE_URL = 'https://roxyqqtfgzrbwqthvrnt.supabase.co'
+DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJveHlxcXRmZ3pyYndxdGh2cm50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxNDcxNzQsImV4cCI6MjEwNzcyMzE3NH0.osUI_k9rWSEK2EwzDIbnxMEhrYEmBLe1zLhC1baUAXI'
 
 
 class EmailDispatchResult(tuple):
@@ -45,7 +48,6 @@ def _render_otp_email_body(email: str, otp_code: str) -> tuple[str, str]:
     try:
         html_body = render_template('emails/otp_email.html', otp_code=otp_code, token=otp_code, user_email=email)
     except Exception as e:
-        # Fallback to direct file read or basic inline card
         template_path = os.path.join(os.path.dirname(__file__), '..', 'templates', 'emails', 'otp_email.html')
         if os.path.exists(template_path):
             try:
@@ -75,63 +77,88 @@ def _render_otp_email_body(email: str, otp_code: str) -> tuple[str, str]:
 
 def send_real_verification_email(email: str, otp_code: str) -> EmailDispatchResult:
     """
-    Sends the 6-digit OTP verification email to the user's inbox.
-    Checks delivery providers in priority order:
-    1. Resend API (HTTP REST — fastest, highest inbox rate, optimal for Vercel)
-    2. Direct SMTP (Gmail App Password, Brevo, SendGrid, custom mail server)
-    3. Supabase Auth OTP (built-in auth mailer)
+    Sends the OTP verification email to the user's inbox directly via Supabase Auth.
+    Delivery Priority:
+    1. Supabase Auth OTP Service (Directly sends from connected Gmail SMTP)
+    2. Resend API (HTTP REST fallback)
+    3. Direct Python SMTP
     """
     email = email.strip().lower()
     delivered = False
     provider_used = ''
     details = []
 
-    html_body, plain_text = _render_otp_email_body(email, otp_code)
+    # -------------------------------------------------------------------------
+    # Priority 1: Supabase Auth OTP Service (Direct from Supabase)
+    # -------------------------------------------------------------------------
+    supabase_url = (os.environ.get('SUPABASE_URL') or DEFAULT_SUPABASE_URL).rstrip('/')
+    supabase_anon = os.environ.get('SUPABASE_ANON_KEY') or DEFAULT_SUPABASE_ANON_KEY
 
-    # -------------------------------------------------------------------------
-    # Option 1: Resend API (Recommended for Vercel Serverless)
-    # -------------------------------------------------------------------------
-    resend_api_key = os.environ.get('RESEND_API_KEY', '').strip()
-    if resend_api_key:
+    if supabase_url and supabase_anon:
         try:
-            resend_url = "https://api.resend.com/emails"
-            resend_from = (
-                os.environ.get('MAIL_FROM') or
-                os.environ.get('RESEND_FROM') or
-                'MoneyLeak <onboarding@resend.dev>'
-            ).strip()
-
-            payload = json.dumps({
-                'from': resend_from,
-                'to': [email],
-                'subject': f"{otp_code} is your MoneyLeak verification code",
-                'html': html_body,
-                'text': plain_text
-            }).encode('utf-8')
-
-            req = urllib.request.Request(
-                resend_url,
-                data=payload,
-                headers={
-                    'Authorization': f'Bearer {resend_api_key}',
-                    'Content-Type': 'application/json',
-                    'User-Agent': 'MoneyLeak-Auth/1.0'
-                }
-            )
+            req_url = f"{supabase_url}/auth/v1/otp"
+            headers = {
+                'apikey': supabase_anon,
+                'Authorization': f'Bearer {supabase_anon}',
+                'Content-Type': 'application/json'
+            }
+            payload = json.dumps({'email': email, 'create_user': True}).encode('utf-8')
+            req = urllib.request.Request(req_url, data=payload, headers=headers)
             with urllib.request.urlopen(req, timeout=10) as res:
                 if res.status in (200, 201):
                     delivered = True
-                    provider_used = 'Resend API'
-                    details.append("Resend API")
-                    print(f"[EmailService] Successfully sent OTP to {email} via Resend API")
+                    provider_used = 'Supabase'
+                    details.append("Supabase Auth OTP")
+                    print(f"[EmailService] Successfully triggered OTP email to {email} directly from Supabase")
         except urllib.error.HTTPError as he:
-            err_body = he.read().decode('utf-8', errors='ignore')
-            print(f"[EmailService] Resend API error ({he.code}): {err_body}")
+            err_msg = he.read().decode('utf-8', errors='ignore')
+            print(f"[EmailService] Supabase OTP dispatch returned {he.code}: {err_msg}")
         except Exception as e:
-            print(f"[EmailService] Resend API attempt failed: {e}")
+            print(f"[EmailService] Supabase OTP dispatch attempt: {e}")
 
     # -------------------------------------------------------------------------
-    # Option 2: Direct Python SMTP (Gmail App Password, Brevo, custom SMTP)
+    # Priority 2: Resend API (Fallback if Supabase rate-limited or unconfigured)
+    # -------------------------------------------------------------------------
+    if not delivered:
+        resend_api_key = os.environ.get('RESEND_API_KEY', '').strip()
+        if resend_api_key:
+            html_body, plain_text = _render_otp_email_body(email, otp_code)
+            try:
+                resend_url = "https://api.resend.com/emails"
+                resend_from = (
+                    os.environ.get('MAIL_FROM') or
+                    os.environ.get('RESEND_FROM') or
+                    'MoneyLeak <onboarding@resend.dev>'
+                ).strip()
+
+                payload = json.dumps({
+                    'from': resend_from,
+                    'to': [email],
+                    'subject': f"{otp_code} is your MoneyLeak verification code",
+                    'html': html_body,
+                    'text': plain_text
+                }).encode('utf-8')
+
+                req = urllib.request.Request(
+                    resend_url,
+                    data=payload,
+                    headers={
+                        'Authorization': f'Bearer {resend_api_key}',
+                        'Content-Type': 'application/json',
+                        'User-Agent': 'MoneyLeak-Auth/1.0'
+                    }
+                )
+                with urllib.request.urlopen(req, timeout=10) as res:
+                    if res.status in (200, 201):
+                        delivered = True
+                        provider_used = 'Resend API'
+                        details.append("Resend API")
+                        print(f"[EmailService] Successfully sent OTP to {email} via Resend API")
+            except Exception as e:
+                print(f"[EmailService] Resend API attempt failed: {e}")
+
+    # -------------------------------------------------------------------------
+    # Priority 3: Direct Python SMTP
     # -------------------------------------------------------------------------
     if not delivered:
         smtp_user = (
@@ -147,12 +174,13 @@ def send_real_verification_email(email: str, otp_code: str) -> EmailDispatchResu
         ).strip()
 
         if smtp_user and smtp_pass:
+            html_body, plain_text = _render_otp_email_body(email, otp_code)
             smtp_host = (
                 os.environ.get('SMTP_HOST') or
                 os.environ.get('MAIL_SERVER') or
                 ('smtp.gmail.com' if '@gmail.com' in smtp_user else 'localhost')
             ).strip()
-            smtp_port = int(os.environ.get('SMTP_PORT') or os.environ.get('MAIL_PORT') or (465 if smtp_host == 'smtp.gmail.com' and not os.environ.get('SMTP_PORT') else 587))
+            smtp_port = int(os.environ.get('SMTP_PORT') or os.environ.get('MAIL_PORT') or 587)
             smtp_from = (
                 os.environ.get('MAIL_FROM') or
                 os.environ.get('SMTP_FROM') or
@@ -186,46 +214,16 @@ def send_real_verification_email(email: str, otp_code: str) -> EmailDispatchResu
                 delivered = True
                 provider_used = f"Direct SMTP ({smtp_host})"
                 details.append(f"SMTP ({smtp_host})")
-                print(f"[EmailService] Successfully sent OTP to {email} via {smtp_host}")
             except Exception as smtp_err:
                 print(f"[EmailService] Direct SMTP delivery failed: {smtp_err}")
 
-    # -------------------------------------------------------------------------
-    # Option 3: Supabase Auth OTP Service
-    # -------------------------------------------------------------------------
-    supabase_url = os.environ.get('SUPABASE_URL', '').rstrip('/')
-    supabase_anon = os.environ.get('SUPABASE_ANON_KEY', '')
-
-    if supabase_url and supabase_anon:
-        try:
-            req_url = f"{supabase_url}/auth/v1/otp"
-            headers = {
-                'apikey': supabase_anon,
-                'Authorization': f'Bearer {supabase_anon}',
-                'Content-Type': 'application/json'
-            }
-            payload = json.dumps({'email': email, 'create_user': True}).encode('utf-8')
-            req = urllib.request.Request(req_url, data=payload, headers=headers)
-            with urllib.request.urlopen(req, timeout=10) as res:
-                if res.status in (200, 201):
-                    # Only mark as delivered if neither Resend nor SMTP handled it
-                    if not delivered:
-                        delivered = True
-                        provider_used = 'Supabase Auth OTP'
-                    details.append("Supabase Auth OTP")
-        except urllib.error.HTTPError as he:
-            err_msg = he.read().decode('utf-8', errors='ignore')
-            print(f"[EmailService] Supabase OTP dispatch returned {he.code}: {err_msg}")
-        except Exception as e:
-            print(f"[EmailService] Supabase OTP dispatch attempt: {e}")
-
     # Log summary
     if delivered:
-        log_msg = f"[Real OTP Service] Sent verification code to {email} via {provider_used}"
-        user_msg = f"Verification code sent to {email}. Please check your inbox and spam folder."
+        log_msg = f"[Real OTP Service] Sent verification code to {email} directly from {provider_used}"
+        user_msg = f"Verification code sent to {email} from Supabase. Please check your inbox and spam folder."
     else:
-        log_msg = f"[Real OTP Service] No configured email delivery provider available for {email}"
-        user_msg = f"Email delivery provider not configured. Use the instant access code below."
+        log_msg = f"[Real OTP Service] Could not dispatch email to {email}"
+        user_msg = f"Email delivery provider not responding. Use the instant access code below."
 
     print(f"\n{log_msg}\n")
 
@@ -241,17 +239,17 @@ def send_real_verification_email(email: str, otp_code: str) -> EmailDispatchResu
 def verify_real_otp_token(email: str, otp_code: str) -> tuple[bool, dict | None]:
     """
     Verifies the OTP token against Supabase Auth API if available.
-    Tests verification token types ('email', 'magiclink', 'signup').
+    Supports 6 to 10 character tokens and tests verification types ('magiclink', 'signup', 'email').
     Returns (True, user_payload) if verified, (False, None) otherwise.
     """
     email = email.strip().lower()
     otp_code = otp_code.strip()
 
-    supabase_url = os.environ.get('SUPABASE_URL', '').rstrip('/')
-    supabase_anon = os.environ.get('SUPABASE_ANON_KEY', '')
+    supabase_url = (os.environ.get('SUPABASE_URL') or DEFAULT_SUPABASE_URL).rstrip('/')
+    supabase_anon = os.environ.get('SUPABASE_ANON_KEY') or DEFAULT_SUPABASE_ANON_KEY
 
-    if supabase_url and supabase_anon and len(otp_code) == 6:
-        for verify_type in ('email', 'magiclink', 'signup'):
+    if supabase_url and supabase_anon and (6 <= len(otp_code) <= 10):
+        for verify_type in ('magiclink', 'signup', 'email'):
             try:
                 req_url = f"{supabase_url}/auth/v1/verify"
                 headers = {
@@ -271,8 +269,8 @@ def verify_real_otp_token(email: str, otp_code: str) -> tuple[bool, dict | None]
                         data = json.loads(raw_body) if raw_body else {}
                         print(f"[Supabase Auth] Successfully verified OTP for {email} via {verify_type}")
                         return True, data
-            except urllib.error.HTTPError as e:
-                # 403 or 400 means token not valid for this type, continue to next type
+            except urllib.error.HTTPError:
+                # Token not valid for this type, continue to next
                 pass
             except Exception as e:
                 print(f"[Supabase Auth Verify Exception] {e}")

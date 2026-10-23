@@ -1103,18 +1103,18 @@
             </div>
           </div>
 
-          <!-- Field 3: 6-Digit OTP Verification Code (Clean empty input) -->
+          <!-- Field 3: OTP Verification Code (Clean empty input) -->
           <div class="form-group" id="group-otp-code" style="display: none;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <label class="form-label" for="auth-otp-input" style="margin-bottom:0;">Enter 6-Digit OTP Code</label>
+              <label class="form-label" for="auth-otp-input" style="margin-bottom:0;">Enter OTP Verification Code</label>
               <span id="otp-destination-tag" style="font-size:11px; color:#15803d; font-weight:700;"></span>
             </div>
             <input 
               type="text" 
               id="auth-otp-input" 
               class="auth-input otp-code-input" 
-              maxlength="6" 
-              placeholder="••••••" 
+              maxlength="8" 
+              placeholder="••••••••" 
               autocomplete="one-time-code"
             >
           </div>
@@ -1803,7 +1803,7 @@
       if (currentStep === 'OTP') {
         const code = otpInput.value.trim();
         if (!code || code.length < 6) {
-          showStatus('Please enter the complete 6-digit verification code.', 'error');
+          showStatus('Please enter the complete verification code from your email.', 'error');
           otpInput.focus();
           return;
         }
@@ -1849,9 +1849,10 @@
       }
     });
 
-    // Auto-submit OTP when 6th digit is typed
+    // Auto-submit OTP when complete code is entered (6 or 8 digits)
     otpInput.addEventListener('input', (e) => {
-      if (e.target.value.trim().length === 6 && currentStep === 'OTP') {
+      const len = e.target.value.trim().length;
+      if ((len === 6 || len === 8) && currentStep === 'OTP') {
         btnAction.click();
       }
     });

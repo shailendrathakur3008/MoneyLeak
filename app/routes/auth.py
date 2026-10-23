@@ -315,18 +315,9 @@ def send_otp():
     is_delivered = bool(dispatch_result and getattr(dispatch_result, 'delivered', False))
     provider_name = getattr(dispatch_result, 'provider', '') if dispatch_result else ''
 
-    # Share dev_otp if:
-    # 1. Real email could not be delivered to inbox (e.g. unconfigured provider on Vercel)
-    # 2. Testing / Debug mode
-    # 3. Explicit env flag SHOW_DEV_OTP / DEMO_MODE
-    is_dev_or_testing = (
-        current_app.config.get('TESTING') or
-        current_app.config.get('DEBUG') or
-        os.environ.get('FLASK_ENV') == 'development' or
-        os.environ.get('SHOW_DEV_OTP', '').lower() in ('true', '1') or
-        os.environ.get('DEMO_MODE', '').lower() in ('true', '1')
-    )
-    show_dev_otp = (not is_delivered) or is_dev_or_testing
+    # If Supabase email was dispatched successfully, do not show dev_otp on screen!
+    # The user wants the code delivered straight to their email inbox from Supabase.
+    show_dev_otp = (not is_delivered) or bool(current_app.config.get('TESTING'))
 
     existing_user = User.query.filter_by(email=email).first()
 
