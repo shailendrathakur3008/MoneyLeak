@@ -42,20 +42,75 @@ ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
 MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
 
 
+def _login_user_session(user: User):
+    """Stores full user session context so serverless workers can self-heal without DB loss."""
+    session['user_id'] = user.id
+    session['user_email'] = user.email
+    session['user_name'] = user.full_name
+    session['user_type'] = user.user_type or 'student'
+    session['currency'] = user.currency or 'INR'
+    session['country'] = user.country or 'India'
+    session['onboarding_completed'] = bool(user.onboarding_completed)
+    session['onboarding_step'] = user.onboarding_step or 1
+    session['auth_provider'] = user.auth_provider or 'supabase'
+    session['provider_user_id'] = user.provider_user_id or ''
+    session.permanent = True
+
+
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         user_id = session.get('user_id')
+        user_email = session.get('user_email')
         if not user_id:
             if request.is_json or request.path.startswith('/api/'):
                 return jsonify({'error': 'Unauthorized', 'message': 'Authentication required'}), 401
             flash('Please log in to access this page.', 'warning')
             return redirect(url_for('auth.login', next=request.path))
+
         user = db.session.get(User, user_id)
+        if not user and user_email:
+            user = User.query.filter_by(email=user_email).first()
+
+        # Resilient self-healing for serverless ephemeral environments (Vercel /tmp)
+        if not user and user_email:
+            try:
+                user = User(
+                    id=user_id,
+                    email=user_email,
+                    full_name=session.get('user_name', user_email.split('@')[0].title()),
+                    user_type=session.get('user_type', 'student'),
+                    currency=session.get('currency', 'INR'),
+                    country=session.get('country', 'India'),
+                    onboarding_completed=session.get('onboarding_completed', True),
+                    onboarding_step=session.get('onboarding_step', 5),
+                    auth_provider=session.get('auth_provider', 'supabase'),
+                    provider_user_id=session.get('provider_user_id') or None,
+                    email_verified=True
+                )
+                user.set_password(secrets.token_urlsafe(32))
+                db.session.add(user)
+                db.session.flush()
+
+                # Recreate budget and seed categories for this worker
+                budget = Budget(
+                    user_id=user.id,
+                    needs_percentage=50.0,
+                    wants_percentage=30.0,
+                    savings_percentage=20.0
+                )
+                db.session.add(budget)
+                seed_categories_for_user_type(user, user.user_type or 'student')
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                user = User.query.filter_by(email=user_email).first()
+
         if not user:
             session.clear()
             flash('Session expired. Please log in again.', 'warning')
             return redirect(url_for('auth.login'))
+
         g.current_user = user
         return f(*args, **kwargs)
     return decorated_function
@@ -183,8 +238,7 @@ def login():
             return render_template('login.html')
 
         session.pop(fail_key, None)
-        session['user_id'] = user.id
-        session.permanent = True
+        _login_user_session(user)
 
         next_page = request.args.get('next')
         dest = next_page if next_page and next_page.startswith('/') else url_for('dashboard.view_dashboard')
@@ -456,10 +510,13 @@ def verify_otp():
     db.session.commit()
 
     # Log in session
-    session['user_id'] = user.id
-    session.permanent = True
+    _login_user_session(user)
 
-    dest = url_for('dashboard.view_dashboard') if user.onboarding_completed else url_for('auth.onboarding')
+    next_page = request.args.get('next') or (data.get('next') if isinstance(data, dict) else None)
+    if user.onboarding_completed:
+        dest = next_page if (next_page and next_page.startswith('/') and not next_page.startswith('//')) else url_for('dashboard.view_dashboard')
+    else:
+        dest = url_for('auth.onboarding')
 
     return jsonify({
         'success': True,
@@ -540,8 +597,7 @@ def token_login():
                         user.auth_provider = 'supabase'
 
                 db.session.commit()
-                session['user_id'] = user.id
-                session.permanent = True
+                _login_user_session(user)
 
                 dest = url_for('dashboard.view_dashboard') if user.onboarding_completed else url_for('auth.onboarding')
                 return jsonify({
@@ -640,8 +696,7 @@ def google_auth():
 
     db.session.commit()
 
-    session['user_id'] = user.id
-    session.permanent = True
+    _login_user_session(user)
 
     dest = url_for('dashboard.view_dashboard') if user.onboarding_completed else url_for('auth.onboarding')
 
@@ -763,6 +818,7 @@ def onboarding():
             user.onboarding_step = max(user.onboarding_step, 2)
 
             db.session.commit()
+            _login_user_session(user)
             return jsonify({
                 'success': True,
                 'next_step': 2,
@@ -947,6 +1003,7 @@ def onboarding():
 
             user.onboarding_completed = True
             db.session.commit()
+            _login_user_session(user)
 
             flash('Welcome! Your profile and personalized workspace are ready.', 'success')
             return jsonify({

@@ -24,6 +24,11 @@ class VercelPathMiddleware:
         self.wsgi_app = wsgi_app
 
     def __call__(self, environ, start_response):
+        # Normalize HTTPS scheme and clear SCRIPT_NAME so cookies and url_for use '/' root
+        if environ.get('HTTP_X_FORWARDED_PROTO') == 'https':
+            environ['wsgi.url_scheme'] = 'https'
+        environ['SCRIPT_NAME'] = ''
+
         query_string = environ.get('QUERY_STRING', '')
 
         # 1. Primary: Extract path from __vercel_path parameter if rewritten via vercel.json

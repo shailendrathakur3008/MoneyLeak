@@ -24,6 +24,8 @@ class Config:
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_PATH = '/'
+    APPLICATION_ROOT = '/'
     SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False').lower() in ('true', '1')
     WTF_CSRF_ENABLED = True
     WTF_CSRF_TIME_LIMIT = 3600
@@ -47,6 +49,7 @@ class TestingConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
     SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_PATH = '/'
 
 config_by_name = {
     'development': DevelopmentConfig,

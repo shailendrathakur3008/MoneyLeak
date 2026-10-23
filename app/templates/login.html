@@ -1826,7 +1826,8 @@
               otp_code: code,
               otp_token: currentOtpToken,
               purpose: 'login',
-              full_name: customName
+              full_name: customName,
+              next: new URLSearchParams(window.location.search).get('next') || ''
             })
           });
           const data = await res.json();
