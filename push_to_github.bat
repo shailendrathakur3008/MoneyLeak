@@ -5,6 +5,10 @@ echo ========================================================
 echo   MoneyLeak Deployment Automation
 echo ========================================================
 echo.
+echo Staging and committing changes...
+git add -A
+git diff-index --quiet HEAD || git commit -m "fix(theme): persist light theme across page transitions, universal sync, and transactions"
+echo.
 echo Pushing latest commits to GitHub (shailendrathakur3008/MoneyLeak)...
 echo.
 echo If GitHub Credential Manager pops up, click 'Sign in with browser'.

@@ -54,6 +54,7 @@ def _login_user_session(user: User):
     session['onboarding_step'] = user.onboarding_step or 1
     session['auth_provider'] = user.auth_provider or 'supabase'
     session['provider_user_id'] = user.provider_user_id or ''
+    session['theme_preference'] = user.theme_preference or 'system'
     session.permanent = True
 
 
@@ -86,6 +87,7 @@ def login_required(f):
                     onboarding_step=session.get('onboarding_step', 5),
                     auth_provider=session.get('auth_provider', 'supabase'),
                     provider_user_id=session.get('provider_user_id') or None,
+                    theme_preference=session.get('theme_preference', 'system'),
                     email_verified=True
                 )
                 user.set_password(secrets.token_urlsafe(32))

@@ -10,12 +10,13 @@
   <script>
     (function() {
       try {
-        const saved = localStorage.getItem('moneyleak_theme') || 'system';
+        const saved = localStorage.getItem('moneyleak_theme_preference') || localStorage.getItem('moneyleak_theme') || 'system';
         let theme = saved;
         if (saved === 'system') {
           theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
         document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.setAttribute('data-theme-preference', saved);
       } catch (e) {}
     })();
   </script>

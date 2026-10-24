@@ -260,6 +260,7 @@ def update_appearance():
         return jsonify({'success': False, 'error': 'Invalid theme option. Must be light, dark, or system.'}), 400
 
     user.theme_preference = theme
+    session['theme_preference'] = theme
     db.session.commit()
 
     return jsonify({

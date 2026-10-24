@@ -678,9 +678,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const ThemeManager = {
   STORAGE_KEY: 'moneyleak_theme_preference',
+  ALT_STORAGE_KEY: 'moneyleak_theme',
 
   getPreference() {
     return localStorage.getItem(this.STORAGE_KEY) ||
+           localStorage.getItem(this.ALT_STORAGE_KEY) ||
            document.documentElement.getAttribute('data-theme-preference') ||
            'system';
   },
@@ -741,6 +743,25 @@ const ThemeManager = {
     }
   },
 
+  updateQuickToggleUI(resolvedTheme) {
+    const quickToggles = document.querySelectorAll('.quick-theme-toggle-btn');
+    quickToggles.forEach(btn => {
+      const sunIcon = btn.querySelector('.theme-icon-sun');
+      const moonIcon = btn.querySelector('.theme-icon-moon');
+      if (resolvedTheme === 'dark') {
+        if (sunIcon) sunIcon.style.display = 'inline-block';
+        if (moonIcon) moonIcon.style.display = 'none';
+        btn.setAttribute('title', 'Switch to Light theme');
+        btn.setAttribute('aria-label', 'Switch to Light theme');
+      } else {
+        if (sunIcon) sunIcon.style.display = 'none';
+        if (moonIcon) moonIcon.style.display = 'inline-block';
+        btn.setAttribute('title', 'Switch to Dark theme');
+        btn.setAttribute('aria-label', 'Switch to Dark theme');
+      }
+    });
+  },
+
   applyTheme(preference, saveToServer = false) {
     const resolved = this.resolveTheme(preference);
 
@@ -749,9 +770,11 @@ const ThemeManager = {
 
     try {
       localStorage.setItem(this.STORAGE_KEY, preference);
+      localStorage.setItem(this.ALT_STORAGE_KEY, preference);
     } catch (e) {}
 
     this.updateSegmentedControlUI(preference);
+    this.updateQuickToggleUI(resolved);
     this.updateChartDefaults(resolved);
 
     window.dispatchEvent(new CustomEvent('themechange', {
@@ -763,11 +786,24 @@ const ThemeManager = {
     }
   },
 
+  toggle() {
+    const currentResolved = document.documentElement.getAttribute('data-theme') || 'dark';
+    const nextTheme = currentResolved === 'dark' ? 'light' : 'dark';
+    this.applyTheme(nextTheme, true);
+  },
+
   async savePreferenceToServer(preference) {
     try {
-      await secureFetch('/api/settings/appearance', {
+      const token = getCsrfToken();
+      // Use keepalive: true so browser delivers request even during immediate page navigation
+      await fetch('/api/settings/appearance', {
         method: 'POST',
-        body: JSON.stringify({ theme: preference })
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': token
+        },
+        body: JSON.stringify({ theme: preference }),
+        keepalive: true
       });
     } catch (err) {
       console.warn('Could not persist theme to server:', err);
@@ -804,6 +840,15 @@ const ThemeManager = {
         }
       });
     });
+
+    // Attach listeners to quick toggle buttons
+    const quickToggles = document.querySelectorAll('.quick-theme-toggle-btn');
+    quickToggles.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.toggle();
+      });
+    });
   }
 };
 
@@ -814,4 +859,5 @@ try {
 
 // Expose ThemeManager globally
 window.ThemeManager = ThemeManager;
+
 

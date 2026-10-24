@@ -24,11 +24,16 @@
     (function() {
       try {
         var serverTheme = "{% if g.current_user and g.current_user.theme_preference %}{{ g.current_user.theme_preference }}{% else %}{% endif %}";
-        var localTheme = localStorage.getItem('moneyleak_theme_preference');
-        var pref = localTheme || serverTheme || 'system';
-        if (serverTheme && (!localTheme || localTheme !== serverTheme)) {
-          localStorage.setItem('moneyleak_theme_preference', serverTheme);
-          pref = serverTheme;
+        var localTheme = localStorage.getItem('moneyleak_theme_preference') || localStorage.getItem('moneyleak_theme');
+        // If localTheme is set by the user, local preference is authoritative.
+        // Fall back to serverTheme only if user has not stored a preference yet.
+        var pref = localTheme;
+        if (!pref) {
+          pref = serverTheme || 'system';
+          try {
+            localStorage.setItem('moneyleak_theme_preference', pref);
+            localStorage.setItem('moneyleak_theme', pref);
+          } catch (e) {}
         }
         var resolved = pref;
         if (pref === 'system') {
@@ -36,6 +41,25 @@
         }
         document.documentElement.setAttribute('data-theme', resolved);
         document.documentElement.setAttribute('data-theme-preference', pref);
+
+        // Sync local choice to server in the background without blocking or overwriting client selection
+        if (serverTheme && localTheme && localTheme !== serverTheme) {
+          try {
+            var meta = document.querySelector('meta[name="csrf-token"]');
+            var token = meta ? meta.getAttribute('content') : '';
+            if (token) {
+              fetch('/api/settings/appearance', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRFToken': token
+                },
+                body: JSON.stringify({ theme: localTheme }),
+                keepalive: true
+              }).catch(function() {});
+            }
+          } catch (e) {}
+        }
       } catch (e) {}
     })();
   </script>
@@ -158,9 +182,15 @@
           </div>
         </div>
       </div>
-      <a href="{{ url_for('auth.logout') }}" title="Logout" aria-label="Logout" style="color:var(--text-muted);display:inline-flex;align-items:center;">
-        <i data-lucide="log-out" style="width:18px;height:18px;"></i>
-      </a>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button type="button" class="quick-theme-toggle-btn" id="global-sidebar-theme-toggle" title="Toggle theme (Light / Dark)" aria-label="Toggle theme">
+          <i data-lucide="sun" class="theme-icon-sun" style="width:16px;height:16px;"></i>
+          <i data-lucide="moon" class="theme-icon-moon" style="width:16px;height:16px;display:none;"></i>
+        </button>
+        <a href="{{ url_for('auth.logout') }}" title="Logout" aria-label="Logout" style="color:var(--text-muted);display:inline-flex;align-items:center;">
+          <i data-lucide="log-out" style="width:18px;height:18px;"></i>
+        </a>
+      </div>
     </div>
   </aside>
   {% endif %}
@@ -180,6 +210,10 @@
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
+        <button type="button" class="quick-theme-toggle-btn" id="global-mobile-theme-toggle" title="Toggle theme (Light / Dark)" aria-label="Toggle theme">
+          <i data-lucide="sun" class="theme-icon-sun" style="width:15px;height:15px;"></i>
+          <i data-lucide="moon" class="theme-icon-moon" style="width:15px;height:15px;display:none;"></i>
+        </button>
         <button type="button" class="btn btn-primary btn-sm" onclick="openModal('quick-add-modal')" style="padding:6px 12px;font-size:12px;">
           <i data-lucide="plus" style="width:14px;height:14px;"></i> Add
         </button>

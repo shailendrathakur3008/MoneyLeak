@@ -396,6 +396,34 @@ button, input, select, textarea {
   color: var(--text-muted);
 }
 
+/* Quick Theme Toggle Buttons (Sidebar & Mobile Header) */
+.quick-theme-toggle-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card-subtle, rgba(0, 0, 0, 0.04));
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.quick-theme-toggle-btn:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+  border-color: var(--brand-lime);
+}
+
+.quick-theme-toggle-btn:focus-visible {
+  outline: 2px solid var(--brand-lime);
+  outline-offset: 2px;
+}
+
 /* ==========================================================================
    TOP BAR / HEADER
    ========================================================================== */

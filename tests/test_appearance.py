@@ -71,3 +71,28 @@ def test_appearance_user_isolation(client, test_user, second_user):
 
     res_sec = client.get('/api/settings/appearance')
     assert res_sec.get_json()['theme'] == 'system'
+
+
+def test_appearance_navigation_persistence(client, test_user):
+    """Test updating appearance to light preserves serverTheme across navigation to /transactions."""
+    with client.session_transaction() as sess:
+        sess['user_id'] = test_user.id
+
+    # Switch theme to light
+    res_update = client.post('/api/settings/appearance', json={'theme': 'light'})
+    assert res_update.status_code == 200
+    assert res_update.get_json()['theme'] == 'light'
+
+    # Navigate to Transactions page
+    res_txn = client.get('/transactions')
+    assert res_txn.status_code == 200
+    html = res_txn.get_data(as_text=True)
+
+    # Verify serverTheme rendered into base.html is 'light'
+    assert 'var serverTheme = "light";' in html
+    # Verify quick theme toggle buttons are rendered
+    assert 'id="global-sidebar-theme-toggle"' in html
+    assert 'id="global-mobile-theme-toggle"' in html
+    # Verify anti-theme-flash logic does not overwrite localTheme
+    assert 'var pref = localTheme;' in html
+

@@ -9,12 +9,13 @@
   <script>
     (function() {
       try {
-        const saved = localStorage.getItem('moneyleak_theme') || 'system';
+        const saved = localStorage.getItem('moneyleak_theme_preference') || localStorage.getItem('moneyleak_theme') || 'system';
         let theme = saved;
         if (saved === 'system') {
           theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
         document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.setAttribute('data-theme-preference', saved);
       } catch (e) {}
     })();
   </script>
@@ -327,7 +328,11 @@
           const current = document.documentElement.getAttribute('data-theme') || 'light';
           const next = current === 'dark' ? 'light' : 'dark';
           document.documentElement.setAttribute('data-theme', next);
-          localStorage.setItem('moneyleak_theme', next);
+          document.documentElement.setAttribute('data-theme-preference', next);
+          try {
+            localStorage.setItem('moneyleak_theme_preference', next);
+            localStorage.setItem('moneyleak_theme', next);
+          } catch (e) {}
         });
       }
     });
