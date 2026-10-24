@@ -192,6 +192,106 @@
   }
 }
 
+/* ==========================================================================
+   HIGH-CONTRAST NEON BOX, BUTTON & BADGE TYPOGRAPHY (Fix for Dark Theme)
+   Ensures text and icons inside neon lime elements are ultra-crisp & readable
+   ========================================================================== */
+.btn-primary,
+[data-theme="dark"] .btn-primary,
+:root[data-theme="dark"] .btn-primary,
+[data-theme="light"] .btn-primary {
+  color: #121614 !important;
+}
+
+.btn-primary i,
+.btn-primary svg,
+[data-theme="dark"] .btn-primary i,
+[data-theme="dark"] .btn-primary svg {
+  color: #121614 !important;
+  stroke: #121614 !important;
+}
+
+.badge-lime,
+[data-theme="dark"] .badge-lime,
+:root[data-theme="dark"] .badge-lime,
+[data-theme="light"] .badge-lime {
+  color: #121614 !important;
+  font-weight: 800 !important;
+}
+
+.badge-lime i,
+.badge-lime svg,
+[data-theme="dark"] .badge-lime i,
+[data-theme="dark"] .badge-lime svg {
+  color: #121614 !important;
+  stroke: #121614 !important;
+}
+
+.brand-icon-box,
+[data-theme="dark"] .brand-icon-box {
+  color: #121614 !important;
+}
+
+.brand-icon-box i,
+.brand-icon-box svg,
+[data-theme="dark"] .brand-icon-box i,
+[data-theme="dark"] .brand-icon-box svg {
+  color: #121614 !important;
+  stroke: #121614 !important;
+}
+
+.motivational-banner:not([style*="#0284c7"]),
+[data-theme="dark"] .motivational-banner:not([style*="#0284c7"]) {
+  color: #121614 !important;
+}
+
+.motivational-banner:not([style*="#0284c7"]) .banner-headline,
+.motivational-banner:not([style*="#0284c7"]) .banner-headline span,
+[data-theme="dark"] .motivational-banner:not([style*="#0284c7"]) .banner-headline,
+[data-theme="dark"] .motivational-banner:not([style*="#0284c7"]) .banner-headline span {
+  color: #121614 !important;
+  font-weight: 800 !important;
+}
+
+.motivational-banner:not([style*="#0284c7"]) .banner-headline i,
+.motivational-banner:not([style*="#0284c7"]) .banner-headline svg,
+[data-theme="dark"] .motivational-banner:not([style*="#0284c7"]) .banner-headline i,
+[data-theme="dark"] .motivational-banner:not([style*="#0284c7"]) .banner-headline svg {
+  color: #121614 !important;
+  stroke: #121614 !important;
+}
+
+.motivational-banner:not([style*="#0284c7"]) .banner-sub,
+[data-theme="dark"] .motivational-banner:not([style*="#0284c7"]) .banner-sub {
+  color: #2b3310 !important;
+  font-weight: 600 !important;
+}
+
+.dock-floating-btn,
+[data-theme="dark"] .dock-floating-btn {
+  color: #121614 !important;
+}
+
+.dock-floating-btn i,
+.dock-floating-btn svg,
+[data-theme="dark"] .dock-floating-btn i,
+[data-theme="dark"] .dock-floating-btn svg {
+  color: #121614 !important;
+  stroke: #121614 !important;
+}
+
+.pill-option.active,
+.pill-option:hover,
+[data-theme="dark"] .pill-option.active,
+[data-theme="dark"] .pill-option:hover {
+  color: #121614 !important;
+}
+
+.cat-pill-btn.active,
+[data-theme="dark"] .cat-pill-btn.active {
+  color: #121614 !important;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -279,9 +379,15 @@ button, input, select, textarea {
   justify-content: center;
   font-size: 18px;
   font-weight: 800;
-  color: var(--text-primary);
+  color: #121614 !important;
   box-shadow: 0 2px 8px rgba(203, 244, 50, 0.35);
   flex-shrink: 0;
+}
+
+.brand-icon-box i,
+.brand-icon-box svg {
+  color: #121614 !important;
+  stroke: #121614 !important;
 }
 
 .brand-title {
@@ -498,7 +604,8 @@ button, input, select, textarea {
 
 .pill-option.active, .pill-option:hover {
   background: var(--brand-lime);
-  color: var(--text-primary);
+  color: #121614 !important;
+  font-weight: 700;
 }
 
 /* ==========================================================================
@@ -528,13 +635,22 @@ button, input, select, textarea {
 
 .btn-primary {
   background: var(--brand-lime);
-  color: var(--text-primary);
+  color: #121614 !important;
   border-color: var(--brand-lime);
+  font-weight: 700;
 }
 
-.btn-primary:hover {
+.btn-primary:hover,
+.btn-primary:focus {
   background: var(--brand-lime-hover);
+  color: #121614 !important;
   box-shadow: 0 2px 8px rgba(203, 244, 50, 0.4);
+}
+
+.btn-primary i,
+.btn-primary svg {
+  color: #121614 !important;
+  stroke: #121614 !important;
 }
 
 .btn-dark {
@@ -592,7 +708,14 @@ button, input, select, textarea {
 
 .badge-lime {
   background: var(--brand-lime);
-  color: var(--text-primary);
+  color: #121614 !important;
+  font-weight: 800;
+}
+
+.badge-lime i,
+.badge-lime svg {
+  color: #121614 !important;
+  stroke: #121614 !important;
 }
 
 .badge-dark {

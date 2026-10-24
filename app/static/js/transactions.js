@@ -192,7 +192,7 @@ function renderPagination(totalPages, activePage) {
   for (let i = 1; i <= totalPages; i++) {
     const isAct = i === activePage;
     const activeStyle = isAct 
-      ? 'background:var(--brand-primary);color:var(--text-on-dark);font-weight:800;border-color:var(--brand-primary);' 
+      ? 'background:var(--brand-lime);color:#121614;font-weight:800;border-color:var(--brand-lime);' 
       : 'background:var(--bg-surface);color:var(--text-secondary);';
     html += `<button type="button" class="btn btn-secondary btn-sm" style="${activeStyle}min-width:32px;height:32px;padding:0 8px;" onclick="loadTransactions(${i})">${i}</button>`;
   }

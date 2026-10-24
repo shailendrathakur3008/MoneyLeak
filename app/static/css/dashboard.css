@@ -263,7 +263,7 @@
   box-shadow: var(--shadow-xs);
   cursor: pointer;
   text-decoration: none;
-  color: var(--text-primary);
+  color: #121614 !important;
   transition: transform var(--transition-fast);
 }
 
@@ -281,12 +281,23 @@
   letter-spacing: -0.3px;
   line-height: 1.25;
   margin-bottom: 2px;
+  color: #121614 !important;
+}
+
+.banner-headline span {
+  color: #121614 !important;
+}
+
+.banner-headline i,
+.banner-headline svg {
+  color: #121614 !important;
+  stroke: #121614 !important;
 }
 
 .banner-sub {
   font-size: 11px;
   font-weight: 600;
-  color: #2b3310;
+  color: #2b3310 !important;
   line-height: 1.35;
 }
 
