@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMacroRings();
   initDonutChart();
   initTrendsChart();
+  initMonthlyBudgetPrompt();
 });
 
 // Animate the 3 SVG Macro Rings (Needs, Wants, Savings)
@@ -210,3 +211,170 @@ window.addEventListener('themechange', (e) => {
     window.trendChart.update();
   }
 });
+
+// ============================================================================
+// MONTHLY BUDGET CONFIRMATION LOGIC
+// ============================================================================
+
+function getPromptMetadata() {
+  const el = document.getElementById('budget-prompt-data');
+  if (!el) return null;
+  return {
+    year: parseInt(el.getAttribute('data-year') || '0', 10),
+    month: parseInt(el.getAttribute('data-month') || '0', 10),
+    monthName: el.getAttribute('data-month-name') || '',
+    shouldPrompt: el.getAttribute('data-should-prompt') === 'true',
+    needsPct: parseFloat(el.getAttribute('data-needs-pct') || '50'),
+    wantsPct: parseFloat(el.getAttribute('data-wants-pct') || '30'),
+    savingsPct: parseFloat(el.getAttribute('data-savings-pct') || '20'),
+    currencySymbol: el.getAttribute('data-currency-symbol') || '₹',
+    prevFormatted: el.getAttribute('data-prev-formatted') || ''
+  };
+}
+
+function initMonthlyBudgetPrompt() {
+  const meta = getPromptMetadata();
+  if (!meta) return;
+
+  // Initialize live preview for modal input if present
+  const inputEl = document.getElementById('modal-new-budget-amount');
+  if (inputEl && inputEl.value) {
+    updateModalBudgetPreview(inputEl.value);
+  }
+
+  // Check if eligible to prompt and not dismissed during this browser session
+  const sessionKey = `budget_prompt_dismissed_${meta.year}_${meta.month}`;
+  const alreadyDismissedThisSession = sessionStorage.getItem(sessionKey) === 'true';
+
+  if (meta.shouldPrompt && !alreadyDismissedThisSession) {
+    // Delay slightly for smooth page entrance
+    setTimeout(() => {
+      openMonthlyBudgetModal();
+    }, 400);
+  }
+}
+
+window.openMonthlyBudgetModal = function() {
+  openModal('monthly-budget-modal');
+  const inputEl = document.getElementById('modal-new-budget-amount');
+  if (inputEl) {
+    updateModalBudgetPreview(inputEl.value);
+    inputEl.focus();
+  }
+};
+
+window.handleCloseBudgetModal = function() {
+  const meta = getPromptMetadata();
+  if (meta) {
+    sessionStorage.setItem(`budget_prompt_dismissed_${meta.year}_${meta.month}`, 'true');
+    // Notify server of dismissal without changing budget
+    secureFetch('/api/budget/confirm-action', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'dismiss', year: meta.year, month: meta.month })
+    }).catch(() => {});
+  }
+  closeModal('monthly-budget-modal');
+};
+
+window.handlePostponePrompt = function() {
+  const meta = getPromptMetadata();
+  if (meta) {
+    sessionStorage.setItem(`budget_prompt_dismissed_${meta.year}_${meta.month}`, 'true');
+    secureFetch('/api/budget/confirm-action', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'remind_later', year: meta.year, month: meta.month })
+    }).then(() => {
+      showToast('Reminder postponed. You can set or confirm your budget anytime from this dashboard or Settings.', 'info');
+      const banner = document.getElementById('monthly-budget-banner');
+      if (banner) banner.style.opacity = '0.7';
+    }).catch(err => {
+      showToast(err.message || 'Action failed', 'danger');
+    });
+  }
+  closeModal('monthly-budget-modal');
+};
+
+window.handleKeepPreviousBudget = function() {
+  const meta = getPromptMetadata();
+  if (!meta) return;
+
+  secureFetch('/api/budget/confirm-action', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'keep_previous', year: meta.year, month: meta.month })
+  }).then(res => {
+    closeModal('monthly-budget-modal');
+    const banner = document.getElementById('monthly-budget-banner');
+    if (banner) banner.remove();
+    showToast(res.message || 'Previous budget retained.', 'success');
+    setTimeout(() => window.location.reload(), 450);
+  }).catch(err => {
+    showToast(err.message || 'Failed to confirm budget.', 'danger');
+  });
+};
+
+window.handleSetNewBudget = async function(e) {
+  if (e) e.preventDefault();
+  const meta = getPromptMetadata();
+  if (!meta) return;
+
+  const inputEl = document.getElementById('modal-new-budget-amount');
+  const rawVal = (inputEl ? inputEl.value : '').replace(/,/g, '').trim();
+  const amount = parseFloat(rawVal);
+
+  if (isNaN(amount) || amount <= 0) {
+    showToast('Please enter a valid positive budget amount.', 'danger');
+    if (inputEl) inputEl.focus();
+    return;
+  }
+
+  const btn = document.getElementById('btn-confirm-new-budget');
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await secureFetch('/api/budget/confirm-action', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'set_new',
+        amount: amount,
+        year: meta.year,
+        month: meta.month,
+        month_name: meta.monthName
+      })
+    });
+    closeModal('monthly-budget-modal');
+    const banner = document.getElementById('monthly-budget-banner');
+    if (banner) banner.remove();
+    showToast(res.message || 'New monthly budget confirmed!', 'success');
+    setTimeout(() => window.location.reload(), 450);
+  } catch (err) {
+    showToast(err.message || 'Failed to save new budget.', 'danger');
+    if (btn) btn.disabled = false;
+  }
+};
+
+window.updateModalBudgetPreview = function(val) {
+  const meta = getPromptMetadata();
+  if (!meta) return;
+
+  const num = parseFloat((val || '').replace(/,/g, '').trim());
+  const needsEl = document.getElementById('modal-preview-needs');
+  const wantsEl = document.getElementById('modal-preview-wants');
+  const savingsEl = document.getElementById('modal-preview-savings');
+
+  if (isNaN(num) || num <= 0) {
+    if (needsEl) needsEl.innerText = '-';
+    if (wantsEl) wantsEl.innerText = '-';
+    if (savingsEl) savingsEl.innerText = '-';
+    return;
+  }
+
+  const sym = meta.currencySymbol;
+  const needsAmt = Math.round(num * (meta.needsPct / 100)).toLocaleString('en-IN');
+  const wantsAmt = Math.round(num * (meta.wantsPct / 100)).toLocaleString('en-IN');
+  const savingsAmt = Math.round(num * (meta.savingsPct / 100)).toLocaleString('en-IN');
+
+  if (needsEl) needsEl.innerText = `${sym}${needsAmt}`;
+  if (wantsEl) wantsEl.innerText = `${sym}${wantsAmt}`;
+  if (savingsEl) savingsEl.innerText = `${sym}${savingsAmt}`;
+};
+

@@ -62,7 +62,10 @@ class VercelPathMiddleware:
         return self.wsgi_app(environ, start_response)
 
 
-# Wrap Flask with VercelPathMiddleware
+from werkzeug.middleware.proxy_fix import ProxyFix
+
+# Wrap Flask with ProxyFix and VercelPathMiddleware
+flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 flask_app.wsgi_app = VercelPathMiddleware(flask_app.wsgi_app)
 
 

@@ -11,8 +11,10 @@ import json
 import smtplib
 import urllib.request
 import urllib.error
+from datetime import datetime, date
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from typing import Any, Optional
 from flask import render_template
 
 DEFAULT_SUPABASE_URL = 'https://roxyqqtfgzrbwqthvrnt.supabase.co'
@@ -276,3 +278,192 @@ def verify_real_otp_token(email: str, otp_code: str) -> tuple[bool, dict | None]
                 print(f"[Supabase Auth Verify Exception] {e}")
 
     return False, None
+
+
+def _dispatch_raw_email(to_email: str, subject: str, html_body: str, plain_text: str) -> EmailDispatchResult:
+    """
+    Core dispatcher sending transactional emails through configured Resend API or SMTP.
+    Returns EmailDispatchResult with delivery outcome, provider name, and error details.
+    """
+    to_email = to_email.strip().lower()
+    delivered = False
+    provider_used = ''
+    details = []
+
+    # 1. Resend API
+    resend_api_key = os.environ.get('RESEND_API_KEY', '').strip()
+    if resend_api_key:
+        try:
+            resend_url = "https://api.resend.com/emails"
+            resend_from = (
+                os.environ.get('MAIL_FROM') or
+                os.environ.get('RESEND_FROM') or
+                'MoneyLeak <notifications@resend.dev>'
+            ).strip()
+
+            payload = json.dumps({
+                'from': resend_from,
+                'to': [to_email],
+                'subject': subject,
+                'html': html_body,
+                'text': plain_text
+            }).encode('utf-8')
+
+            req = urllib.request.Request(
+                resend_url,
+                data=payload,
+                headers={
+                    'Authorization': f'Bearer {resend_api_key}',
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'MoneyLeak-Notifications/1.0'
+                }
+            )
+            with urllib.request.urlopen(req, timeout=12) as res:
+                if res.status in (200, 201):
+                    delivered = True
+                    provider_used = 'Resend API'
+                    details.append("Resend API")
+        except Exception as e:
+            details.append(f"Resend error: {e}")
+            print(f"[EmailService] Resend dispatch failed: {e}")
+
+    # 2. Direct SMTP
+    if not delivered:
+        smtp_user = (
+            os.environ.get('SMTP_USER') or
+            os.environ.get('MAIL_USERNAME') or
+            os.environ.get('MAIL_DEFAULT_SENDER') or
+            ''
+        ).strip()
+        smtp_pass = (
+            os.environ.get('SMTP_PASS') or
+            os.environ.get('MAIL_PASSWORD') or
+            ''
+        ).strip()
+
+        if smtp_user and smtp_pass:
+            smtp_host = (
+                os.environ.get('SMTP_HOST') or
+                os.environ.get('MAIL_SERVER') or
+                ('smtp.gmail.com' if '@gmail.com' in smtp_user else 'localhost')
+            ).strip()
+            smtp_port = int(os.environ.get('SMTP_PORT') or os.environ.get('MAIL_PORT') or 587)
+            smtp_from = (
+                os.environ.get('MAIL_FROM') or
+                os.environ.get('SMTP_FROM') or
+                f"MoneyLeak <{smtp_user}>"
+            ).strip()
+
+            try:
+                msg = MIMEMultipart('alternative')
+                msg['Subject'] = subject
+                msg['From'] = smtp_from
+                msg['To'] = to_email
+
+                msg.attach(MIMEText(plain_text, 'plain', 'utf-8'))
+                msg.attach(MIMEText(html_body, 'html', 'utf-8'))
+
+                if smtp_port == 465 or os.environ.get('SMTP_USE_SSL', '').lower() in ('true', '1'):
+                    server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=12)
+                    server.ehlo()
+                    server.login(smtp_user, smtp_pass)
+                    server.sendmail(smtp_user, to_email, msg.as_string())
+                    server.quit()
+                else:
+                    server = smtplib.SMTP(smtp_host, smtp_port, timeout=12)
+                    server.ehlo()
+                    server.starttls()
+                    server.ehlo()
+                    server.login(smtp_user, smtp_pass)
+                    server.sendmail(smtp_user, to_email, msg.as_string())
+                    server.quit()
+
+                delivered = True
+                provider_used = f"SMTP ({smtp_host})"
+                details.append(f"SMTP ({smtp_host})")
+            except Exception as smtp_err:
+                details.append(f"SMTP error: {smtp_err}")
+                print(f"[EmailService] Direct SMTP reminder dispatch failed: {smtp_err}")
+
+    if not provider_used:
+        provider_used = 'UNCONFIGURED'
+
+    return EmailDispatchResult(
+        success=delivered,
+        message="Email sent" if delivered else "Provider unconfigured or delivery failed",
+        provider=provider_used,
+        details=details,
+        delivered=delivered
+    )
+
+
+def send_payment_reminder_email(
+    user_email: str,
+    user_name: str,
+    schedule_data: Any,
+    occurrence_data: Any,
+    days_before: int,
+    content_dict: dict | None = None
+) -> EmailDispatchResult:
+    """
+    Renders and dispatches a transactional payment reminder email using the user's payment data.
+    """
+    from app.services.reminder_service import generate_reminder_content, format_inr
+
+    content = content_dict or generate_reminder_content(schedule_data, occurrence_data, days_before)
+    subject = content.get('email_subject', 'Payment Reminder')
+
+    payment_name = getattr(schedule_data, 'name', '') or getattr(schedule_data, 'payment_name', 'Scheduled Payment')
+    scheme_name = getattr(schedule_data, 'scheme_name', None) or payment_name
+    category = getattr(schedule_data, 'category', 'CUSTOM')
+
+    amount = getattr(occurrence_data, 'amount', None)
+    if amount is None:
+        amount_minor = getattr(occurrence_data, 'amount_minor_units', getattr(schedule_data, 'amount_minor_units', 0))
+        amount = round(amount_minor / 100.0, 2)
+    amount_str = format_inr(amount)
+
+    due_date = getattr(occurrence_data, 'due_date', None) or getattr(schedule_data, 'next_due_date', date.today())
+    if isinstance(due_date, datetime):
+        due_date = due_date.date()
+    due_date_str = due_date.strftime("%d %B %Y") if due_date else "Scheduled Date"
+
+    plain_text = (
+        f"Hello {user_name},\n\n"
+        f"{content.get('message', '')}\n\n"
+        f"Payment: {payment_name}\n"
+        f"Investment / Scheme: {scheme_name}\n"
+        f"Amount: {amount_str}\n"
+        f"Scheduled Date: {due_date_str}\n\n"
+        "Please ensure sufficient funds are available in your designated bank account.\n"
+        "You can review your upcoming payments from your finance dashboard: https://moneyleak.app/payments\n\n"
+        "Important: This is a reminder only. No payment has been initiated by this notification.\n\n"
+        "— MoneyLeak Finance Dashboard"
+    )
+
+    try:
+        html_body = render_template(
+            'emails/payment_reminder.html',
+            subject=subject,
+            user_name=user_name,
+            headline=content.get('title', 'Upcoming Scheduled Payment'),
+            message_body=content.get('message', ''),
+            payment_name=payment_name,
+            scheme_name=scheme_name,
+            category=category,
+            category_label=category.replace('_', ' ').title(),
+            due_date_str=due_date_str,
+            amount_str=amount_str,
+            dashboard_url='/payments'
+        )
+    except Exception as e:
+        print(f"[EmailService] Template render fallback: {e}")
+        html_body = f"<p>{plain_text.replace(chr(10), '<br>')}</p>"
+
+    return _dispatch_raw_email(
+        to_email=user_email,
+        subject=subject,
+        html_body=html_body,
+        plain_text=plain_text
+    )
+

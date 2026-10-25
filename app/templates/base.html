@@ -147,6 +147,20 @@
         </a>
       </li>
       <li>
+        <a href="/payments" class="nav-item-link {% if request.endpoint and request.endpoint.startswith('payments.') %}active{% endif %}">
+          <span class="nav-icon"><i data-lucide="calendar-clock"></i></span>
+          <span>Upcoming Payments</span>
+          <span class="badge-pill badge-lime" style="font-size:9px;padding:1px 5px;margin-left:auto;">Reminders</span>
+        </a>
+      </li>
+      <li>
+        <a href="/notifications" class="nav-item-link {% if request.endpoint and request.endpoint.startswith('notifications.') %}active{% endif %}">
+          <span class="nav-icon"><i data-lucide="bell"></i></span>
+          <span>Notifications</span>
+          <span class="notification-unread-badge badge-pill badge-danger" style="font-size:9px;padding:1px 5px;margin-left:auto;display:none;background:#ef4444;color:#fff;">0</span>
+        </a>
+      </li>
+      <li>
         <a href="{{ url_for('reports.view_reports') }}" class="nav-item-link {% if request.endpoint == 'reports.view_reports' %}active{% endif %}">
           <span class="nav-icon"><i data-lucide="chart-column"></i></span>
           <span>Reports & PDF</span>
@@ -183,6 +197,27 @@
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
+        <!-- Notification Bell Dropdown Container -->
+        <div style="position:relative;">
+          <button type="button" class="quick-theme-toggle-btn" id="header-notification-bell-btn" title="Notifications" aria-label="Notifications" style="position:relative;">
+            <i data-lucide="bell" style="width:16px;height:16px;"></i>
+            <span class="notification-unread-badge badge-pill badge-danger" style="position:absolute;top:-4px;right:-4px;font-size:9px;padding:1px 4px;line-height:1;display:none;background:#ef4444;color:#fff;border-radius:10px;">0</span>
+          </button>
+          
+          <div id="header-notification-dropdown" class="card" style="display:none;position:absolute;bottom:42px;left:0;width:320px;border-radius:12px;background:#161917;border:1px solid var(--border-subtle);box-shadow:0 10px 30px rgba(0,0,0,0.7);z-index:9999;overflow:hidden;">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-weight:800;font-size:13px;color:var(--text-primary);">Notifications</span>
+              <button type="button" onclick="markAllNotificationsRead()" style="background:none;border:none;color:var(--brand-primary);font-size:11px;font-weight:700;cursor:pointer;padding:0;">Mark all read</button>
+            </div>
+            <div id="notification-bell-dropdown-list" style="max-height:280px;overflow-y:auto;">
+              <!-- Dynamic notifications loaded here -->
+            </div>
+            <div style="padding:10px;text-align:center;border-top:1px solid var(--border-subtle);background:rgba(255,255,255,0.02);">
+              <a href="/notifications" style="font-size:12px;color:var(--text-primary);font-weight:700;text-decoration:none;">View All Notifications &rarr;</a>
+            </div>
+          </div>
+        </div>
+
         <button type="button" class="quick-theme-toggle-btn" id="global-sidebar-theme-toggle" title="Toggle theme (Light / Dark)" aria-label="Toggle theme">
           <i data-lucide="sun" class="theme-icon-sun" style="width:16px;height:16px;"></i>
           <i data-lucide="moon" class="theme-icon-moon" style="width:16px;height:16px;display:none;"></i>
@@ -210,6 +245,10 @@
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
+        <a href="/notifications" class="quick-theme-toggle-btn" title="Notifications" aria-label="Notifications" style="position:relative;display:inline-flex;align-items:center;justify-content:center;">
+          <i data-lucide="bell" style="width:15px;height:15px;"></i>
+          <span class="notification-unread-badge badge-pill badge-danger" style="position:absolute;top:-2px;right:-2px;font-size:8px;padding:1px 4px;display:none;background:#ef4444;color:#fff;border-radius:8px;">0</span>
+        </a>
         <button type="button" class="quick-theme-toggle-btn" id="global-mobile-theme-toggle" title="Toggle theme (Light / Dark)" aria-label="Toggle theme">
           <i data-lucide="sun" class="theme-icon-sun" style="width:15px;height:15px;"></i>
           <i data-lucide="moon" class="theme-icon-moon" style="width:15px;height:15px;display:none;"></i>
@@ -556,6 +595,7 @@
 <!-- Core JavaScript -->
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 <script src="{{ url_for('static', filename='js/chat_assistant.js') }}"></script>
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 <script>
   // Set default today date on date inputs
   document.addEventListener('DOMContentLoaded', () => {

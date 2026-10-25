@@ -24,7 +24,7 @@ class Category(db.Model):
 
     # Relationships
     transactions = db.relationship('Transaction', backref='category', lazy='dynamic')
-    recurring_payments = db.relationship('RecurringPayment', backref='category', lazy='dynamic')
+    recurring_payments = db.relationship('RecurringPayment', backref='category_rel', lazy='dynamic')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

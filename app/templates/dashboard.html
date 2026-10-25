@@ -122,6 +122,36 @@
     </div>
     {% endif %}
 
+    <!-- MONTHLY BUDGET CONFIRMATION BANNER -->
+    {% if prompt_info and prompt_info.confirmation_status in ('pending', 'postponed') %}
+    <div id="monthly-budget-banner" class="card" style="margin-bottom:14px;background:var(--bg-card);border-left:4px solid var(--brand-primary);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;box-shadow:var(--shadow-sm);">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(203,244,50,0.15);color:var(--brand-primary-text, #65a30d);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i data-lucide="calendar" style="width:20px;height:20px;"></i>
+        </div>
+        <div>
+          <div style="font-weight:800;font-size:14px;color:var(--text-primary);letter-spacing:-0.2px;">
+            Set Your Budget for {{ prompt_info.month_name }} {{ prompt_info.year }}
+          </div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">
+            Active carried budget: <strong style="color:var(--text-primary);">{{ prompt_info.current_budget_formatted }}</strong>. Confirm this or set a new monthly budget.
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-sm btn-primary" onclick="openMonthlyBudgetModal()" style="display:inline-flex;align-items:center;gap:5px;">
+          <i data-lucide="edit-3" style="width:13px;height:13px;"></i> Set New Budget
+        </button>
+        <button type="button" class="btn btn-sm btn-secondary" onclick="handleKeepPreviousBudget()" style="display:inline-flex;align-items:center;gap:5px;">
+          <i data-lucide="check" style="width:13px;height:13px;"></i> Keep {{ prompt_info.previous_budget_formatted }}
+        </button>
+        <button type="button" class="btn btn-sm" onclick="handlePostponePrompt()" style="background:transparent;border:none;color:var(--text-muted);font-size:12px;padding:4px 8px;cursor:pointer;" title="Remind Me Later">
+          Remind Later
+        </button>
+      </div>
+    </div>
+    {% endif %}
+
     <!-- 1. HERO DARK OUTFLOW & 50/30/20 MACRO CARD -->
     <div class="hero-macro-card">
       <div class="hero-card-header">
@@ -130,7 +160,9 @@
           <span>Monthly Outflow</span>
         </div>
         <span class="hero-percentage-pill">
-          {% if summary.income.minor > 0 %}
+          {% if summary.budget.minor > 0 %}
+            {{ summary.budget.outflow_pct|round(0)|int }}% of Budget
+          {% elif summary.income.minor > 0 %}
             {{ (summary.total_outflow.minor / summary.income.minor * 100)|round(0)|int }}% of Income
           {% else %}
             0%
@@ -140,13 +172,13 @@
 
       <div class="hero-main-stat">
         <div class="hero-big-number">{{ summary.total_outflow.formatted }}</div>
-        <div class="hero-target-denom">/ {{ summary.income.formatted }} budget</div>
+        <div class="hero-target-denom">/ {{ summary.budget.formatted }} budget</div>
       </div>
 
       <!-- Outflow Progress Bar -->
       <div class="hero-progress-track">
-        {% set pct_outflow = (summary.total_outflow.minor / summary.income.minor * 100) if summary.income.minor > 0 else 0 %}
-        <div class="hero-progress-bar" style="width: {{ [pct_outflow, 100]|min }}%;"></div>
+        {% set pct_outflow = summary.budget.outflow_pct if summary.budget.minor > 0 else (summary.total_outflow.minor / summary.income.minor * 100 if summary.income.minor > 0 else 0) %}
+        <div class="hero-progress-bar" {{ ('style="width:' ~ ([pct_outflow, 100]|min)|string ~ '%;"')|safe }}></div>
       </div>
 
       <!-- 3 Macro Progress Rings: Needs, Wants, Savings (Extracted from UI Reference) -->
@@ -404,7 +436,7 @@
               <div class="alert-title-text">{{ alert.title }}</div>
               <div class="alert-desc-text">{{ alert.description }}</div>
             </div>
-            <button type="button" class="alert-dismiss-btn" onclick="dismissAlert({{ alert.id }}, this)" title="Dismiss" aria-label="Dismiss">
+            <button type="button" class="alert-dismiss-btn" data-id="{{ alert.id }}" onclick="dismissAlert(this.dataset.id, this)" title="Dismiss" aria-label="Dismiss">
               <i data-lucide="x" style="width:14px;height:14px;"></i>
             </button>
           </div>
@@ -433,7 +465,7 @@
       </div>
 
       <div class="hero-progress-track" style="background:rgba(0,0,0,0.06);margin-bottom:12px;">
-        <div class="hero-progress-bar" style="background:#8b5cf6;width: {{ goals_data.goals[0].progress_pct }}%;"></div>
+        <div class="hero-progress-bar bg-purple" {{ ('style="width:' ~ goals_data.goals[0].progress_pct|string ~ '%;"')|safe }}></div>
       </div>
 
       <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;">
@@ -444,6 +476,122 @@
     {% endif %}
   </div>
 </div>
+
+<!-- MONTHLY BUDGET CONFIRMATION MODAL -->
+<div id="monthly-budget-modal" class="modal-backdrop">
+  <div class="modal-card" style="max-width:540px;">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:38px;height:38px;border-radius:10px;background:rgba(203,244,50,0.18);display:flex;align-items:center;justify-content:center;color:#65a30d;">
+          <i data-lucide="calendar-days" style="width:20px;height:20px;"></i>
+        </div>
+        <div>
+          <h3 style="font-weight:800;font-size:17px;color:var(--text-primary);margin:0;">Set Your Budget for {{ prompt_info.month_name }}</h3>
+          <p style="font-size:12px;color:var(--text-muted);margin:0;">Your new month has started! Would you like to set a budget for {{ prompt_info.month_name }}?</p>
+        </div>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="handleCloseBudgetModal()" aria-label="Close">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      </button>
+    </div>
+
+    <!-- Previous Month Info Badge -->
+    <div style="background:var(--bg-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:10px 14px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:12px;color:var(--text-secondary);font-weight:600;">Previous month's budget:</span>
+      <span style="font-size:14px;font-weight:800;color:var(--text-primary);">{{ prompt_info.previous_budget_formatted }}</span>
+    </div>
+
+    <!-- 3 Options -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <!-- OPTION 1: SET NEW BUDGET -->
+      <div style="background:var(--bg-card);border:2px solid var(--brand-primary);border-radius:var(--radius-md);padding:14px 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-weight:800;font-size:14px;color:var(--text-primary);display:inline-flex;align-items:center;gap:6px;">
+            <i data-lucide="edit-3" style="width:15px;height:15px;color:var(--brand-primary);"></i>
+            <span>1. Set New Budget</span>
+          </div>
+          <span class="badge-pill badge-lime" style="font-size:10px;">Custom Amount</span>
+        </div>
+        <p style="font-size:12px;color:var(--text-secondary);margin:0 0 10px 0;">
+          Enter a new monthly budget. Your new budget will only be saved after you explicitly confirm it.
+        </p>
+
+        <form id="set-new-budget-form" onsubmit="handleSetNewBudget(event)">
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label" style="font-size:12px;font-weight:700;">New Budget Amount ({{ prompt_info.currency }})</label>
+            <div style="position:relative;">
+              <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-weight:700;color:var(--text-muted);">{{ prompt_info.currency_symbol }}</span>
+              <input type="text" inputmode="decimal" id="modal-new-budget-amount" class="form-control"
+                style="padding-left:32px;font-size:16px;font-weight:800;color:var(--text-primary);"
+                placeholder="e.g. 15000"
+                value="{{ (prompt_info.current_budget_amount)|round(0)|int if prompt_info.current_budget_amount > 0 else '' }}"
+                oninput="updateModalBudgetPreview(this.value)">
+            </div>
+          </div>
+
+          <!-- Dynamic 50/30/20 Live Preview -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
+            <div style="background:var(--bg-subtle);padding:8px 10px;border-radius:var(--radius-sm);text-align:center;border-top:2px solid #3b82f6;">
+              <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Needs ({{ prompt_info.needs_pct|round(0)|int }}%)</div>
+              <div id="modal-preview-needs" style="font-size:12px;font-weight:800;color:var(--text-primary);margin-top:2px;">-</div>
+            </div>
+            <div style="background:var(--bg-subtle);padding:8px 10px;border-radius:var(--radius-sm);text-align:center;border-top:2px solid #f59e0b;">
+              <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Wants ({{ prompt_info.wants_pct|round(0)|int }}%)</div>
+              <div id="modal-preview-wants" style="font-size:12px;font-weight:800;color:var(--text-primary);margin-top:2px;">-</div>
+            </div>
+            <div style="background:var(--bg-subtle);padding:8px 10px;border-radius:var(--radius-sm);text-align:center;border-top:2px solid #16a34a;">
+              <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Savings ({{ prompt_info.savings_pct|round(0)|int }}%)</div>
+              <div id="modal-preview-savings" style="font-size:12px;font-weight:800;color:var(--text-primary);margin-top:2px;">-</div>
+            </div>
+          </div>
+
+          <button type="submit" id="btn-confirm-new-budget" class="btn btn-primary btn-sm" style="width:100%;height:38px;display:inline-flex;align-items:center;justify-content:center;gap:6px;">
+            <i data-lucide="check-circle" style="width:15px;height:15px;"></i>
+            <span>Confirm &amp; Save New Budget</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- OPTION 2: KEEP PREVIOUS BUDGET -->
+      <div style="background:var(--bg-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;">
+        <div>
+          <div style="font-weight:800;font-size:13px;color:var(--text-primary);display:inline-flex;align-items:center;gap:6px;">
+            <i data-lucide="copy-check" style="width:14px;height:14px;color:var(--text-muted);"></i>
+            <span>2. Keep Previous Budget</span>
+          </div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">
+            Continue using {{ prompt_info.previous_budget_formatted }} for {{ prompt_info.month_name }}. No changes will be made.
+          </div>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="handleKeepPreviousBudget()" style="flex-shrink:0;">
+          Keep {{ prompt_info.previous_budget_formatted }}
+        </button>
+      </div>
+
+      <!-- OPTION 3: REMIND ME LATER -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 4px;">
+        <div style="font-size:11px;color:var(--text-muted);">
+          Dismisses this prompt temporarily. Your budget will remain {{ prompt_info.previous_budget_formatted }}.
+        </div>
+        <button type="button" class="btn btn-sm" onclick="handlePostponePrompt()" style="background:transparent;border:none;color:var(--text-secondary);font-weight:600;font-size:12px;text-decoration:underline;cursor:pointer;">
+          3. Remind Me Later
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="budget-prompt-data"
+  data-year="{{ prompt_info.year }}"
+  data-month="{{ prompt_info.month }}"
+  data-month-name="{{ prompt_info.month_name }}"
+  data-should-prompt="{{ 'true' if prompt_info.should_prompt else 'false' }}"
+  data-needs-pct="{{ prompt_info.needs_pct }}"
+  data-wants-pct="{{ prompt_info.wants_pct }}"
+  data-savings-pct="{{ prompt_info.savings_pct }}"
+  data-currency-symbol="{{ prompt_info.currency_symbol }}"
+  data-prev-formatted="{{ prompt_info.previous_budget_formatted }}"
+  style="display:none;"></div>
 {% endblock %}
 
 {% block extra_js %}

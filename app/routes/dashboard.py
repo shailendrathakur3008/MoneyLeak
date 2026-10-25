@@ -11,6 +11,7 @@ from app.services.budget_engine import calculate_budget_summary, get_month_date_
 from app.services.leak_detection import run_leak_detection
 from app.services.goal_engine import get_all_goals_summary
 from app.services.money import format_money
+from app.services.persistent_budget_service import get_monthly_prompt_info
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -31,6 +32,7 @@ def view_dashboard():
     summary = calculate_budget_summary(user.id, year, month)
     alerts = run_leak_detection(user.id, year, month)
     goals_data = get_all_goals_summary(user.id, user.currency)
+    prompt_info = get_monthly_prompt_info(user.id, year, month)
 
     # Recent transactions
     recent_txns = Transaction.query.filter_by(user_id=user.id)\
@@ -47,6 +49,7 @@ def view_dashboard():
         summary=summary,
         alerts=alerts,
         goals_data=goals_data,
+        prompt_info=prompt_info,
         recent_txns=recent_txns,
         recurring_count=len(recurring_items),
         recurring_monthly_formatted=format_money(total_recurring_monthly, user.currency),
@@ -66,12 +69,14 @@ def api_dashboard():
     summary = calculate_budget_summary(user.id, year, month)
     alerts = run_leak_detection(user.id, year, month)
     goals_data = get_all_goals_summary(user.id, user.currency)
+    prompt_info = get_monthly_prompt_info(user.id, year, month)
 
     return jsonify({
         'success': True,
         'summary': summary,
         'alerts': alerts,
-        'goals': goals_data
+        'goals': goals_data,
+        'prompt_info': prompt_info
     })
 
 

@@ -65,7 +65,7 @@
         <div style="margin-bottom:16px;">
           <label class="form-label" style="font-weight:700;">Which option best describes you?</label>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0 12px 0;">
-            <label id="card-role-student" onclick="selectSettingsRole('student')" style="background:var(--bg-subtle);border:2px solid {% if user.user_type == 'student' %}var(--brand-primary){% else %}var(--border-subtle){% endif %};border-radius:var(--radius-md);padding:14px;cursor:pointer;position:relative;display:block;">
+            <label id="card-role-student" onclick="selectSettingsRole('student')" class="role-select-card {% if user.user_type == 'student' %}role-selected{% endif %}">
               <input type="radio" name="settings_user_type" value="student" {% if user.user_type == 'student' %}checked{% endif %} style="position:absolute;top:12px;right:12px;accent-color:var(--brand-primary);">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
                 <div style="width:26px;height:26px;border-radius:6px;background:rgba(56,189,248,0.15);color:#0284c7;display:flex;align-items:center;justify-content:center;">
@@ -78,7 +78,7 @@
               </div>
             </label>
 
-            <label id="card-role-salaried" onclick="selectSettingsRole('salaried')" style="background:var(--bg-subtle);border:2px solid {% if user.user_type == 'salaried' or not user.user_type %}var(--brand-primary){% else %}var(--border-subtle){% endif %};border-radius:var(--radius-md);padding:14px;cursor:pointer;position:relative;display:block;">
+            <label id="card-role-salaried" onclick="selectSettingsRole('salaried')" class="role-select-card {% if user.user_type == 'salaried' or not user.user_type %}role-selected{% endif %}">
               <input type="radio" name="settings_user_type" value="salaried" {% if user.user_type == 'salaried' or not user.user_type %}checked{% endif %} style="position:absolute;top:12px;right:12px;accent-color:var(--brand-primary);">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
                 <div style="width:26px;height:26px;border-radius:6px;background:rgba(203,244,50,0.2);color:#65a30d;display:flex;align-items:center;justify-content:center;">
@@ -160,22 +160,37 @@
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div class="form-group">
-              <label class="form-label">Monthly Income / Allowance</label>
-              <input type="number" step="0.01" id="prof-income" class="form-control" value="{{ (user.monthly_income_minor_units / 100)|round(2) if user.monthly_income_minor_units else '' }}" placeholder="e.g. 50000">
+              <label class="form-label" style="font-weight:700;">
+                <span>Monthly Budget Target ({{ user.currency }})</span>
+                <span class="badge-pill badge-lime" style="font-size:10px;padding:2px 6px;">Spending Limit</span>
+              </label>
+              <input type="text" inputmode="decimal" id="prof-budget" class="form-control" value="{{ (active_budget_minor / 100)|round(0)|int if active_budget_minor and active_budget_minor > 0 else ((user.monthly_budget_minor_units or 0) / 100)|round(0)|int if user.monthly_budget_minor_units else '' }}" placeholder="e.g. 10000">
+              <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">Permanent spending ceiling across months &amp; years. Only changes when explicitly updated.</div>
             </div>
 
             <div class="form-group">
-              <label class="form-label">Opening Available Balance (Optional)</label>
-              <input type="number" step="0.01" id="prof-opening-bal" class="form-control" value="{{ (user.opening_balance_minor_units / 100)|round(2) if user.opening_balance_minor_units else '' }}" placeholder="Current checking/savings">
+              <label class="form-label" style="font-weight:700;">
+                <span>Monthly Income / Allowance ({{ user.currency }})</span>
+                <span class="badge-pill badge-blue" style="font-size:10px;padding:2px 6px;">Total Inflow</span>
+              </label>
+              <input type="text" inputmode="decimal" id="prof-income" class="form-control" value="{{ (user.monthly_income_minor_units / 100)|round(0)|int if user.monthly_income_minor_units and user.monthly_income_minor_units > 0 else '' }}" placeholder="e.g. 10000">
+              <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">Recorded monthly earnings baseline for surplus &amp; cashflow.</div>
             </div>
           </div>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div class="form-group">
-              <label class="form-label">Monthly Savings Target</label>
-              <input type="number" step="0.01" id="prof-savings-target" class="form-control" value="{{ (user.monthly_savings_target_minor_units / 100)|round(2) if user.monthly_savings_target_minor_units else '' }}" placeholder="e.g. 15000">
+              <label class="form-label">Opening Available Balance (Optional)</label>
+              <input type="text" inputmode="decimal" id="prof-opening-bal" class="form-control" value="{{ (user.opening_balance_minor_units / 100)|round(0)|int if user.opening_balance_minor_units and user.opening_balance_minor_units > 0 else '' }}" placeholder="Current checking/savings">
             </div>
 
+            <div class="form-group">
+              <label class="form-label">Monthly Savings Target</label>
+              <input type="text" inputmode="decimal" id="prof-savings-target" class="form-control" value="{{ (user.monthly_savings_target_minor_units / 100)|round(0)|int if user.monthly_savings_target_minor_units and user.monthly_savings_target_minor_units > 0 else '' }}" placeholder="e.g. 2000">
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div class="form-group">
               <label class="form-label">Primary Financial Goal</label>
               <select id="prof-goal" class="form-control">
@@ -187,15 +202,15 @@
                 <option value="Retirement Prep" {% if user.primary_financial_goal == 'Retirement Prep' %}selected{% endif %}>Retirement Prep</option>
               </select>
             </div>
-          </div>
 
-          <div class="form-group" style="margin-bottom:6px;">
-            <label class="form-label">Investment Experience</label>
-            <select id="prof-exp" class="form-control">
-              <option value="Beginner" {% if user.investment_experience == 'Beginner' or not user.investment_experience %}selected{% endif %}>Beginner — New to mutual funds & equities</option>
-              <option value="Intermediate" {% if user.investment_experience == 'Intermediate' %}selected{% endif %}>Intermediate — Familiar with SIPs, index funds & stocks</option>
-              <option value="Experienced" {% if user.investment_experience == 'Experienced' %}selected{% endif %}>Experienced — Active in direct equities, derivatives & debt</option>
-            </select>
+            <div class="form-group">
+              <label class="form-label">Investment Experience</label>
+              <select id="prof-exp" class="form-control">
+                <option value="Beginner" {% if user.investment_experience == 'Beginner' or not user.investment_experience %}selected{% endif %}>Beginner — New to mutual funds & equities</option>
+                <option value="Intermediate" {% if user.investment_experience == 'Intermediate' %}selected{% endif %}>Intermediate — Familiar with SIPs, index funds & stocks</option>
+                <option value="Experienced" {% if user.investment_experience == 'Experienced' %}selected{% endif %}>Experienced — Active in direct equities, derivatives & debt</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -231,7 +246,7 @@
                 <span style="font-size:11px;color:var(--text-muted);margin-left:6px;font-variant-numeric:tabular-nums;">Cap: {{ cat.monthly_budget_minor_units|format_money(user.currency) }}</span>
               {% endif %}
             </div>
-            <button class="btn btn-secondary btn-sm" style="color:var(--accent-danger);padding:3px 8px;font-size:11px;" onclick="deleteCategory({{ cat.id }})" title="Delete category" aria-label="Delete category">
+            <button class="btn btn-secondary btn-sm" style="color:var(--accent-danger);padding:3px 8px;font-size:11px;" data-id="{{ cat.id }}" onclick="deleteCategory(this.dataset.id)" title="Delete category" aria-label="Delete category">
               <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
             </button>
           </div>
@@ -245,8 +260,146 @@
     </div>
   </div>
 
-  <!-- RIGHT: APPEARANCE, SECURITY & DANGER ZONE -->
+  <!-- RIGHT: NOTIFICATIONS, APPEARANCE, SECURITY & DANGER ZONE -->
   <div class="dashboard-col">
+    <!-- NOTIFICATION & REMINDER PREFERENCES -->
+    <div class="card" id="notification-settings-card" style="margin-bottom:20px;">
+      <div class="card-header-flex">
+        <div>
+          <div class="card-title" style="display:flex;align-items:center;gap:6px;">
+            <i data-lucide="bell" style="width:18px;height:18px;color:var(--brand-primary);"></i>
+            <span>Notification & Reminders</span>
+          </div>
+          <div class="card-subtitle">Manage channels, timing, quiet hours, and payment categories</div>
+        </div>
+        <a href="/notifications" class="btn btn-secondary btn-sm" style="font-size:11px;padding:4px 8px;display:inline-flex;align-items:center;gap:4px;">
+          <i data-lucide="inbox" style="width:12px;height:12px;"></i> View History
+        </a>
+      </div>
+
+      <form id="notification-preferences-form" onsubmit="saveNotificationPreferences(event)" style="margin-top:14px;">
+        <!-- Channels -->
+        <div style="margin-bottom:16px;">
+          <label class="form-label" style="font-weight:700;margin-bottom:8px;display:block;">Notification Channels</label>
+          <div style="display:grid;grid-template-columns:1fr;gap:8px;">
+            <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg-subtle);border-radius:8px;cursor:pointer;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <i data-lucide="bell" style="width:15px;height:15px;color:var(--brand-primary);"></i>
+                <span style="font-size:13px;font-weight:700;color:var(--text-primary);">In-App Notifications</span>
+              </div>
+              <input type="checkbox" id="pref-in-app" checked style="accent-color:var(--brand-primary);width:16px;height:16px;">
+            </label>
+
+            <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg-subtle);border-radius:8px;cursor:pointer;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <i data-lucide="mail" style="width:15px;height:15px;color:#38bdf8;"></i>
+                <div>
+                  <span style="font-size:13px;font-weight:700;color:var(--text-primary);">Email Reminders</span>
+                  <div style="font-size:11px;color:var(--text-muted);">Sent to {{ user.email }}</div>
+                </div>
+              </div>
+              <input type="checkbox" id="pref-email" checked style="accent-color:var(--brand-primary);width:16px;height:16px;">
+            </label>
+
+            <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg-subtle);border-radius:8px;cursor:pointer;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <i data-lucide="send" style="width:15px;height:15px;color:#a855f7;"></i>
+                <div>
+                  <span style="font-size:13px;font-weight:700;color:var(--text-primary);">Browser Web Push</span>
+                  <div style="font-size:11px;color:var(--text-muted);">Desktop and mobile device notifications</div>
+                </div>
+              </div>
+              <input type="checkbox" id="pref-push" checked style="accent-color:var(--brand-primary);width:16px;height:16px;">
+            </label>
+          </div>
+        </div>
+
+        <!-- Reminder Timing -->
+        <div style="margin-bottom:16px;">
+          <label class="form-label" style="font-weight:700;margin-bottom:8px;display:block;">Reminder Timing</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-primary);cursor:pointer;padding:6px;background:var(--bg-subtle);border-radius:6px;">
+              <input type="checkbox" id="timing-7days" value="7" style="accent-color:var(--brand-primary);">
+              <span>7 days before</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-primary);cursor:pointer;padding:6px;background:var(--bg-subtle);border-radius:6px;">
+              <input type="checkbox" id="timing-3days" value="3" checked style="accent-color:var(--brand-primary);">
+              <span>3 days before</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-primary);cursor:pointer;padding:6px;background:var(--bg-subtle);border-radius:6px;">
+              <input type="checkbox" id="timing-1day" value="1" checked style="accent-color:var(--brand-primary);">
+              <span>1 day before</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-primary);cursor:pointer;padding:6px;background:var(--bg-subtle);border-radius:6px;">
+              <input type="checkbox" id="timing-0day" value="0" checked style="accent-color:var(--brand-primary);">
+              <span>On due date</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Category Preferences -->
+        <div style="margin-bottom:16px;">
+          <label class="form-label" style="font-weight:700;margin-bottom:8px;display:block;">Enabled Payment Categories</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="cat-sip" checked style="accent-color:var(--brand-primary);">
+              <span>Mutual Fund SIPs</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="cat-sub" checked style="accent-color:var(--brand-primary);">
+              <span>Subscriptions</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="cat-emi" checked style="accent-color:var(--brand-primary);">
+              <span>Loan EMIs</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="cat-bill" checked style="accent-color:var(--brand-primary);">
+              <span>Utility Bills</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="cat-ins" checked style="accent-color:var(--brand-primary);">
+              <span>Insurance Premiums</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="cat-other" checked style="accent-color:var(--brand-primary);">
+              <span>Rent & Other</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Timezone & Quiet Hours -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+          <div class="form-group">
+            <label class="form-label" style="font-size:12px;margin-bottom:4px;">Timezone</label>
+            <select id="pref-timezone" class="form-control" style="font-size:12px;padding:6px;">
+              <option value="Asia/Kolkata">India (IST - UTC+5:30)</option>
+              <option value="UTC">UTC</option>
+              <option value="America/New_York">Eastern Time (ET)</option>
+              <option value="Europe/London">London (GMT/BST)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" style="font-size:12px;margin-bottom:4px;">Quiet Hours</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;margin-top:6px;">
+              <input type="checkbox" id="pref-quiet-hours" style="accent-color:var(--brand-primary);">
+              <span>Suppress push during night (10PM - 8AM)</span>
+            </label>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;border-top:1px solid var(--border-subtle);padding-top:14px;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="testBrowserPushNotification()" style="font-size:11px;display:inline-flex;align-items:center;gap:4px;">
+            <i data-lucide="send" style="width:12px;height:12px;"></i> Test Browser Push
+          </button>
+          <button type="submit" class="btn btn-primary btn-sm" style="font-weight:800;">
+            Save Preferences
+          </button>
+        </div>
+      </form>
+    </div>
+
     <!-- APPEARANCE SETTINGS -->
     <div class="card" id="appearance-settings-card">
       <div class="card-header-flex">
@@ -466,11 +619,11 @@
     const cardStudent = document.getElementById('card-role-student');
     const cardSalaried = document.getElementById('card-role-salaried');
     if (role === 'student') {
-      if (cardStudent) cardStudent.style.borderColor = 'var(--brand-primary)';
-      if (cardSalaried) cardSalaried.style.borderColor = 'var(--border-subtle)';
+      if (cardStudent) cardStudent.classList.add('role-selected');
+      if (cardSalaried) cardSalaried.classList.remove('role-selected');
     } else {
-      if (cardSalaried) cardSalaried.style.borderColor = 'var(--brand-primary)';
-      if (cardStudent) cardStudent.style.borderColor = 'var(--border-subtle)';
+      if (cardSalaried) cardSalaried.classList.add('role-selected');
+      if (cardStudent) cardStudent.classList.remove('role-selected');
     }
   }
 
@@ -625,9 +778,10 @@
               phone_number: document.getElementById('prof-phone').value.trim(),
               date_of_birth: document.getElementById('prof-dob').value,
               user_type: selectedUserType,
-              monthly_income: document.getElementById('prof-income').value,
-              opening_balance: document.getElementById('prof-opening-bal').value,
-              monthly_savings_target: document.getElementById('prof-savings-target').value,
+              monthly_budget: (document.getElementById('prof-budget')?.value || '').replace(/,/g, '').trim(),
+              monthly_income: (document.getElementById('prof-income')?.value || '').replace(/,/g, '').trim(),
+              opening_balance: (document.getElementById('prof-opening-bal')?.value || '').replace(/,/g, '').trim(),
+              monthly_savings_target: (document.getElementById('prof-savings-target')?.value || '').replace(/,/g, '').trim(),
               primary_financial_goal: document.getElementById('prof-goal').value,
               investment_experience: document.getElementById('prof-exp').value
             })
@@ -716,5 +870,91 @@
       showToast(err.message, 'danger');
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Notification Preferences
+  // ---------------------------------------------------------------------------
+  async function loadNotificationPreferences() {
+    try {
+      const res = await fetch('/api/notifications/preferences');
+      const data = await res.json();
+      if (!data.success || !data.preferences) return;
+
+      const p = data.preferences;
+      document.getElementById('pref-in-app').checked = p.in_app_enabled;
+      document.getElementById('pref-email').checked = p.email_enabled;
+      document.getElementById('pref-push').checked = p.browser_push_enabled;
+
+      const offsets = p.reminder_days_before || [];
+      document.getElementById('timing-7days').checked = offsets.includes(7);
+      document.getElementById('timing-3days').checked = offsets.includes(3);
+      document.getElementById('timing-1day').checked = offsets.includes(1);
+      document.getElementById('timing-0day').checked = Boolean(p.reminder_on_due_date);
+
+      document.getElementById('cat-sip').checked = p.category_sip_enabled;
+      document.getElementById('cat-sub').checked = p.category_subscription_enabled;
+      document.getElementById('cat-emi').checked = p.category_emi_enabled;
+      document.getElementById('cat-bill').checked = p.category_bill_enabled;
+      document.getElementById('cat-ins').checked = p.category_insurance_enabled;
+      document.getElementById('cat-other').checked = p.category_other_enabled;
+
+      if (p.timezone) document.getElementById('pref-timezone').value = p.timezone;
+      document.getElementById('pref-quiet-hours').checked = p.quiet_hours_enabled;
+    } catch (e) {
+      console.error('Error loading notification preferences:', e);
+    }
+  }
+
+  async function saveNotificationPreferences(e) {
+    e.preventDefault();
+    const offsets = [];
+    if (document.getElementById('timing-7days').checked) offsets.push(7);
+    if (document.getElementById('timing-3days').checked) offsets.push(3);
+    if (document.getElementById('timing-1day').checked) offsets.push(1);
+
+    const payload = {
+      in_app_enabled: document.getElementById('pref-in-app').checked,
+      email_enabled: document.getElementById('pref-email').checked,
+      browser_push_enabled: document.getElementById('pref-push').checked,
+      reminder_days_before: offsets,
+      reminder_on_due_date: document.getElementById('timing-0day').checked,
+      category_sip_enabled: document.getElementById('cat-sip').checked,
+      category_subscription_enabled: document.getElementById('cat-sub').checked,
+      category_emi_enabled: document.getElementById('cat-emi').checked,
+      category_bill_enabled: document.getElementById('cat-bill').checked,
+      category_insurance_enabled: document.getElementById('cat-ins').checked,
+      category_other_enabled: document.getElementById('cat-other').checked,
+      timezone: document.getElementById('pref-timezone').value,
+      quiet_hours_enabled: document.getElementById('pref-quiet-hours').checked
+    };
+
+    try {
+      const res = await secureFetch('/api/notifications/preferences', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      showToast('Notification preferences saved successfully.', 'success');
+    } catch (err) {
+      showToast(err.message, 'danger');
+    }
+  }
+
+  async function testBrowserPushNotification() {
+    try {
+      const res = await fetch('/api/notifications/push/test', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Test browser push notification sent! Check your desktop/device.', 'success');
+      } else {
+        showToast(data.error || 'Could not send push notification.', 'warning');
+      }
+    } catch (e) {
+      showToast('Error dispatching test push.', 'danger');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadNotificationPreferences();
+  });
 </script>
 {% endblock %}

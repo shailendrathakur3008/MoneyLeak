@@ -120,9 +120,9 @@
     </div>
     <!-- Mini progress ratio -->
     <div style="display:flex;gap:4px;height:6px;background:var(--card-hover);border-radius:3px;overflow:hidden;margin:8px 0 6px 0;">
-      <div style="width:{{ [spendsense.distribution_50_30_20.needs.actual_pct, 100]|min }}%;background:#3b82f6;" title="Needs: {{ spendsense.distribution_50_30_20.needs.actual_pct }}%"></div>
-      <div style="width:{{ [spendsense.distribution_50_30_20.wants.actual_pct, 100]|min }}%;background:#f59e0b;" title="Wants: {{ spendsense.distribution_50_30_20.wants.actual_pct }}%"></div>
-      <div style="width:{{ [spendsense.distribution_50_30_20.savings.actual_pct, 100]|min }}%;background:#10b981;" title="Savings: {{ spendsense.distribution_50_30_20.savings.actual_pct }}%"></div>
+      <div {{ ('style="width:' ~ ([spendsense.distribution_50_30_20.needs.actual_pct, 100]|min)|string ~ '%;background:#3b82f6;"')|safe }} title="Needs: {{ spendsense.distribution_50_30_20.needs.actual_pct }}%"></div>
+      <div {{ ('style="width:' ~ ([spendsense.distribution_50_30_20.wants.actual_pct, 100]|min)|string ~ '%;background:#f59e0b;"')|safe }} title="Wants: {{ spendsense.distribution_50_30_20.wants.actual_pct }}%"></div>
+      <div {{ ('style="width:' ~ ([spendsense.distribution_50_30_20.savings.actual_pct, 100]|min)|string ~ '%;background:#10b981;"')|safe }} title="Savings: {{ spendsense.distribution_50_30_20.savings.actual_pct }}%"></div>
     </div>
     <div style="font-size:10px;color:var(--text-muted);display:flex;justify-content:space-between;">
       <span>N: <b>{{ spendsense.distribution_50_30_20.needs.actual_pct }}%</b> ({{ spendsense.distribution_50_30_20.needs.target_pct }}%)</span>
@@ -219,10 +219,9 @@
 
   <div class="findings-list" style="display:flex;flex-direction:column;gap:12px;">
     {% for finding in spendsense.findings %}
-      <div class="finding-card card {% if finding.is_dismissed %}finding-dismissed{% endif %}" 
+      <div class="finding-card card {% if finding.is_dismissed %}finding-dismissed{% endif %} {% if finding.severity == 'DANGER' %}finding-border-danger{% elif finding.severity == 'WARNING' %}finding-border-warning{% else %}finding-border-info{% endif %}" 
            data-alert-type="{{ finding.alert_type }}"
-           data-severity="{{ finding.severity }}"
-           style="border-left: 4px solid {% if finding.severity == 'DANGER' %}#ef4444{% elif finding.severity == 'WARNING' %}#f59e0b{% else %}#3b82f6{% endif %};">
+           data-severity="{{ finding.severity }}">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;">
           <div style="flex:1;min-width:280px;">
             <!-- Top Badges & Tags -->
@@ -302,20 +301,20 @@
 
             <!-- Interactive Action Buttons -->
             <div style="display:flex;gap:6px;margin-top:14px;flex-wrap:wrap;justify-content:flex-end;">
-              <button type="button" class="btn btn-secondary btn-sm" onclick="openEvidenceModal({{ finding.id }}, '{{ finding.title|replace('\'', '\\\'') }}')" style="font-size:11px;padding:3px 8px;">
+              <button type="button" class="btn btn-secondary btn-sm" data-id="{{ finding.id }}" data-title="{{ finding.title }}" onclick="openEvidenceModal(this.dataset.id, this.dataset.title)" style="font-size:11px;padding:3px 8px;">
                 <i data-lucide="list" style="width:12px;height:12px;margin-right:3px;"></i> Review Evidence
               </button>
 
-              <button type="button" class="btn btn-primary btn-sm" onclick="openTargetModal({{ finding.id }}, '{{ finding.title|replace('\'', '\\\'') }}', {{ finding.actual_spending_minor }}, {{ finding.potential_savings_minor }})" style="font-size:11px;padding:3px 8px;">
+              <button type="button" class="btn btn-primary btn-sm" data-id="{{ finding.id }}" data-title="{{ finding.title }}" data-actual="{{ finding.actual_spending_minor }}" data-savings="{{ finding.potential_savings_minor }}" onclick="openTargetModal(this.dataset.id, this.dataset.title, Number(this.dataset.actual), Number(this.dataset.savings))" style="font-size:11px;padding:3px 8px;">
                 <i data-lucide="target" style="width:12px;height:12px;margin-right:3px;"></i> Set Target
               </button>
 
               {% if not finding.is_dismissed %}
-                <button type="button" class="btn btn-ghost btn-sm" onclick="applyFindingAction({{ finding.id }}, 'dismiss')" title="Dismiss this finding" aria-label="Dismiss finding" style="padding:4px 6px;">
+                <button type="button" class="btn btn-ghost btn-sm" data-id="{{ finding.id }}" onclick="applyFindingAction(this.dataset.id, 'dismiss')" title="Dismiss this finding" aria-label="Dismiss finding" style="padding:4px 6px;">
                   <i data-lucide="x" style="width:13px;height:13px;"></i>
                 </button>
               {% else %}
-                <button type="button" class="btn btn-ghost btn-sm" onclick="applyFindingAction({{ finding.id }}, 'reset')" title="Restore finding" aria-label="Restore finding" style="padding:4px 6px;">
+                <button type="button" class="btn btn-ghost btn-sm" data-id="{{ finding.id }}" onclick="applyFindingAction(this.dataset.id, 'reset')" title="Restore finding" aria-label="Restore finding" style="padding:4px 6px;">
                   <i data-lucide="rotate-ccw" style="width:13px;height:13px;"></i>
                 </button>
               {% endif %}
@@ -563,7 +562,7 @@
                 <div style="font-weight:800;font-size:13px;color:var(--text-primary);font-variant-numeric:tabular-nums;">{{ item.formatted_amount }}</div>
                 <div style="font-size:10px;color:var(--text-muted);font-variant-numeric:tabular-nums;">{{ item.formatted_annual }}/yr</div>
               </div>
-              <button type="button" class="btn btn-ghost btn-sm" onclick="deleteRecurring({{ item.id }})" title="Remove subscription" aria-label="Remove subscription" style="color:#ef4444;padding:4px;">
+              <button type="button" class="btn btn-ghost btn-sm" data-id="{{ item.id }}" onclick="deleteRecurring(this.dataset.id)" title="Remove subscription" aria-label="Remove subscription" style="color:#ef4444;padding:4px;">
                 <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
               </button>
             </div>
@@ -609,7 +608,7 @@
                 <div style="font-size:10px;color:var(--text-muted);">Confidence: {{ pattern.confidence }}</div>
               </div>
               {% if not pattern.is_registered %}
-                <button type="button" class="btn btn-secondary btn-sm" onclick="prefillSubscriptionModal('{{ pattern.name|replace('\'', '\\\'') }}', {{ pattern.observed_amount_minor / 100 }}, '{{ pattern.frequency }}', '{{ pattern.category_id or '' }}')" style="font-size:10px;padding:3px 6px;">
+                <button type="button" class="btn btn-secondary btn-sm" data-name="{{ pattern.name }}" data-amount="{{ pattern.observed_amount_minor / 100 }}" data-frequency="{{ pattern.frequency }}" data-category-id="{{ pattern.category_id or '' }}" onclick="prefillSubscriptionModal(this.dataset.name, this.dataset.amount, this.dataset.frequency, this.dataset.categoryId)" style="font-size:10px;padding:3px 6px;">
                   <i data-lucide="plus" style="width:11px;height:11px;margin-right:2px;"></i> Track
                 </button>
               {% endif %}
@@ -765,7 +764,7 @@
         </div>
         <div style="font-size:11px;margin-top:4px;">
           Burn Rate Shift: 
-          <b style="color:{% if spendsense.trends.previous_month.burn_rate_diff_pct > 0 %}#ef4444{% else %}#16a34a{% endif %};">
+          <b class="{% if spendsense.trends.previous_month.burn_rate_diff_pct > 0 %}text-danger{% else %}text-success{% endif %}">
             {% if spendsense.trends.previous_month.burn_rate_diff_pct > 0 %}+{% endif %}{{ spendsense.trends.previous_month.burn_rate_diff_pct }}%
           </b>
         </div>

@@ -306,15 +306,31 @@ def calculate_budget_summary(user_id: int, year: Optional[int] = None, month: Op
     if goal_contrib_sum > 0 and savings_actual_minor < goal_contrib_sum:
         savings_actual_minor = max(savings_actual_minor, goal_contrib_sum)
 
-    # 4. Budget Targets (50/30/20)
+    # 4. Applicable Monthly Budget & 50/30/20 Targets
+    from app.services.persistent_budget_service import get_or_create_monthly_budget
+    mb = get_or_create_monthly_budget(user_id, year, month)
+
+    # Resolve applicable budget:
+    # 1. Month-specific MonthlyBudget record
+    # 2. User master persistent monthly_budget_minor_units
+    # 3. Baseline monthly income if no budget yet set
+    if mb and mb.budget_amount_minor_units > 0:
+        applicable_budget_minor = mb.budget_amount_minor_units
+    elif user.monthly_budget_minor_units and user.monthly_budget_minor_units > 0:
+        applicable_budget_minor = user.monthly_budget_minor_units
+    else:
+        applicable_budget_minor = recognized_income_minor
+
+    budget_base_minor = applicable_budget_minor if applicable_budget_minor > 0 else recognized_income_minor
+
     distribution = get_user_budget_distribution(user_id)
     needs_pct = distribution['needs']
     wants_pct = distribution['wants']
     savings_pct = distribution['savings']
 
-    needs_target_minor = int((recognized_income_minor * needs_pct) / 100.0)
-    wants_target_minor = int((recognized_income_minor * wants_pct) / 100.0)
-    savings_target_minor = int((recognized_income_minor * savings_pct) / 100.0)
+    needs_target_minor = int((budget_base_minor * needs_pct) / 100.0)
+    wants_target_minor = int((budget_base_minor * wants_pct) / 100.0)
+    savings_target_minor = int((budget_base_minor * savings_pct) / 100.0)
 
     # 5. Variances & Gaps
     needs_variance_minor = needs_actual_minor - needs_target_minor
@@ -324,15 +340,18 @@ def calculate_budget_summary(user_id: int, year: Optional[int] = None, month: Op
     # Total recognized outflow (consumption + actual savings)
     total_outflow_minor = consumption_expenses_minor + savings_actual_minor
     monthly_surplus_minor = recognized_income_minor - total_outflow_minor
+    budget_remaining_minor = max(0, budget_base_minor - total_outflow_minor)
+    budget_variance_minor = total_outflow_minor - budget_base_minor
 
     # Remaining allocations
     needs_remaining_minor = max(0, needs_target_minor - needs_actual_minor)
     wants_remaining_minor = max(0, wants_target_minor - wants_actual_minor)
 
-    # Percentages of income used
-    needs_actual_pct = (needs_actual_minor / recognized_income_minor * 100.0) if recognized_income_minor > 0 else 0.0
-    wants_actual_pct = (wants_actual_minor / recognized_income_minor * 100.0) if recognized_income_minor > 0 else 0.0
-    savings_rate = (savings_actual_minor / recognized_income_minor * 100.0) if recognized_income_minor > 0 else 0.0
+    # Percentages
+    needs_actual_pct = (needs_actual_minor / budget_base_minor * 100.0) if budget_base_minor > 0 else 0.0
+    wants_actual_pct = (wants_actual_minor / budget_base_minor * 100.0) if budget_base_minor > 0 else 0.0
+    savings_rate = (savings_actual_minor / budget_base_minor * 100.0) if budget_base_minor > 0 else 0.0
+    outflow_pct_of_budget = (total_outflow_minor / budget_base_minor * 100.0) if budget_base_minor > 0 else 0.0
 
     # Sorted Category Spending List
     category_breakdown = sorted(
@@ -341,7 +360,7 @@ def calculate_budget_summary(user_id: int, year: Optional[int] = None, month: Op
         reverse=True
     )
     for c in category_breakdown:
-        c['share_of_income_pct'] = round((c['total_minor'] / recognized_income_minor * 100.0) if recognized_income_minor > 0 else 0.0, 1)
+        c['share_of_income_pct'] = round((c['total_minor'] / budget_base_minor * 100.0) if budget_base_minor > 0 else 0.0, 1)
         c['formatted_amount'] = format_money(c['total_minor'], user.currency)
 
     currency = user.currency
@@ -349,6 +368,19 @@ def calculate_budget_summary(user_id: int, year: Optional[int] = None, month: Op
     return {
         'period': {'year': year, 'month': month, 'start_date': start_date.isoformat(), 'end_date': end_date.isoformat()},
         'currency': currency,
+        # Persistent Monthly Budget Allocation
+        'budget': {
+            'minor': budget_base_minor,
+            'formatted': format_money(budget_base_minor, currency),
+            'remaining_minor': budget_remaining_minor,
+            'remaining_formatted': format_money(budget_remaining_minor, currency),
+            'variance_minor': budget_variance_minor,
+            'is_over_budget': budget_variance_minor > 0,
+            'outflow_pct': round(outflow_pct_of_budget, 1),
+            'is_manually_set': getattr(mb, 'is_manually_set', False) if mb else False,
+            'confirmation_status': getattr(mb, 'confirmation_status', 'pending') if mb else 'pending',
+            'source_month': getattr(mb, 'source_month', None) if mb else None
+        },
         # Income
         'income': {
             'minor': recognized_income_minor,

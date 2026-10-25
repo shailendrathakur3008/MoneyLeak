@@ -124,6 +124,69 @@
     border-color: var(--brand-lime);
     background: var(--brand-lime-light);
   }
+
+  /* Bank Directory Selection Styles */
+  .bank-pill {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: var(--transition-fast);
+  }
+  .bank-pill:hover {
+    color: var(--text-primary);
+    border-color: var(--border-input-focus);
+    background: var(--bg-surface-hover);
+  }
+  .bank-pill.active {
+    background: var(--brand-lime);
+    color: var(--brand-lime-text);
+    border-color: var(--brand-lime);
+  }
+  .bank-item-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+  }
+  .bank-item-card:hover {
+    border-color: var(--brand-lime);
+    background: var(--bg-surface-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+  .bank-item-card.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .bank-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-weight: 900;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .text-success-green { color: #16a34a; }
+  .text-warning-amber { color: #d97706; }
+  .text-danger-red { color: #ef4444; }
+  .text-muted-sec { color: var(--text-secondary); }
+  .source-card-simulated { border-color: rgba(245, 158, 11, 0.4); }
 </style>
 {% endblock %}
 
@@ -140,9 +203,11 @@
           </span>
           <span style="font-size: 12px; color: var(--text-on-dark-muted);">
             {% if overview.provider_info.mode == 'LIVE_API' %}
-              • <span style="color: #4ade80; font-weight: 700;">Live Setu Production</span>
+              • <span style="color: #4ade80; font-weight: 700;">Live Setu Production (Active)</span>
+            {% elif overview.provider_info.mode == 'PROVIDER_SETUP_REQUIRED' %}
+              • <span style="color: #f87171; font-weight: 700;">Provider Setup Required</span>
             {% else %}
-              • <span style="color: #fbbf24; font-weight: 700;">Verified Sandbox Simulator</span>
+              • <span style="color: #fbbf24; font-weight: 700;">Sandbox Simulation Mode</span>
             {% endif %}
           </span>
         </div>
@@ -163,6 +228,30 @@
       </div>
     </div>
   </div>
+
+  <!-- PROVIDER SETUP REQUIRED ALERT BANNER -->
+  {% if overview.provider_info.setup_required %}
+  <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-lg); padding: 18px 22px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 14px;">
+    <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(239, 68, 68, 0.15); color: #ef4444; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <i data-lucide="shield-alert" style="width: 22px; height: 22px;"></i>
+    </div>
+    <div style="flex: 1;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
+        <strong style="color: var(--text-primary); font-size: 15px;">Genuine Bank Connection: Setup Required</strong>
+        <span class="badge-pill" style="background: #fee2e2; color: #b91c1c; font-size: 10px; font-weight: 800;">ACTION REQUIRED</span>
+      </div>
+      <p style="font-size: 13px; color: var(--text-secondary); margin: 0 0 10px 0; line-height: 1.5;">
+        MoneyLeak connects genuine Indian bank accounts via <strong>RBI-regulated Account Aggregators (Setu AA)</strong> with real-time SMS OTP verification. Live connectivity requires authorized provider credentials from the <a href="https://bridge.setu.co" target="_blank" rel="noopener" style="color: var(--brand-lime-text); font-weight: 700; text-decoration: underline;">Setu Bridge Dashboard</a>.
+      </p>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 12px; color: var(--text-muted);">
+        <span>Required Environment Variables:</span>
+        <code style="background: var(--bg-surface-hover); padding: 3px 8px; border-radius: 4px; font-size: 11px; color: var(--text-primary); border: 1px solid var(--border-subtle);">SETU_AA_CLIENT_ID</code>
+        <code style="background: var(--bg-surface-hover); padding: 3px 8px; border-radius: 4px; font-size: 11px; color: var(--text-primary); border: 1px solid var(--border-subtle);">SETU_AA_CLIENT_SECRET</code>
+        <code style="background: var(--bg-surface-hover); padding: 3px 8px; border-radius: 4px; font-size: 11px; color: var(--text-primary); border: 1px solid var(--border-subtle);">SETU_AA_PRODUCT_INSTANCE_ID</code>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
   <!-- KPI SUMMARY CARDS -->
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
@@ -222,11 +311,15 @@
         {% endif %}
       </div>
       <div style="font-size: 12px; color: var(--text-secondary);">
-        Status: <span style="font-weight: 700; color: {% if overview.overall_status == 'ACTIVE' %}#16a34a{% elif overview.overall_status in ('CONFIG_REQUIRED', 'SANDBOX_READY') %}#d97706{% else %}var(--text-secondary){% endif %};">
+        Status: <span class="{% if overview.overall_status == 'ACTIVE' %}text-success-green{% elif overview.overall_status == 'SIMULATED_ACTIVE' or overview.overall_status == 'SANDBOX_READY' %}text-warning-amber{% elif overview.overall_status == 'CONFIG_REQUIRED' %}text-danger-red{% else %}text-muted-sec{% endif %}" style="font-weight: 700;">
           {% if overview.overall_status == 'ACTIVE' %}
-            Active (Connected)
-          {% elif overview.overall_status in ('CONFIG_REQUIRED', 'SANDBOX_READY') %}
-            Ready to Link (Simulator)
+            Active (Bank Verified)
+          {% elif overview.overall_status == 'SIMULATED_ACTIVE' %}
+            Active (Simulated Demo)
+          {% elif overview.overall_status == 'CONFIG_REQUIRED' %}
+            Setup Required
+          {% elif overview.overall_status == 'SANDBOX_READY' %}
+            Ready to Link (Sandbox)
           {% else %}
             Idle
           {% endif %}
@@ -278,9 +371,9 @@
     {% else %}
       <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; margin-bottom: 24px;">
         {% for conn in connections %}
-          <div class="source-card">
+          <div class="source-card {% if conn.is_simulated %}source-card-simulated{% endif %}">
             <div>
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 8px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                   <div style="width: 38px; height: 38px; border-radius: var(--radius-md); background: var(--bg-surface-hover); display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-subtle);">
                     <i data-lucide="landmark" style="width: 20px; height: 20px; color: var(--text-primary);"></i>
@@ -290,10 +383,28 @@
                     <span style="font-size: 12px; color: var(--text-muted);">{{ conn.account_type }} • {{ conn.account_mask }}</span>
                   </div>
                 </div>
-                <span class="status-pill {% if conn.status == 'CONNECTED' %}status-active{% elif conn.status == 'SYNCING' %}status-pending{% else %}status-error{% endif %}">
-                  {{ conn.status }}
-                </span>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                  {% if conn.is_simulated %}
+                    <span class="status-pill" style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; font-size: 10px; font-weight: 800;">
+                      SIMULATED DEMO
+                    </span>
+                  {% else %}
+                    <span class="status-pill status-active" style="font-size: 10px; font-weight: 800;">
+                      VERIFIED LIVE AA
+                    </span>
+                  {% endif %}
+                  <span class="status-pill {% if conn.status == 'CONNECTED' %}status-active{% elif conn.status == 'PENDING' %}status-pending{% else %}status-error{% endif %}">
+                    {{ conn.status }}
+                  </span>
+                </div>
               </div>
+
+              {% if conn.is_simulated %}
+              <div style="font-size: 11px; color: #b45309; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; line-height: 1.4;">
+                <i data-lucide="alert-circle" style="width: 12px; height: 12px; display: inline; vertical-align: -2px;"></i>
+                Simulated sandbox connection. No live bank credentials were verified.
+              </div>
+              {% endif %}
 
               <div style="background: var(--bg-surface-hover); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 14px; font-size: 12px; color: var(--text-secondary);">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
@@ -302,7 +413,13 @@
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                   <span>Consent Status:</span>
-                  <strong style="color: #16a34a;">{{ conn.consent_status }} (Active)</strong>
+                  {% if conn.is_simulated %}
+                    <strong style="color: #d97706;">SIMULATED (Demo Data)</strong>
+                  {% elif conn.consent_status == 'ACTIVE' %}
+                    <strong style="color: #16a34a;">ACTIVE (Bank Verified)</strong>
+                  {% else %}
+                    <strong style="color: var(--text-secondary);">{{ conn.consent_status }}</strong>
+                  {% endif %}
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span>Last Synced:</span>
@@ -312,11 +429,11 @@
             </div>
 
             <div style="display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid var(--border-subtle); padding-top: 12px;">
-              <button type="button" class="btn btn-secondary btn-sm" onclick="syncSingleConnection({{ conn.id }}, this)">
+              <button type="button" class="btn btn-secondary btn-sm" data-id="{{ conn.id }}" onclick="syncSingleConnection(this.dataset.id, this)">
                 <i data-lucide="refresh-cw" style="width: 14px; height: 14px; margin-right: 4px;"></i> Sync
               </button>
-              <button type="button" class="btn btn-secondary btn-sm" style="color: var(--color-danger); border-color: rgba(239,68,68,0.2);" onclick="disconnectConnection({{ conn.id }})">
-                <i data-lucide="trash-2" style="width: 14px; height: 14px; margin-right: 4px;"></i> Disconnect
+              <button type="button" class="btn btn-secondary btn-sm" style="color: var(--color-danger); border-color: rgba(239,68,68,0.2);" data-id="{{ conn.id }}" onclick="disconnectConnection(this.dataset.id)">
+                <i data-lucide="trash-2" style="width: 14px; height: 14px; margin-right: 4px;"></i> {% if conn.is_simulated %}Remove Demo{% else %}Disconnect{% endif %}
               </button>
             </div>
           </div>
@@ -579,61 +696,181 @@
 
 </div>
 
-<!-- MODAL: CONNECT BANK (ACCOUNT AGGREGATOR) -->
+<!-- MODAL: CONNECT BANK (ACCOUNT AGGREGATOR & DYNAMIC DISCOVERY) -->
 <div id="connect-bank-modal" class="modal-backdrop">
-  <div class="modal-card" style="max-width: 520px;">
-    <div class="modal-header">
-      <div>
-        <h3 style="font-weight: 800; font-size: 17px; margin: 0 0 2px 0; color: var(--text-primary);">Connect Bank Account</h3>
-        <p style="font-size: 12px; color: var(--text-muted); margin: 0;">RBI Account Aggregator framework integration</p>
-      </div>
-      <button type="button" class="modal-close-btn" onclick="closeModal('connect-bank-modal')">
-        <i data-lucide="x" style="width: 16px; height: 16px;"></i>
-      </button>
-    </div>
-
-    <form id="connect-bank-form" onsubmit="handleConnectBank(event)" style="margin-top: 16px;">
-      <div class="form-group" style="margin-bottom: 14px;">
-        <label class="form-label" style="font-weight: 700; font-size: 12px;">Select Financial Institution</label>
-        <select id="connect-fip-code" class="form-control" required>
-          {% for fip in supported_fips %}
-            <option value="{{ fip.code }}">{{ fip.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="form-group" style="margin-bottom: 14px;">
-        <label class="form-label" style="font-weight: 700; font-size: 12px;">Registered Mobile Number (for AA OTP)</label>
-        <input type="tel" id="connect-phone" class="form-control" value="{{ user.phone_number or '9876543210' }}" required>
-        <small style="font-size: 11px; color: var(--text-muted);">Used by the Account Aggregator to discover your linked bank accounts.</small>
-      </div>
-
-      <div class="form-group" style="margin-bottom: 20px;">
-        <label class="form-label" style="font-weight: 700; font-size: 12px;">Account Types</label>
-        <div style="display: flex; gap: 16px; font-size: 13px;">
-          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-            <input type="checkbox" name="acc_types" value="SAVINGS" checked> Savings Account
-          </label>
-          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-            <input type="checkbox" name="acc_types" value="CURRENT"> Current Account
-          </label>
+  <div class="modal-card" style="max-width: 680px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+    
+    <!-- STEP 1: BROWSE & SEARCH INDIAN BANKS -->
+    <div id="bank-step-1" style="display: flex; flex-direction: column; height: 100%;">
+      <div class="modal-header" style="padding-bottom: 12px;">
+        <div>
+          <h3 style="font-weight: 800; font-size: 18px; margin: 0 0 2px 0; color: var(--text-primary);">Connect Bank Account</h3>
+          <p style="font-size: 12px; color: var(--text-muted); margin: 0;">
+            Search across 40+ Indian institutions supported under RBI's Account Aggregator framework
+          </p>
         </div>
-      </div>
-
-      <div style="background: var(--bg-surface-hover); border-radius: var(--radius-sm); padding: 12px; font-size: 12px; color: var(--text-secondary); margin-bottom: 18px;">
-        <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">
-          <i data-lucide="shield-check" style="width: 14px; height: 14px; color: #16a34a;"></i> 100% Encrypted & RBI Regulated
-        </div>
-        Your financial institution authorizes read-only access. You can revoke access at any time with 1 click.
-      </div>
-
-      <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button type="button" class="btn btn-secondary" onclick="closeModal('connect-bank-modal')">Cancel</button>
-        <button type="submit" class="btn btn-primary" id="btn-submit-connect">
-          <i data-lucide="link-2" style="width: 15px; height: 15px; margin-right: 5px;"></i> Authorize & Link
+        <button type="button" class="modal-close-btn" onclick="closeModal('connect-bank-modal')">
+          <i data-lucide="x" style="width: 16px; height: 16px;"></i>
         </button>
       </div>
-    </form>
+
+      <!-- Search Input -->
+      <div style="position: relative; margin: 12px 0;">
+        <input type="text" id="bank-picker-search" class="form-control" placeholder="Search SBI, HDFC, Union Bank, PNB, Canara, IFSC prefix..." oninput="filterBankCards()" style="padding-left: 36px;">
+        <i data-lucide="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted);"></i>
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 10px;">
+        <button type="button" class="bank-pill active" onclick="setBankCategory('ALL', this)">All Institutions</button>
+        <button type="button" class="bank-pill" onclick="setBankCategory('PUBLIC_SECTOR', this)">Public-Sector (12)</button>
+        <button type="button" class="bank-pill" onclick="setBankCategory('PRIVATE_SECTOR', this)">Private-Sector (16)</button>
+        <button type="button" class="bank-pill" onclick="setBankCategory('SMALL_FINANCE', this)">Small Finance (8)</button>
+        <button type="button" class="bank-pill" onclick="setBankCategory('PAYMENTS_BANK', this)">Payments (4)</button>
+      </div>
+
+      <!-- Directory Metadata / Refresh Status -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 11px; color: var(--text-muted);">
+        <span>Directory: <strong style="color: var(--text-primary);">{{ supported_fips|length }} Verified Institutions</strong> (RBI / Sahamati)</span>
+        <button type="button" onclick="refreshBankDirectory()" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 11px;">
+          <i data-lucide="rotate-cw" id="icon-refresh-dir" style="width: 12px; height: 12px;"></i> Refresh
+        </button>
+      </div>
+
+      <!-- Bank Cards List -->
+      <div id="bank-cards-container" style="max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px;">
+        {% for fip in supported_fips %}
+          {% set is_conn = false %}
+          {% for c in connections %}
+            {% if c.institution_code == fip.code and c.status == 'CONNECTED' %}
+              {% set is_conn = true %}
+            {% endif %}
+          {% endfor %}
+          <div class="bank-item-card" data-code="{{ fip.code }}" data-name="{{ fip.name|lower }}" data-cat="{{ fip.category }}" data-full-name="{{ fip.name }}" data-cat-label="{{ fip.category_label }}" data-color="{{ fip.logo_color }}" data-supported="{{ 'true' if fip.provider_supported else 'false' }}" data-connected="{{ 'true' if is_conn else 'false' }}" onclick="selectBankFromCard(this)">
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+              <div class="bank-avatar" data-avatar-color="{{ fip.logo_color }}">
+                {{ fip.code[:2] }}
+              </div>
+              <div style="min-width: 0;">
+                <div style="font-weight: 800; font-size: 14px; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                  {{ fip.name }}
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                  <span>{{ fip.category_label }}</span>
+                  <span>•</span>
+                  <span>IFSC: {{ fip.code }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+              {% if is_conn %}
+                <span class="status-pill status-active">Connected</span>
+              {% elif not fip.provider_supported %}
+                <span class="status-pill" style="background: #f3f4f6; color: #6b7280;">Unsupported</span>
+              {% elif provider_status.mode == 'LIVE_API' %}
+                <span class="status-pill status-active">Available</span>
+              {% elif provider_status.mode == 'SANDBOX_SIMULATION' %}
+                <span class="status-pill status-pending">Demo Ready</span>
+              {% else %}
+                <span class="status-pill status-config">Setup Required</span>
+              {% endif %}
+              <button type="button" class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 12px; pointer-events: none;">
+                Select
+              </button>
+            </div>
+          </div>
+        {% endfor %}
+        <div id="bank-cards-empty" style="display: none; padding: 32px 16px; text-align: center; color: var(--text-muted);">
+          <i data-lucide="search-x" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.5;"></i>
+          <p style="margin: 0 0 8px 0; font-weight: 700;">No institutions match your search</p>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="clearBankSearch()">Clear Search</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2: CONFIGURE & AUTHORIZE CHOSEN BANK -->
+    <div id="bank-step-2" style="display: none;">
+      <div class="modal-header" style="padding-bottom: 12px;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="backToBankPicker()" style="display: inline-flex; align-items: center; gap: 4px;">
+          <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> Back to Banks
+        </button>
+        <button type="button" class="modal-close-btn" onclick="closeModal('connect-bank-modal')">
+          <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+        </button>
+      </div>
+
+      <!-- Selected Bank Banner -->
+      <div style="display: flex; align-items: center; gap: 14px; background: var(--bg-surface-hover); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 14px; margin: 14px 0 16px 0;">
+        <div id="selected-bank-avatar" class="bank-avatar" style="width: 44px; height: 44px; font-size: 16px;">
+          --
+        </div>
+        <div>
+          <h4 id="selected-bank-name" style="margin: 0; font-size: 16px; font-weight: 800; color: var(--text-primary);">Bank Name</h4>
+          <span id="selected-bank-meta" style="font-size: 12px; color: var(--text-muted);">Category • RBI Certified FIP</span>
+        </div>
+      </div>
+
+      <form id="connect-bank-form" onsubmit="handleConnectBank(event)">
+        <input type="hidden" id="connect-fip-code" value="">
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 700; font-size: 12px;">Registered Mobile Number (for Bank OTP)</label>
+          <input type="tel" id="connect-phone" class="form-control" value="{{ user.phone_number or '9876543210' }}" required>
+          <small style="font-size: 11px; color: var(--text-muted);">Must match mobile registered with this bank for Account Aggregator VPA verification.</small>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 700; font-size: 12px;">Account Label / Nickname (Optional)</label>
+          <input type="text" id="connect-account-name" class="form-control" placeholder="e.g. Primary Salary Account, Joint Savings">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" style="font-weight: 700; font-size: 12px;">Account Types to Authorize</label>
+          <div style="display: flex; gap: 16px; font-size: 13px;">
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" name="acc_types" value="SAVINGS" checked> Savings Account
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" name="acc_types" value="CURRENT"> Current Account
+            </label>
+          </div>
+        </div>
+
+        <!-- Mode Explanation Box -->
+        {% if provider_status.mode == 'LIVE_API' %}
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-sm); padding: 12px; font-size: 12px; color: #166534; margin-bottom: 18px;">
+            <strong style="display: block; margin-bottom: 2px;">⚡ Live Setu Account Aggregator Flow</strong>
+            Clicking Authorize will open the certified RBI consent webview where your bank sends an SMS OTP to approve read-only transaction sharing.
+          </div>
+        {% elif provider_status.mode == 'SANDBOX_SIMULATION' %}
+          <div style="background: #fefce8; border: 1px solid #fef08a; border-radius: var(--radius-sm); padding: 12px; font-size: 12px; color: #854d0e; margin-bottom: 18px;">
+            <strong style="display: block; margin-bottom: 2px;">🛠️ Certified Sandbox Simulation Mode</strong>
+            Operating in developer simulator mode. Will simulate verified Indian banking transactions (UPI, Salary, Swiggy, Zerodha, BESCOM) for this bank.
+          </div>
+        {% else %}
+          <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-sm); padding: 12px; font-size: 12px; color: #991b1b; margin-bottom: 18px;">
+            <strong style="display: block; margin-bottom: 2px;">⚠️ Provider Setup Required for Live Sync</strong>
+            Set `SETU_AA_CLIENT_ID`, `SETU_AA_CLIENT_SECRET`, and `SETU_AA_PRODUCT_INSTANCE_ID` in your environment to initiate live production bank connections.
+          </div>
+        {% endif %}
+
+        <div style="background: var(--bg-surface-hover); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 12px; color: var(--text-secondary); margin-bottom: 18px;">
+          <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px;">
+            <i data-lucide="shield-check" style="width: 14px; height: 14px; color: #16a34a;"></i> 100% Encrypted & RBI Regulated
+          </div>
+          Read-only access to transaction history. Zero storage of passwords, debit card PINs, or net banking credentials. Revoke anytime with 1 click.
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-secondary" onclick="backToBankPicker()">Back</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-connect">
+            <i data-lucide="link-2" style="width: 15px; height: 15px; margin-right: 5px;"></i> Authorize & Connect
+          </button>
+        </div>
+      </form>
+    </div>
+
   </div>
 </div>
 
@@ -722,26 +959,149 @@
     if (window.lucide) lucide.createIcons();
   }
 
+  let activeBankCategory = 'ALL';
+
+  function setBankCategory(cat, btn) {
+    activeBankCategory = cat;
+    document.querySelectorAll('.bank-pill').forEach(el => el.classList.remove('active'));
+    btn.classList.add('active');
+    filterBankCards();
+  }
+
+  function filterBankCards() {
+    const q = (document.getElementById('bank-picker-search').value || '').trim().toLowerCase();
+    const cards = document.querySelectorAll('#bank-cards-container .bank-item-card');
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+      const name = card.getAttribute('data-name') || '';
+      const code = (card.getAttribute('data-code') || '').toLowerCase();
+      const cat = card.getAttribute('data-cat') || '';
+
+      const matchesCat = (activeBankCategory === 'ALL' || cat === activeBankCategory);
+      const matchesQuery = (!q || name.includes(q) || code.includes(q));
+
+      if (matchesCat && matchesQuery) {
+        card.style.display = 'flex';
+        visibleCount++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    const emptyBox = document.getElementById('bank-cards-empty');
+    if (emptyBox) {
+      emptyBox.style.display = visibleCount === 0 ? 'block' : 'none';
+    }
+  }
+
+  function clearBankSearch() {
+    document.getElementById('bank-picker-search').value = '';
+    activeBankCategory = 'ALL';
+    document.querySelectorAll('.bank-pill').forEach((el, idx) => {
+      if (idx === 0) el.classList.add('active');
+      else el.classList.remove('active');
+    });
+    filterBankCards();
+  }
+
+  function selectBankFromCard(card) {
+    selectBankForConnect(
+      card.dataset.code,
+      card.dataset.fullName,
+      card.dataset.catLabel,
+      card.dataset.color,
+      card.dataset.supported === 'true',
+      card.dataset.connected === 'true'
+    );
+  }
+
+  function selectBankForConnect(code, name, categoryLabel, color, isSupported, isConnected) {
+    if (!isSupported) {
+      showToast(`${name} is not currently supported for automated AA connection. Please use Statement Import.`, 'info');
+      return;
+    }
+
+    document.getElementById('bank-step-1').style.display = 'none';
+    document.getElementById('bank-step-2').style.display = 'block';
+
+    document.getElementById('connect-fip-code').value = code;
+    document.getElementById('selected-bank-name').textContent = name;
+    document.getElementById('selected-bank-meta').textContent = `${categoryLabel} • IFSC Prefix: ${code}`;
+    
+    const avatar = document.getElementById('selected-bank-avatar');
+    avatar.style.background = color || '#333';
+    avatar.textContent = code.substring(0, 2);
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function backToBankPicker() {
+    document.getElementById('bank-step-2').style.display = 'none';
+    document.getElementById('bank-step-1').style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
+  }
+
+  async function refreshBankDirectory() {
+    const icon = document.getElementById('icon-refresh-dir');
+    if (icon) icon.classList.add('spin');
+
+    try {
+      const res = await fetch('/api/sync/institutions/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' }
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message, 'success');
+      } else {
+        showToast(data.error || 'Failed to refresh directory', 'error');
+      }
+    } catch (e) {
+      showToast('Network error refreshing bank directory', 'error');
+    } finally {
+      if (icon) icon.classList.remove('spin');
+    }
+  }
+
   async function handleConnectBank(e) {
     e.preventDefault();
     const btn = document.getElementById('btn-submit-connect');
     btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader" class="spin" style="width:15px;height:15px;margin-right:5px;"></i> Linking...';
+    btn.innerHTML = '<i data-lucide="loader" class="spin" style="width:15px;height:15px;margin-right:5px;"></i> Authorizing...';
 
     const fipCode = document.getElementById('connect-fip-code').value;
     const phone = document.getElementById('connect-phone').value;
+    const accountName = document.getElementById('connect-account-name') ? document.getElementById('connect-account-name').value : '';
+
+    const accTypes = [];
+    document.querySelectorAll('input[name="acc_types"]:checked').forEach(cb => accTypes.push(cb.value));
+    if (accTypes.length === 0) accTypes.push('SAVINGS');
 
     try {
       const res = await fetch('/api/sync/connections', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
-        body: JSON.stringify({ fip_code: fipCode, phone: phone })
+        body: JSON.stringify({
+          fip_code: fipCode,
+          phone: phone,
+          account_types: accTypes,
+          account_name: accountName
+        })
       });
       const data = await res.json();
+
       if (data.success) {
-        showToast(data.message, 'success');
-        closeModal('connect-bank-modal');
-        setTimeout(() => window.location.reload(), 1200);
+        if (data.mode === 'LIVE_API' && data.redirect_url) {
+          showToast('Redirecting to RBI Account Aggregator webview for SMS OTP verification...', 'info');
+          setTimeout(() => {
+            window.location.href = data.redirect_url;
+          }, 800);
+        } else {
+          showToast(data.message || 'Successfully linked institution.', 'success');
+          closeModal('connect-bank-modal');
+          setTimeout(() => window.location.reload(), 1200);
+        }
       } else {
         showToast(data.error || 'Failed to connect institution', 'error');
       }
@@ -749,7 +1109,7 @@
       showToast('Network error while connecting bank', 'error');
     } finally {
       btn.disabled = false;
-      btn.innerHTML = '<i data-lucide="link-2" style="width:15px;height:15px;margin-right:5px;"></i> Authorize & Link';
+      btn.innerHTML = '<i data-lucide="link-2" style="width:15px;height:15px;margin-right:5px;"></i> Authorize & Connect';
       if (window.lucide) lucide.createIcons();
     }
   }
@@ -1004,6 +1364,7 @@
             <td style="padding:10px 14px;">${t.raw_date}</td>
             <td style="padding:10px 14px;">
               <strong>${t.normalized_merchant}</strong>
+              ${t.is_simulated ? '<span class="badge-pill" style="background:#fef3c7;color:#b45309;font-size:9px;font-weight:800;margin-left:6px;">SIMULATED DEMO</span>' : ''}
               <div style="font-size:11px;color:var(--text-muted);">${t.raw_narration.substring(0, 35)}</div>
             </td>
             <td style="padding:10px 14px;"><span class="method-badge method-${t.payment_method.toLowerCase()}">${t.payment_method}</span></td>
@@ -1226,8 +1587,11 @@
     }
   });
 
-  // Initialize Lucide icons on load
+  // Initialize Lucide icons and dynamic avatar colors on load
   document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-avatar-color]').forEach(el => {
+      el.style.backgroundColor = el.getAttribute('data-avatar-color') || '#2563eb';
+    });
     if (window.lucide) lucide.createIcons();
   });
 </script>

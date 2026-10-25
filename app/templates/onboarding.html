@@ -45,6 +45,7 @@
       --ml-text-secondary: #6e756c;
       --ml-text-muted: #959e93;
     }
+    .custom-city-hidden { display: none; }
 
     [data-theme="dark"] {
       --ml-canvas: #090d16;
@@ -451,10 +452,16 @@
 <div class="onboarding-wrap">
   <div class="onboarding-card">
     
-    <!-- Corner Theme Toggle -->
-    <button type="button" class="theme-corner-toggle" id="onboard-theme-toggle" title="Toggle theme">
-      <i data-lucide="sun-moon" style="width:17px;height:17px;"></i>
-    </button>
+    <!-- Top Actions: Skip to Dashboard & Corner Theme Toggle -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+      <a href="{{ url_for('auth.skip_onboarding') }}" id="btn-skip-onboarding-top" style="font-size: 13px; color: var(--ml-text-muted); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; padding: 6px 10px; border-radius: 8px; background: var(--ml-input-bg); border: 1px solid var(--ml-card-border); transition: all 0.18s ease;">
+        <span>Skip for now & go to Dashboard</span>
+        <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+      </a>
+      <button type="button" class="theme-corner-toggle" id="onboard-theme-toggle" title="Toggle theme" style="position: static; margin: 0;">
+        <i data-lucide="sun-moon" style="width:17px;height:17px;"></i>
+      </button>
+    </div>
 
     <!-- ===================================================================== -->
     <!-- 5-STEP NUMBERED STEPPER: ① ── ② ── ③ ── ④ ── ⑤                       -->
@@ -649,25 +656,9 @@
           <div class="form-group" id="group-state">
             <label class="form-label">
               <span>State or Union Territory <span style="color:#ef4444;">*</span></span>
-              <span style="font-size:11px;color:var(--ml-text-muted);">28 States & 8 UTs</span>
+              <span style="font-size:11px;color:var(--ml-text-muted);">28 States & 8 UTs (Searchable)</span>
             </label>
-            <select id="s2-state" class="form-control">
-              <option value="">-- Select State / Union Territory --</option>
-              <optgroup label="States (28)">
-                {% for s in all_states %}
-                  {% if s.type == 'State' %}
-                    <option value="{{ s.id }}" data-name="{{ s.name }}" {% if user.state_id == s.id %}selected{% endif %}>{{ s.name }}</option>
-                  {% endif %}
-                {% endfor %}
-              </optgroup>
-              <optgroup label="Union Territories (8)">
-                {% for s in all_states %}
-                  {% if s.type == 'Union Territory' %}
-                    <option value="{{ s.id }}" data-name="{{ s.name }}" {% if user.state_id == s.id %}selected{% endif %}>{{ s.name }}</option>
-                  {% endif %}
-                {% endfor %}
-              </optgroup>
-            </select>
+            <div id="s2-state-wrap"></div>
           </div>
         </div>
 
@@ -675,34 +666,19 @@
           <!-- District -->
           <div class="form-group">
             <label class="form-label">
-              <span>District <span style="color:var(--ml-text-muted);font-weight:normal;">(Recommended)</span></span>
-              <span id="district-load-hint" style="font-size:10px;color:var(--ml-text-muted);"></span>
+              <span>District <span style="color:#ef4444;">*</span></span>
+              <span style="font-size:11px;color:var(--ml-text-muted);">788 Official Districts</span>
             </label>
-            <select id="s2-district" class="form-control">
-              <option value="">-- Select District --</option>
-              {% if user.district_id and user.district_name %}
-                <option value="{{ user.district_id }}" selected>{{ user.district_name }}</option>
-              {% endif %}
-            </select>
+            <div id="s2-district-wrap"></div>
           </div>
 
           <!-- City or Town -->
           <div class="form-group">
             <label class="form-label">
-              <span>City or Town <span style="color:#ef4444;">*</span></span>
-              <span id="city-load-hint" style="font-size:10px;color:var(--ml-text-muted);"></span>
+              <span>City / Town <span style="color:#ef4444;">*</span></span>
+              <span style="font-size:11px;color:var(--ml-text-muted);">Statutory & Census Towns (Villages Excluded)</span>
             </label>
-            <select id="s2-city-select" class="form-control">
-              <option value="">-- Select City or Town --</option>
-              {% if user.city_id and user.city_name and not user.is_custom_city %}
-                <option value="{{ user.city_id }}" data-tier="{{ user.location_tier }}" selected>{{ user.city_name }}</option>
-              {% endif %}
-              <option value="OTHER" {% if user.is_custom_city %}selected{% endif %}>Other / Not Listed...</option>
-            </select>
-
-            <div id="custom-city-wrap" style="display:{% if user.is_custom_city %}block{% else %}none{% endif %};margin-top:8px;">
-              <input type="text" id="s2-custom-city" class="form-control" value="{{ user.city_name if user.is_custom_city else '' }}" placeholder="Enter town or locality name" style="font-size:13px;">
-            </div>
+            <div id="s2-city-wrap"></div>
           </div>
         </div>
 
@@ -798,14 +774,14 @@
           <!-- Monthly Income -->
           <div class="form-group">
             <label class="form-label">Monthly Net Income / Allowance ({{ user.currency }})</label>
-            <input type="number" step="100" id="s3-income" class="form-control" value="45000" placeholder="e.g. 45000">
+            <input type="text" inputmode="decimal" id="s3-income" class="form-control" value="{{ (user.monthly_income_minor_units / 100)|round(0)|int if user.monthly_income_minor_units and user.monthly_income_minor_units > 0 else '' }}" placeholder="e.g. 10000">
             <div style="font-size:11px;color:var(--ml-text-muted);margin-top:4px;">Inflow baseline for 50/30/20 allocation engine</div>
           </div>
 
           <!-- Opening Balance -->
           <div class="form-group">
             <label class="form-label">Opening Available Balance ({{ user.currency }})</label>
-            <input type="number" step="100" id="s3-balance" class="form-control" value="25000" placeholder="e.g. 25000">
+            <input type="text" inputmode="decimal" id="s3-balance" class="form-control" value="{{ (user.opening_balance_minor_units / 100)|round(0)|int if user.opening_balance_minor_units and user.opening_balance_minor_units > 0 else '' }}" placeholder="e.g. 25000">
             <div style="font-size:11px;color:var(--ml-text-muted);margin-top:4px;">Current liquid funds across bank accounts</div>
           </div>
         </div>
@@ -836,13 +812,13 @@
           <!-- Rent or Home EMI -->
           <div class="form-group">
             <label class="form-label">Monthly Rent or Home EMI ({{ user.currency }})</label>
-            <input type="number" step="100" id="s4-rent" class="form-control" value="12000" placeholder="e.g. 15000">
+            <input type="text" inputmode="decimal" id="s4-rent" class="form-control" value="{{ (user.rent_or_emi_minor_units / 100)|round(0)|int if user.rent_or_emi_minor_units and user.rent_or_emi_minor_units > 0 else '' }}" placeholder="e.g. 12000">
           </div>
 
           <!-- Essential Groceries & Utilities -->
           <div class="form-group">
             <label class="form-label">Essential Groceries & Utilities ({{ user.currency }})</label>
-            <input type="number" step="100" id="s4-essentials" class="form-control" value="8000" placeholder="e.g. 8000">
+            <input type="text" inputmode="decimal" id="s4-essentials" class="form-control" value="{{ (user.essential_expenses_minor_units / 100)|round(0)|int if user.essential_expenses_minor_units and user.essential_expenses_minor_units > 0 else '' }}" placeholder="e.g. 8000">
           </div>
         </div>
 
@@ -850,7 +826,7 @@
           <!-- Debt Payments / Loans -->
           <div class="form-group">
             <label class="form-label">Mandatory Loan EMIs / Debt ({{ user.currency }})</label>
-            <input type="number" step="100" id="s4-debt" class="form-control" value="0" placeholder="e.g. 3000">
+            <input type="text" inputmode="decimal" id="s4-debt" class="form-control" value="{{ (user.debt_payments_minor_units / 100)|round(0)|int if user.debt_payments_minor_units and user.debt_payments_minor_units > 0 else '' }}" placeholder="e.g. 0">
           </div>
 
           <!-- Dependants -->
@@ -918,7 +894,7 @@
           <!-- Monthly Savings Goal -->
           <div class="form-group">
             <label class="form-label">Monthly Target Savings ({{ user.currency }})</label>
-            <input type="number" step="100" id="s5-savings-target" class="form-control" value="9000" placeholder="e.g. 9000">
+            <input type="text" inputmode="decimal" id="s5-savings-target" class="form-control" value="{{ (user.monthly_savings_target_minor_units / 100)|round(0)|int if user.monthly_savings_target_minor_units and user.monthly_savings_target_minor_units > 0 else '' }}" placeholder="e.g. 2000">
             <div style="font-size:11px;color:var(--ml-text-muted);margin-top:4px;">Target 20% allocation for systematic SIPs</div>
           </div>
         </div>
@@ -939,7 +915,7 @@
             <div><span style="color:var(--ml-text-secondary);">Profile:</span> <strong id="rev-name">{{ user.full_name }}</strong></div>
             <div><span style="color:var(--ml-text-secondary);">Location:</span> <strong id="rev-loc">India</strong></div>
             <div><span style="color:var(--ml-text-secondary);">Employment:</span> <strong id="rev-type">Salaried Professional</strong></div>
-            <div><span style="color:var(--ml-text-secondary);">Income:</span> <strong id="rev-inc">₹45,000 / mo</strong></div>
+            <div><span style="color:var(--ml-text-secondary);">Income:</span> <strong id="rev-inc">₹0 / mo</strong></div>
           </div>
         </div>
 
@@ -958,10 +934,18 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/lucide.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/location_selector.js') }}"></script>
+<script id="onboarding-data" type="application/json">
+{
+  "activeStep": {{ active_step or 1 }},
+  "userType": {{ (user.user_type or 'salaried')|tojson }}
+}
+</script>
 <script>
   const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-  let currentStep = {{ active_step or 1 }};
-  let selectedUserType = "{{ user.user_type or 'salaried' }}";
+  const _obConfig = JSON.parse(document.getElementById('onboarding-data').textContent || '{}');
+  let currentStep = _obConfig.activeStep || 1;
+  let selectedUserType = _obConfig.userType || "salaried";
 
   document.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) window.lucide.createIcons();
@@ -1048,30 +1032,68 @@
     const previewImg = document.getElementById('avatar-preview-img');
     const statusDiv = document.getElementById('avatar-upload-status');
 
+    const getCsrf = () => {
+      if (typeof CSRF_TOKEN !== 'undefined' && CSRF_TOKEN) return CSRF_TOKEN;
+      const meta = document.querySelector('meta[name="csrf-token"]');
+      return meta ? meta.getAttribute('content') : '';
+    };
+
     if (fileInput) {
       fileInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
+        // 1. Client-side validation
+        if (file.size > 5 * 1024 * 1024) {
+          statusDiv.innerHTML = '<span style="color:#ef4444;font-weight:600;">Photo exceeds 5MB limit. Please choose a smaller file.</span>';
+          fileInput.value = '';
+          return;
+        }
+
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (!['png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
+          statusDiv.innerHTML = '<span style="color:#ef4444;font-weight:600;">Invalid format. Please upload PNG, JPG, or WEBP.</span>';
+          fileInput.value = '';
+          return;
+        }
+
+        // 2. Instant client-side preview
+        try {
+          const localUrl = URL.createObjectURL(file);
+          previewImg.src = localUrl;
+        } catch (previewErr) {}
+
         statusDiv.innerHTML = '<span style="color:var(--ml-text-muted);">Uploading photo...</span>';
         const formData = new FormData();
         formData.append('photo', file);
 
+        const csrfToken = getCsrf();
+        const headers = { 'X-Requested-With': 'XMLHttpRequest' };
+        if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+
         try {
           const res = await fetch('/api/profile/upload-photo', {
             method: 'POST',
-            headers: { 'X-CSRFToken': CSRF_TOKEN },
+            headers: headers,
             body: formData
           });
-          const data = await res.json();
-          if (data.success) {
+
+          let data = null;
+          try {
+            data = await res.json();
+          } catch (jsonErr) {}
+
+          if (res.ok && data && data.success) {
             previewImg.src = data.photo_url;
-            statusDiv.innerHTML = '<span style="color:#16a34a;font-weight:700;">Photo uploaded successfully!</span>';
+            statusDiv.innerHTML = '<span style="color:#16a34a;font-weight:700;">✓ Photo uploaded successfully!</span>';
           } else {
-            statusDiv.innerHTML = `<span style="color:#ef4444;">${data.error || 'Upload failed.'}</span>`;
+            const errText = (data && data.error)
+              || (res.status === 401 ? 'Session expired. Please reload the page to continue.' : `Upload failed (${res.status}). Please try again.`);
+            statusDiv.innerHTML = `<span style="color:#ef4444;font-weight:600;">${errText}</span>`;
           }
         } catch (err) {
-          statusDiv.innerHTML = '<span style="color:#ef4444;">Network error during upload.</span>';
+          console.error('Avatar upload network error:', err);
+          statusDiv.innerHTML = `<span style="color:#ef4444;font-weight:600;">Network error: ${err.message || 'Please check your connection and retry.'}</span>`;
         }
       });
     }
@@ -1079,18 +1101,31 @@
     if (removeBtn) {
       removeBtn.addEventListener('click', async () => {
         statusDiv.innerHTML = '<span style="color:var(--ml-text-muted);">Restoring avatar...</span>';
+        const csrfToken = getCsrf();
+        const headers = { 'X-Requested-With': 'XMLHttpRequest' };
+        if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+
         try {
           const res = await fetch('/api/profile/remove-photo', {
             method: 'POST',
-            headers: { 'X-CSRFToken': CSRF_TOKEN }
+            headers: headers
           });
-          const data = await res.json();
-          if (data.success) {
+
+          let data = null;
+          try {
+            data = await res.json();
+          } catch (jsonErr) {}
+
+          if (res.ok && data && data.success) {
             previewImg.src = data.avatar_url;
-            statusDiv.innerHTML = '<span style="color:var(--ml-text-secondary);">Photo removed.</span>';
+            statusDiv.innerHTML = '<span style="color:var(--ml-text-secondary);">Photo removed. Default avatar restored.</span>';
+            if (fileInput) fileInput.value = '';
+          } else {
+            const errText = (data && data.error) || 'Failed to remove photo.';
+            statusDiv.innerHTML = `<span style="color:#ef4444;">${errText}</span>`;
           }
         } catch (err) {
-          statusDiv.innerHTML = '<span style="color:#ef4444;">Error removing photo.</span>';
+          statusDiv.innerHTML = '<span style="color:#ef4444;">Error communicating with server.</span>';
         }
       });
     }
@@ -1124,83 +1159,21 @@
   // LOCATION & PIN CODE ENGINE
   // ---------------------------------------------------------------------------
   function initLocationSelectors() {
-    const stateSelect = document.getElementById('s2-state');
-    const districtSelect = document.getElementById('s2-district');
-    const citySelect = document.getElementById('s2-city-select');
-    const customCityWrap = document.getElementById('custom-city-wrap');
-    const pincodeInput = document.getElementById('s2-pincode');
-    const pinFeedback = document.getElementById('pincode-feedback');
-    const tierPill = document.getElementById('tier-pill');
-    const tierNameLabel = document.getElementById('tier-name-label');
-
-    if (stateSelect) {
-      stateSelect.addEventListener('change', async () => {
-        const stateId = stateSelect.value;
-        if (!stateId) return;
-
-        // Fetch districts
-        districtSelect.innerHTML = '<option value="">-- Loading Districts... --</option>';
-        try {
-          const res = await fetch(`/api/locations/districts?state_id=${encodeURIComponent(stateId)}`);
-          const data = await res.json();
-          if (data.success) {
-            districtSelect.innerHTML = '<option value="">-- Select District --</option>' +
-              data.districts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
-          }
-        } catch (e) {
-          districtSelect.innerHTML = '<option value="">-- Select District --</option>';
-        }
-
-        // Fetch cities
-        citySelect.innerHTML = '<option value="">-- Loading Cities... --</option>';
-        try {
-          const res = await fetch(`/api/locations/cities?state_id=${encodeURIComponent(stateId)}`);
-          const data = await res.json();
-          if (data.success) {
-            citySelect.innerHTML = '<option value="">-- Select City or Town --</option>' +
-              data.cities.map(c => `<option value="${c.id}" data-tier="${c.tier}">${c.name}</option>`).join('') +
-              '<option value="OTHER">Other / Not Listed...</option>';
-          }
-        } catch (e) {
-          citySelect.innerHTML = '<option value="">-- Select City or Town --</option><option value="OTHER">Other / Not Listed...</option>';
-        }
-      });
-    }
-
-    if (citySelect) {
-      citySelect.addEventListener('change', () => {
-        if (citySelect.value === 'OTHER') {
-          customCityWrap.style.display = 'block';
-          tierPill.innerText = 'Baseline';
-          tierNameLabel.innerText = 'Standard 50/30/20 Baseline';
-        } else {
-          customCityWrap.style.display = 'none';
-          const opt = citySelect.options[citySelect.selectedIndex];
-          const tier = opt ? opt.getAttribute('data-tier') : 'UNCLASSIFIED';
-          updateTierBadge(tier);
-        }
-      });
-    }
-
-    if (pincodeInput) {
-      pincodeInput.addEventListener('input', async (e) => {
-        const val = e.target.value.trim();
-        if (val.length === 6) {
-          const stateId = stateSelect ? stateSelect.value : '';
-          try {
-            const res = await fetch(`/api/locations/validate-pincode?pincode=${val}&state_id=${stateId}`);
-            const data = await res.json();
-            if (data.valid) {
-              pinFeedback.innerHTML = `<span style="color:#16a34a;font-weight:700;">✓ Valid PIN (${data.state_name || 'India'})</span>`;
-            } else {
-              pinFeedback.innerHTML = `<span style="color:#ef4444;">${data.reason || 'Invalid Indian PIN code.'}</span>`;
-            }
-          } catch (err) {}
-        } else {
-          pinFeedback.innerHTML = '';
-        }
-      });
-    }
+    window.locationCoordinator = new IndiaLocationCoordinator({
+      countrySelector: '#s2-country',
+      stateSelector: '#s2-state-wrap',
+      districtSelector: '#s2-district-wrap',
+      citySelector: '#s2-city-wrap',
+      pincodeInput: '#s2-pincode',
+      pincodeFeedback: '#pincode-feedback',
+      tierPill: '#tier-pill',
+      tierLabel: '#tier-name-label',
+      initialStateId: '{{ user.state_id or "" }}',
+      initialDistrictId: '{{ user.district_id or "" }}',
+      initialCityId: '{{ user.city_id or "" }}',
+      initialCityName: '{{ user.city_name or "" }}',
+      initialCountry: '{{ user.country or "India" }}'
+    });
   }
 
   function updateTierBadge(tier) {
@@ -1227,10 +1200,14 @@
   }
 
   function updateFeasibilityGauge() {
-    const income = parseFloat(document.getElementById('s3-income').value || 45000);
-    const rent = parseFloat(document.getElementById('s4-rent').value || 0);
-    const essentials = parseFloat(document.getElementById('s4-essentials').value || 0);
-    const debt = parseFloat(document.getElementById('s4-debt').value || 0);
+    const incRaw = (document.getElementById('s3-income')?.value || '').replace(/,/g, '').replace(/[^\d.]/g, '');
+    const income = parseFloat(incRaw) || 0;
+    const rentRaw = (document.getElementById('s4-rent')?.value || '').replace(/,/g, '').replace(/[^\d.]/g, '');
+    const rent = parseFloat(rentRaw) || 0;
+    const essRaw = (document.getElementById('s4-essentials')?.value || '').replace(/,/g, '').replace(/[^\d.]/g, '');
+    const essentials = parseFloat(essRaw) || 0;
+    const debtRaw = (document.getElementById('s4-debt')?.value || '').replace(/,/g, '').replace(/[^\d.]/g, '');
+    const debt = parseFloat(debtRaw) || 0;
 
     const totalNeeds = rent + essentials + debt;
     const needsPct = income > 0 ? Math.min(100, Math.round((totalNeeds / income) * 100)) : 50;
@@ -1258,17 +1235,23 @@
     const typeEl = document.getElementById('rev-type');
     const incEl = document.getElementById('rev-inc');
 
-    if (nameEl) nameEl.innerText = document.getElementById('s1-fullname').value || 'User';
+    if (nameEl) nameEl.innerText = document.getElementById('s1-fullname')?.value || 'User';
     
-    const stateSel = document.getElementById('s2-state');
-    const stateName = stateSel && stateSel.selectedIndex > 0 ? stateSel.options[stateSel.selectedIndex].text : 'India';
-    if (locEl) locEl.innerText = stateName;
+    if (locEl) {
+      const loc = window.locationCoordinator ? window.locationCoordinator.getLocationData() : null;
+      if (loc && loc.state_name) {
+        locEl.innerText = `${loc.city_name ? loc.city_name + ', ' : ''}${loc.state_name}`;
+      } else {
+        locEl.innerText = 'India';
+      }
+    }
 
     if (typeEl) typeEl.innerText = selectedUserType === 'student' ? 'Student / Scholar' : 'Salaried Professional';
 
-    const curr = document.getElementById('s1-currency').value || 'INR';
-    const incVal = document.getElementById('s3-income').value || '45000';
-    if (incEl) incEl.innerText = `${curr} ${Number(incVal).toLocaleString('en-IN')} / mo`;
+    const curr = document.getElementById('s1-currency')?.value || 'INR';
+    const incVal = (document.getElementById('s3-income')?.value || '').replace(/,/g, '').replace(/[^\d.]/g, '');
+    const incNum = parseFloat(incVal) || 0;
+    if (incEl) incEl.innerText = `${curr} ${incNum.toLocaleString('en-IN')} / mo`;
   }
 
   // ---------------------------------------------------------------------------
@@ -1309,25 +1292,36 @@
     if (f2) {
       f2.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const stateSelect = document.getElementById('s2-state');
-        const stateOpt = stateSelect.options[stateSelect.selectedIndex];
-        const citySelect = document.getElementById('s2-city-select');
-        const isCustom = citySelect.value === 'OTHER';
-        const customName = document.getElementById('s2-custom-city').value.trim();
-        const cityOpt = citySelect.options[citySelect.selectedIndex];
+        const loc = window.locationCoordinator ? window.locationCoordinator.getLocationData() : {};
+        const country = loc.country || document.getElementById('s2-country')?.value || 'India';
+
+        if (country === 'India') {
+          if (!loc.state_id) {
+            alert('Please select your State or Union Territory.');
+            return;
+          }
+          if (!loc.district_id) {
+            alert('Please select your District.');
+            return;
+          }
+          if (!loc.city_name) {
+            alert('Please select your City, Town, or Locality.');
+            return;
+          }
+        }
 
         const payload = {
           step: 2,
-          country: document.getElementById('s2-country').value,
-          state_id: stateSelect.value,
-          state_name: stateOpt ? stateOpt.getAttribute('data-name') : '',
-          district_id: document.getElementById('s2-district').value,
-          district_name: document.getElementById('s2-district').options[document.getElementById('s2-district').selectedIndex]?.text || '',
-          city_id: citySelect.value,
-          city_name: isCustom ? customName : (cityOpt ? cityOpt.text : ''),
-          is_custom_city: isCustom,
-          pincode: document.getElementById('s2-pincode').value.trim(),
-          location_tier: cityOpt ? (cityOpt.getAttribute('data-tier') || 'UNCLASSIFIED') : 'UNCLASSIFIED'
+          country: country,
+          state_id: loc.state_id || '',
+          state_name: loc.state_name || '',
+          district_id: loc.district_id || '',
+          district_name: loc.district_name || '',
+          city_id: loc.city_id || '',
+          city_name: loc.city_name || '',
+          is_custom_city: loc.is_custom_city || false,
+          pincode: (document.getElementById('s2-pincode')?.value || '').trim(),
+          location_tier: loc.location_tier || 'UNCLASSIFIED'
         };
 
         try {
@@ -1353,8 +1347,8 @@
         const payload = {
           step: 3,
           user_type: selectedUserType,
-          monthly_income: document.getElementById('s3-income').value,
-          opening_balance: document.getElementById('s3-balance').value
+          monthly_income: (document.getElementById('s3-income')?.value || '').replace(/,/g, '').trim(),
+          opening_balance: (document.getElementById('s3-balance')?.value || '').replace(/,/g, '').trim()
         };
 
         try {
@@ -1379,10 +1373,10 @@
         e.preventDefault();
         const payload = {
           step: 4,
-          rent_or_emi: document.getElementById('s4-rent').value,
-          essential_expenses: document.getElementById('s4-essentials').value,
-          debt_payments: document.getElementById('s4-debt').value,
-          dependants: document.getElementById('s4-dependants').value
+          rent_or_emi: (document.getElementById('s4-rent')?.value || '').replace(/,/g, '').trim(),
+          essential_expenses: (document.getElementById('s4-essentials')?.value || '').replace(/,/g, '').trim(),
+          debt_payments: (document.getElementById('s4-debt')?.value || '').replace(/,/g, '').trim(),
+          dependants: document.getElementById('s4-dependants')?.value || '0'
         };
 
         try {
@@ -1412,8 +1406,11 @@
         const payload = {
           step: 5,
           primary_financial_goal: document.getElementById('s5-goal').value,
-          monthly_savings_target: document.getElementById('s5-savings-target').value,
-          investment_experience: document.getElementById('s5-experience').value
+          monthly_savings_target: (document.getElementById('s5-savings-target')?.value || '').replace(/,/g, '').trim(),
+          investment_experience: document.getElementById('s5-experience').value,
+          monthly_income: (document.getElementById('s3-income')?.value || '').replace(/,/g, '').trim(),
+          opening_balance: (document.getElementById('s3-balance')?.value || '').replace(/,/g, '').trim(),
+          user_type: selectedUserType || 'student'
         };
 
         try {

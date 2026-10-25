@@ -36,6 +36,12 @@ class Config:
     SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY') or 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJveHlxcXRmZ3pyYndxdGh2cm50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxNDcxNzQsImV4cCI6MjEwNzcyMzE3NH0.osUI_k9rWSEK2EwzDIbnxMEhrYEmBLe1zLhC1baUAXI'
     SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJveHlxcXRmZ3pyYndxdGh2cm50Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjE0NzE3NCwiZXhwIjoyMTA3NzIzMTc0fQ.u04NN6RrpDtK52FeePRvEYLcNorLomNhzric1ERvhhY'
 
+    # Scheduler & Web Push VAPID Configuration
+    SCHEDULER_SECRET_KEY = os.environ.get('SCHEDULER_SECRET_KEY', 'moneyleak-scheduler-secret-key-9a8b7c6d5e')
+    VAPID_PUBLIC_KEY = os.environ.get('VAPID_PUBLIC_KEY', 'BB9Fv5DX6dMJ-lt-7UvR3TKYgDUVpD2uUVN5pg-VuSNrWdx0-fqk2I4DFjATVayrYTvAuQ30cgDOhpWXqxvE2Fs')
+    VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg+AOR5K9p+potfIHv\nnHuR7DDP8/zpJmY50gr5LOigBIShRANCAAQfRb+Q1+nTCfpbfu1L0d0ymIA1FaQ9\nrlFTeaYPlbkja1ncdPn6pNiOAxYwE1Wsq2E7wLkN9HIAzoaVl6sbxNhb\n-----END PRIVATE KEY-----')
+    VAPID_CLAIM_EMAIL = os.environ.get('VAPID_CLAIM_EMAIL', 'admin@moneyleak.app')
+
 class DevelopmentConfig(Config):
     DEBUG = True
 

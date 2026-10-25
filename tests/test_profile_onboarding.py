@@ -258,12 +258,25 @@ def test_avatar_upload_and_removal(client, app):
         u = db.session.get(User, uid)
         assert u.profile_picture_url == data['photo_url']
 
-    # 3. Remove photo
+    # 3. Serve avatar route check
+    res_serve = client.get('/api/profile/avatar/avatar_test.png')
+    assert res_serve.status_code in (200, 302)
+
+    # 4. Remove photo
     res_remove = client.post('/api/profile/remove-photo')
     assert res_remove.status_code == 200
     with app.app_context():
         u = db.session.get(User, uid)
         assert u.profile_picture_url is None
+
+    # 5. Unauthenticated upload returns JSON 401 instead of redirecting
+    with client.session_transaction() as sess:
+        sess.clear()
+    res_unauth = client.post('/api/profile/upload-photo', data={
+        'photo': (io.BytesIO(fake_png), 'avatar.png')
+    }, content_type='multipart/form-data')
+    assert res_unauth.status_code == 401
+    assert res_unauth.get_json()['success'] is False
 
 
 def test_changing_employment_status_preserves_transactions(client, app):
@@ -402,3 +415,123 @@ def test_rerun_onboarding_restart(client, app):
         u = db.session.get(User, uid)
         assert u.onboarding_completed is False
         assert u.onboarding_step == 1
+
+
+def test_user_entered_income_with_comma_preserved_and_not_overwritten(client, app):
+    """
+    Test that when a user enters 10,000 (with comma or currency) during profile/onboarding,
+    it is saved accurately as 1000000 minor units and NOT overwritten by 40,000.
+    """
+    from app.services.budget_engine import calculate_budget_summary
+
+    with app.app_context():
+        user = User(
+            full_name='Shailendra Thakur',
+            email='shailendra@test.com',
+            auth_provider='local',
+            currency='INR',
+            onboarding_completed=False,
+            onboarding_step=1
+        )
+        user.set_password('Secret123!')
+        db.session.add(user)
+        db.session.commit()
+        uid = user.id
+
+    with client.session_transaction() as sess:
+        sess['user_id'] = uid
+
+    # Step 3: Enter 10,000 with comma as monthly_income
+    res3 = client.post('/onboarding', json={
+        'step': 3,
+        'user_type': 'student',
+        'monthly_income': '10,000',
+        'opening_balance': '5,000'
+    })
+    assert res3.status_code == 200
+    assert res3.get_json()['success'] is True
+
+    # Verify user record updated immediately
+    with app.app_context():
+        u = db.session.get(User, uid)
+        assert u.monthly_income_minor_units == 1000000  # Exactly ₹10,000.00, not 40,000!
+        assert u.opening_balance_minor_units == 500000
+
+    # Step 5: Complete onboarding
+    res5 = client.post('/onboarding', json={
+        'step': 5,
+        'primary_financial_goal': 'Education',
+        'monthly_savings_target': '2,000',
+        'investment_experience': 'Beginner',
+        'monthly_income': '10,000',
+        'user_type': 'student'
+    })
+    assert res5.status_code == 200
+    assert res5.get_json()['success'] is True
+
+    # Verify after Step 5 completion, monthly_income is still 10,000 (1000000 minor units)
+    with app.app_context():
+        u = db.session.get(User, uid)
+        assert u.monthly_income_minor_units == 1000000
+        assert u.onboarding_completed is True
+
+        # Check 50/30/20 budget calculation
+        summary = calculate_budget_summary(uid)
+        assert summary['income']['minor'] == 1000000
+        assert summary['income']['formatted'] == '₹10,000.00'
+        assert summary['needs']['target_minor'] == 500000     # 50% = ₹5,000.00
+        assert summary['wants']['target_minor'] == 300000     # 30% = ₹3,000.00
+        assert summary['savings']['target_minor'] == 200000   # 20% = ₹2,000.00
+        assert summary['surplus']['minor'] == 1000000         # ₹10,000.00 surplus when no expense
+        assert summary['surplus']['formatted'] == '₹10,000.00'
+
+
+def test_settings_and_budget_update_preserves_custom_amount(client, app):
+    """
+    Test updating monthly income with commas via Settings and Budget APIs.
+    """
+    with app.app_context():
+        user = User(
+            full_name='Test User',
+            email='testuser@moneyleak.app',
+            auth_provider='local',
+            currency='INR',
+            onboarding_completed=True,
+            onboarding_step=5
+        )
+        user.set_password('Secret123!')
+        db.session.add(user)
+        db.session.commit()
+        uid = user.id
+
+    with client.session_transaction() as sess:
+        sess['user_id'] = uid
+
+    # Update profile in settings with 10,000
+    res_prof = client.post('/api/settings/profile', json={
+        'full_name': 'Test User',
+        'currency': 'INR',
+        'monthly_income': '10,000',
+        'monthly_savings_target': '2,000'
+    })
+    assert res_prof.status_code == 200
+    assert res_prof.get_json()['success'] is True
+
+    with app.app_context():
+        u = db.session.get(User, uid)
+        assert u.monthly_income_minor_units == 1000000
+        assert u.monthly_savings_target_minor_units == 200000
+
+    # Update via Budget API
+    res_budget = client.put('/api/budget', json={
+        'needs_percentage': 50,
+        'wants_percentage': 30,
+        'savings_percentage': 20,
+        'monthly_income': '15,000'
+    })
+    assert res_budget.status_code == 200
+    assert res_budget.get_json()['success'] is True
+
+    with app.app_context():
+        u = db.session.get(User, uid)
+        assert u.monthly_income_minor_units == 1500000

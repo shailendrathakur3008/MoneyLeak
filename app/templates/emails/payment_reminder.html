@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ subject or "Payment Reminder - MoneyLeak" }}</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #0b0d0c;
+      color: #e5e7eb;
+    }
+    .wrapper {
+      width: 100%;
+      table-layout: fixed;
+      background-color: #0b0d0c;
+      padding: 30px 10px;
+    }
+    .container {
+      max-width: 520px;
+      margin: 0 auto;
+      background-color: #161917;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    .header {
+      padding: 24px 30px;
+      background: linear-gradient(135deg, #1c221e 0%, #161917 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-badge {
+      display: inline-block;
+      width: 36px;
+      height: 36px;
+      line-height: 36px;
+      text-align: center;
+      background-color: #cbf432;
+      color: #121614;
+      font-weight: 900;
+      font-size: 16px;
+      border-radius: 10px;
+    }
+    .header-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.3px;
+    }
+    .content {
+      padding: 30px;
+    }
+    .greeting {
+      font-size: 15px;
+      color: #9ca3af;
+      margin-bottom: 14px;
+    }
+    .headline {
+      font-size: 20px;
+      font-weight: 800;
+      color: #ffffff;
+      margin: 0 0 16px 0;
+      line-height: 1.3;
+    }
+    .payment-card {
+      background-color: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 14px;
+    }
+    .detail-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .detail-label {
+      color: #9ca3af;
+    }
+    .detail-value {
+      color: #ffffff;
+      font-weight: 700;
+      text-align: right;
+    }
+    .amount-highlight {
+      color: #cbf432;
+      font-size: 22px;
+      font-weight: 900;
+    }
+    .instructions {
+      font-size: 14px;
+      color: #d1d5db;
+      line-height: 1.6;
+      margin: 20px 0;
+    }
+    .btn-container {
+      text-align: center;
+      margin: 28px 0 16px 0;
+    }
+    .btn {
+      display: inline-block;
+      background-color: #cbf432;
+      color: #121614 !important;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 14px;
+      padding: 12px 28px;
+      border-radius: 10px;
+      letter-spacing: 0.2px;
+    }
+    .disclaimer-box {
+      margin-top: 24px;
+      padding: 14px;
+      background-color: rgba(203, 244, 50, 0.05);
+      border: 1px solid rgba(203, 244, 50, 0.2);
+      border-radius: 8px;
+      font-size: 12px;
+      color: #9ca3af;
+      line-height: 1.5;
+    }
+    .disclaimer-title {
+      font-weight: 700;
+      color: #cbf432;
+      margin-bottom: 4px;
+    }
+    .footer {
+      padding: 20px 30px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      text-align: center;
+      font-size: 12px;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <span class="logo-badge">ML</span>
+        <span class="header-title">MoneyLeak &bull; Payment Reminders</span>
+      </div>
+      <div class="content">
+        <div class="greeting">Hello {{ user_name or "there" }},</div>
+        <h1 class="headline">{{ headline or "Upcoming Scheduled Payment Reminder" }}</h1>
+        <p class="instructions">{{ message_body or "You have an upcoming scheduled obligation on your calendar." }}</p>
+
+        <div class="payment-card">
+          <div class="detail-row">
+            <span class="detail-label">Payment Name</span>
+            <span class="detail-value">{{ payment_name }}</span>
+          </div>
+          {% if scheme_name and scheme_name != payment_name %}
+          <div class="detail-row">
+            <span class="detail-label">Investment Scheme</span>
+            <span class="detail-value">{{ scheme_name }}</span>
+          </div>
+          {% endif %}
+          <div class="detail-row">
+            <span class="detail-label">Category</span>
+            <span class="detail-value">{{ category_label or category }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Scheduled Date</span>
+            <span class="detail-value">{{ due_date_str }}</span>
+          </div>
+          <div class="detail-row" style="margin-top: 6px;">
+            <span class="detail-label" style="font-weight: 700; color: #ffffff;">Amount</span>
+            <span class="amount-highlight">{{ amount_str }}</span>
+          </div>
+        </div>
+
+        <p class="instructions" style="font-size: 13px; color: #9ca3af;">
+          Please ensure sufficient funds are available in your designated bank account prior to the scheduled debit time.
+        </p>
+
+        <div class="btn-container">
+          <a href="{{ dashboard_url or 'https://moneyleak.app/payments' }}" class="btn">View Upcoming Payments</a>
+        </div>
+
+        <div class="disclaimer-box">
+          <div class="disclaimer-title">&#9432; Important Notice</div>
+          This is an informational reminder only. No payment or financial debit has been initiated by this notification.
+        </div>
+      </div>
+      <div class="footer">
+        &copy; 2026 MoneyLeak Financial Intelligence Platform &bull; All rights reserved.<br>
+        You received this email because payment reminders are enabled in your MoneyLeak Notification Settings.
+      </div>
+    </div>
+  </div>
+</body>
+</html>

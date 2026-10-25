@@ -107,17 +107,22 @@ def get_personalized_recommendations(
             if scheme_risk in ['VERY HIGH', 'HIGH']:
                 score += 20.0
                 reasons.append(f"Aligned with {risk_tolerance.capitalize()} risk tolerance for maximum equity compounding.")
-            elif scheme_risk == 'MODERATE':
+            elif scheme_risk in ['MODERATE', 'MEDIUM']:
                 score += 10.0
-        elif risk_upper == 'MODERATE':
-            if scheme_risk == 'MODERATE':
+        elif risk_upper in ['MODERATE', 'MEDIUM']:
+            if scheme_risk in ['MODERATE', 'MEDIUM']:
                 score += 25.0
                 reasons.append("Balanced risk-return profile cushioning against severe drawdowns.")
             elif scheme_risk in ['HIGH', 'VERY HIGH']:
                 score += 5.0
+            elif scheme_risk == 'LOW':
+                score += 15.0
         elif risk_upper == 'LOW':
-            if cat == 'GOLD' or scheme_risk == 'MODERATE':
-                score += 25.0
+            if scheme_risk == 'LOW':
+                score += 35.0
+                reasons.append("Sovereign or high-grade defensive profile aligned with conservative capital preservation.")
+            elif cat == 'GOLD' or scheme_risk in ['MODERATE', 'MEDIUM']:
+                score += 20.0
                 reasons.append("Lower asset volatility suitable for conservative capital growth.")
             else:
                 score -= 15.0

@@ -45,7 +45,10 @@ def to_minor_units(amount: float | str | Decimal | int, currency_code: str = DEF
         return 0
     decimals = get_currency_decimals(currency_code)
     multiplier = Decimal(10 ** decimals)
-    dec_val = Decimal(str(amount).strip().replace(',', ''))
+    clean_str = str(amount).replace(',', '').replace('₹', '').replace('$', '').replace('€', '').replace('£', '').replace('₹', '').strip()
+    if not clean_str:
+        return 0
+    dec_val = Decimal(clean_str)
     minor = (dec_val * multiplier).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
     return int(minor)
 

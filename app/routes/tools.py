@@ -84,6 +84,9 @@ def api_get_schemes():
     max_ter = request.args.get('max_expense_ratio', type=float)
     sort_by = request.args.get('sort_by')
     period = request.args.get('period')
+    goal = request.args.get('goal')
+    asset_type = request.args.get('asset_type')
+    amount = request.args.get('amount', type=float)
 
     filtered = filter_schemes(
         category=category,
@@ -94,11 +97,16 @@ def api_get_schemes():
         tag=tag,
         query=query,
         sort_by=sort_by,
-        return_period=period
+        return_period=period,
+        goal=goal,
+        asset_type=asset_type,
+        amount=amount
     )
+    is_fallback = any(s.get('is_fallback') for s in filtered)
     return jsonify({
         'success': True,
         'count': len(filtered),
+        'is_fallback': is_fallback,
         'schemes': filtered
     })
 
@@ -227,6 +235,7 @@ def api_investment_calculate():
         duration_years = int(data.get('duration_years', 10))
         timing = data.get('timing', 'BEGINNING').upper()
         step_up_pct = float(data.get('step_up_pct', 0.0))
+        compounding_freq = data.get('compounding_frequency', 'MONTHLY').upper()
         scheme_id = data.get('scheme_id')
 
         result = calculate_compound_growth(
@@ -238,6 +247,7 @@ def api_investment_calculate():
             timing=timing,
             currency=user.currency,
             step_up_pct=step_up_pct,
+            compounding_frequency=compounding_freq,
             scheme_id=scheme_id
         )
         return jsonify({'success': True, 'result': result})
@@ -307,4 +317,74 @@ def api_portfolio_calculate():
         return jsonify({'success': True, 'portfolio': result})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 400
+
+
+# -----------------------------------------------------------------------------
+# REST API: LIVE MARKET DATA, GOLD RATES & SIP BACKTESTING
+# -----------------------------------------------------------------------------
+
+@tools_bp.route('/api/tools/market-data/<instrument_id>', methods=['GET'])
+@login_required
+def api_get_market_data(instrument_id):
+    from app.services.market_data_service import market_data_service, VERIFIED_INSTRUMENTS
+    scheme = get_scheme_by_id(instrument_id)
+    if not scheme:
+        return jsonify({'success': False, 'error': 'Instrument not found'}), 404
+
+    inst_meta = VERIFIED_INSTRUMENTS.get(scheme['id'], {})
+    quote_info = {}
+    if inst_meta.get('exchange_symbol'):
+        quote_info = market_data_service.get_stock_quote(inst_meta['exchange_symbol'])
+    elif inst_meta.get('amfi_code'):
+        quote_info = market_data_service.get_mutual_fund_nav(inst_meta['amfi_code'])
+
+    return jsonify({
+        'success': True,
+        'instrument_id': scheme['id'],
+        'name': scheme['name'],
+        'official_symbol': scheme.get('official_symbol', scheme.get('symbol')),
+        'freshness_status': scheme.get('freshness_status'),
+        'current_price_or_nav': scheme.get('currentPrice'),
+        'price_numeric': scheme.get('price_numeric'),
+        'price_date': scheme.get('price_date'),
+        'data_source': scheme.get('data_source'),
+        'data_provider': scheme.get('data_provider'),
+        'risk_methodology': scheme.get('risk_methodology'),
+        'risk_source': scheme.get('risk_classification_source'),
+        'quote_details': quote_info
+    })
+
+
+@tools_bp.route('/api/tools/gold-rates', methods=['GET'])
+@login_required
+def api_get_gold_rates():
+    from app.services.market_data_service import market_data_service
+    try:
+        gold_data = market_data_service.get_gold_market_data()
+        return jsonify({'success': True, 'gold': gold_data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+@tools_bp.route('/api/tools/sip-backtest', methods=['POST'])
+@login_required
+def api_sip_backtest():
+    user = g.current_user
+    data = request.get_json() or {}
+    scheme_id = data.get('scheme_id', 'parag-parikh-flexi-cap')
+    try:
+        monthly_amount = float(data.get('monthly_amount', 5000.0))
+        duration_years = int(data.get('duration_years', 5))
+
+        result = calculate_what_if_investment(
+            scheme_id=scheme_id,
+            amount=monthly_amount,
+            duration_years=duration_years,
+            method='SIP',
+            currency=user.currency
+        )
+        return jsonify({'success': True, 'result': result})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
 

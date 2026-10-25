@@ -49,16 +49,24 @@ function initBudgetSliders() {
       const wants = parseFloat(wantsInput.value);
       const savings = parseFloat(savingsInput.value);
 
+      const incomeInput = document.getElementById('budget-income-input');
+      const monthlyIncome = incomeInput ? incomeInput.value.replace(/,/g, '').trim() : '';
+
+      const budgetInput = document.getElementById('budget-amount-input');
+      const monthlyBudget = budgetInput ? budgetInput.value.replace(/,/g, '').trim() : '';
+
       try {
         await secureFetch('/api/budget', {
           method: 'PUT',
           body: JSON.stringify({
             needs_percentage: needs,
             wants_percentage: wants,
-            savings_percentage: savings
+            savings_percentage: savings,
+            monthly_budget: monthlyBudget,
+            monthly_income: monthlyIncome
           })
         });
-        showToast('50/30/20 framework updated successfully!', 'success');
+        showToast('50/30/20 framework & persistent monthly budget updated successfully!', 'success');
         setTimeout(() => window.location.reload(), 600);
       } catch (err) {
         showToast(err.message, 'danger');

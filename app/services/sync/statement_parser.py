@@ -119,9 +119,25 @@ class StatementParser:
             if 'particulars' in row_text and ('dr' in row or 'cr' in row):
                 return idx, [f.strip() for f in csv.reader([line]).__next__()], 'AXIS'
 
+            # Check for Kotak signature
+            if 'kotak' in row_text or ('transaction details' in row_text and ('debit' in row_text or 'credit' in row_text)):
+                return idx, [f.strip() for f in csv.reader([line]).__next__()], 'KOTAK'
+
             # Check for Union Bank signature
             if 'union' in row_text or ('remarks' in row_text and ('debit' in row_text or 'withdrawal' in row_text)):
                 return idx, [f.strip() for f in csv.reader([line]).__next__()], 'UNION_BANK'
+
+            # Check for Punjab National Bank (PNB) signature
+            if 'pnb' in row_text or 'punjab national' in row_text:
+                return idx, [f.strip() for f in csv.reader([line]).__next__()], 'PNB'
+
+            # Check for Bank of Baroda signature
+            if 'baroda' in row_text or 'bob' in row_text:
+                return idx, [f.strip() for f in csv.reader([line]).__next__()], 'BOB'
+
+            # Check for Canara Bank signature
+            if 'canara' in row_text:
+                return idx, [f.strip() for f in csv.reader([line]).__next__()], 'CANARA'
 
             # Check Generic signature
             if 'date' in row_text and ('amount' in row_text or 'debit' in row_text or 'description' in row_text):

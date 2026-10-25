@@ -57,15 +57,28 @@ class SyncEngine:
         aa_client = AccountAggregatorClient()
         provider_info = aa_client.get_provider_status()
 
+        has_live_connections = any(not c.is_simulated for c in active_connections)
+        if has_live_connections:
+            overall_status = 'ACTIVE'
+        elif active_connections:
+            overall_status = 'SIMULATED_ACTIVE'
+        elif aa_client.is_production() and not aa_client.is_configured():
+            overall_status = 'CONFIG_REQUIRED'
+        elif not aa_client.is_configured():
+            overall_status = 'SANDBOX_READY'
+        else:
+            overall_status = 'IDLE'
+
         return {
             'active_connections_count': len(active_connections),
             'total_connections_count': len(connections),
+            'has_live_connections': has_live_connections,
             'total_synced_transactions': total_synced,
             'pending_review_count': pending_review,
             'potential_duplicates_count': potential_duplicates,
             'last_sync_at': last_sync.isoformat() if last_sync else None,
             'provider_info': provider_info,
-            'overall_status': 'ACTIVE' if active_connections else ('SANDBOX_READY' if not aa_client.is_configured() else 'IDLE')
+            'overall_status': overall_status
         }
 
     @staticmethod
@@ -87,6 +100,20 @@ class SyncEngine:
 
         try:
             aa_client = AccountAggregatorClient()
+
+            # Prevent generating fake transactions in live production when provider credentials are missing
+            if aa_client.is_production() and not aa_client.is_configured():
+                conn.status = 'CONNECTED'
+                db.session.commit()
+                return {
+                    'success': False,
+                    'error': f"Live sync unavailable for {conn.institution_name}: Setu Account Aggregator credentials (SETU_AA_CLIENT_ID, SETU_AA_CLIENT_SECRET, SETU_AA_PRODUCT_INSTANCE_ID) are required in production to sync genuine transactions.",
+                    'imported_count': 0,
+                    'duplicate_count': 0,
+                    'review_count': 0,
+                    'is_simulated': conn.is_simulated
+                }
+
             raw_records = aa_client.fetch_transactions(
                 consent_id=conn.consent_id or 'dummy',
                 fip_code=conn.institution_code,
@@ -202,12 +229,28 @@ class SyncEngine:
         review_count = 0
         staged_ids = []
 
+        import hashlib
+
         for item in raw_records:
             ext_id = item.get('external_id')
             raw_narration = item.get('narration') or item.get('description') or 'Unknown'
             amt_minor = item.get('amount_minor_units', 0)
             txn_date = item.get('date') or date.today()
             direction = item.get('direction', 'DEBIT').upper()
+
+            # Deterministic SHA-256 fingerprint for strict idempotency
+            date_str = txn_date.isoformat() if hasattr(txn_date, 'isoformat') else str(txn_date)
+            fp_raw = f"{user_id}:{ext_id or ''}:{amt_minor}:{date_str}:{raw_narration[:80]}:{direction}"
+            source_fingerprint = hashlib.sha256(fp_raw.encode('utf-8')).hexdigest()
+
+            # Fast check against existing fingerprint
+            existing_fp = SyncedTransaction.query.filter_by(
+                user_id=user_id,
+                source_fingerprint=source_fingerprint
+            ).first()
+            if existing_fp:
+                duplicate_count += 1
+                continue
 
             # 1. Categorization
             cat_result = MerchantCategorizer.categorize_transaction(
@@ -248,11 +291,16 @@ class SyncEngine:
                 initial_status = 'PENDING_REVIEW'
                 review_count += 1
 
+            is_transfer = cat_result['transaction_type'] == 'TRANSFER'
+            is_refund = cat_result['transaction_type'] == 'REFUND'
+            is_reversal = 'reversal' in raw_narration.lower()
+
             # Create SyncedTransaction staging record
             synced_txn = SyncedTransaction(
                 user_id=user_id,
                 connection_id=connection_id,
                 external_id=ext_id,
+                source_fingerprint=source_fingerprint,
                 raw_narration=raw_narration,
                 normalized_merchant=cat_result['normalized_merchant'],
                 amount_minor_units=amt_minor,
@@ -260,6 +308,9 @@ class SyncEngine:
                 direction=direction,
                 transaction_type=cat_result['transaction_type'],
                 payment_method=cat_result['payment_method'],
+                is_transfer=is_transfer,
+                is_refund=is_refund,
+                is_reversal=is_reversal,
                 raw_date=txn_date,
                 suggested_category_id=cat_result['category_id'],
                 confidence_score=cat_result['confidence_score'],
@@ -440,6 +491,14 @@ class SyncEngine:
         if not conn:
             return {'success': False, 'error': 'Connection not found.'}
 
+        # Revoke consent token with active banking provider
+        try:
+            if conn.consent_id:
+                aa_client = AccountAggregatorClient()
+                aa_client.revoke_consent(conn.consent_id)
+        except Exception as e:
+            logger.warning(f"Provider consent revocation notice failed: {e}")
+
         if delete_data:
             # Delete corresponding core transactions first
             synced_txns = SyncedTransaction.query.filter_by(connection_id=conn.id, user_id=user_id).all()
@@ -459,4 +518,4 @@ class SyncEngine:
             conn.consent_status = 'REVOKED'
 
         db.session.commit()
-        return {'success': True, 'message': 'Institution successfully disconnected.'}
+        return {'success': True, 'message': 'Institution successfully disconnected and consent revoked.'}

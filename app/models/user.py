@@ -37,7 +37,8 @@ class User(db.Model):
     user_type = db.Column(db.String(30), nullable=True)  # 'student', 'salaried'
 
     # Financial Preferences & Household Baseline
-    monthly_income_minor_units = db.Column(db.BigInteger, default=4000000)  # Default ₹40,000.00
+    monthly_budget_minor_units = db.Column(db.BigInteger, default=0, nullable=True)  # Persistent default master monthly budget
+    monthly_income_minor_units = db.Column(db.BigInteger, default=0, nullable=False)
     income_frequency = db.Column(db.String(20), default='MONTHLY')
     opening_balance_minor_units = db.Column(db.BigInteger, default=0, nullable=False)
     monthly_savings_target_minor_units = db.Column(db.BigInteger, default=0, nullable=False)
@@ -63,6 +64,7 @@ class User(db.Model):
     transactions = db.relationship('Transaction', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     categories = db.relationship('Category', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     budgets = db.relationship('Budget', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    monthly_budgets = db.relationship('MonthlyBudget', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     goals = db.relationship('SavingsGoal', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     goal_contributions = db.relationship('GoalContribution', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     recurring_payments = db.relationship('RecurringPayment', backref='user', lazy='dynamic', cascade='all, delete-orphan')
@@ -114,6 +116,8 @@ class User(db.Model):
             'preferred_language': self.preferred_language,
             'theme_preference': self.theme_preference or 'system',
             'user_type': self.user_type,
+            'monthly_budget_minor_units': self.monthly_budget_minor_units or 0,
+            'monthly_budget': (self.monthly_budget_minor_units or 0) / 100.0,
             'monthly_income_minor_units': self.monthly_income_minor_units,
             'income_frequency': self.income_frequency,
             'opening_balance_minor_units': self.opening_balance_minor_units,

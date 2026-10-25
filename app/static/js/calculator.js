@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initPortfolioBuilder();
   initWhatIfCalc();
   initSchemeModal();
+  initNeonModal();
   initCardDelegation();
 
   // Initial loads
@@ -99,18 +100,21 @@ function switchTopTab(tabId) {
 // ============================================================================
 
 const explorerState = {
-  activeTab: 'ALL', // 'ALL', 'STOCKS_EQUITY', 'EQUITY_MUTUAL_FUNDS', 'SIP_INVESTMENTS', 'GOLD'
+  activeTab: 'ALL',
   searchQuery: '',
   riskFilter: 'ALL',
+  assetTypeFilter: 'ALL',
   durationFilter: 'ALL',
-  minInvestmentFilter: 'ALL',
-  maxExpenseRatioFilter: 'ALL',
+  goalFilter: 'ALL',
+  amountFilter: null,
+  sortBy: 'relevance',
   returnPeriod: '5y',
-  sortBy: 'relevance'
+  currentPage: 1,
+  pageSize: 12
 };
 
 function initSchemeExplorer() {
-  // Tab buttons click listeners
+  // 1. Tab buttons click listeners
   const tabBtns = document.querySelectorAll('#scheme-explorer-tabs .explorer-tab-btn');
   tabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -119,73 +123,99 @@ function initSchemeExplorer() {
     });
   });
 
-  // Filter bar controls listeners
+  // 2. Search input listener
   const searchInput = document.getElementById('explorer-search');
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
       explorerState.searchQuery = e.target.value;
+      explorerState.currentPage = 1;
       applySchemeExplorerFilters();
     });
   }
 
+  // 3. Risk level filter
   const riskSelect = document.getElementById('explorer-risk');
   if (riskSelect) {
     riskSelect.addEventListener('change', (e) => {
       explorerState.riskFilter = e.target.value;
+      explorerState.currentPage = 1;
       applySchemeExplorerFilters();
     });
   }
 
+  // 4. Investment Type filter
+  const assetTypeSelect = document.getElementById('explorer-asset-type');
+  if (assetTypeSelect) {
+    assetTypeSelect.addEventListener('change', (e) => {
+      explorerState.assetTypeFilter = e.target.value;
+      explorerState.currentPage = 1;
+      applySchemeExplorerFilters();
+    });
+  }
+
+  // 5. Investment Duration filter
   const durationSelect = document.getElementById('explorer-duration');
   if (durationSelect) {
     durationSelect.addEventListener('change', (e) => {
       explorerState.durationFilter = e.target.value;
+      explorerState.currentPage = 1;
       applySchemeExplorerFilters();
     });
   }
 
-  const minInvestSelect = document.getElementById('explorer-min-investment');
-  if (minInvestSelect) {
-    minInvestSelect.addEventListener('change', (e) => {
-      explorerState.minInvestmentFilter = e.target.value;
+  // 6. Investment Goal filter
+  const goalSelect = document.getElementById('explorer-goal');
+  if (goalSelect) {
+    goalSelect.addEventListener('change', (e) => {
+      explorerState.goalFilter = e.target.value;
+      explorerState.currentPage = 1;
       applySchemeExplorerFilters();
     });
   }
 
-  const expenseRatioSelect = document.getElementById('explorer-expense-ratio');
-  if (expenseRatioSelect) {
-    expenseRatioSelect.addEventListener('change', (e) => {
-      explorerState.maxExpenseRatioFilter = e.target.value;
+  // 7. Investment Amount filter
+  const amountInput = document.getElementById('explorer-amount');
+  if (amountInput) {
+    amountInput.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      explorerState.amountFilter = (!isNaN(val) && val > 0) ? val : null;
+      explorerState.currentPage = 1;
       applySchemeExplorerFilters();
     });
   }
 
-  const returnPeriodSelect = document.getElementById('explorer-return-period');
-  if (returnPeriodSelect) {
-    returnPeriodSelect.addEventListener('change', (e) => {
-      explorerState.returnPeriod = e.target.value;
-      applySchemeExplorerFilters();
-    });
-  }
-
+  // 8. Sort selector
   const sortSelect = document.getElementById('explorer-sort');
   if (sortSelect) {
     sortSelect.addEventListener('change', (e) => {
       explorerState.sortBy = e.target.value;
+      explorerState.currentPage = 1;
       applySchemeExplorerFilters();
     });
   }
 
-  // Reset Filters button
-  const resetBtn = document.getElementById('btn-reset-filters');
-  if (resetBtn) {
-    resetBtn.addEventListener('click', resetSchemeExplorerFilters);
-  }
+  // 9. Reset Filters buttons
+  document.getElementById('btn-reset-filters')?.addEventListener('click', resetSchemeExplorerFilters);
+  document.getElementById('btn-empty-reset')?.addEventListener('click', resetSchemeExplorerFilters);
 
-  const emptyResetBtn = document.getElementById('btn-empty-reset');
-  if (emptyResetBtn) {
-    emptyResetBtn.addEventListener('click', resetSchemeExplorerFilters);
-  }
+  // 10. Pagination buttons
+  document.getElementById('btn-page-prev')?.addEventListener('click', () => {
+    if (explorerState.currentPage > 1) {
+      explorerState.currentPage--;
+      applySchemeExplorerFilters(false);
+      document.getElementById('scheme-explorer-section')?.scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+
+  document.getElementById('btn-page-next')?.addEventListener('click', () => {
+    const filtered = computeFilteredSchemes();
+    const totalPages = Math.ceil(filtered.length / explorerState.pageSize) || 1;
+    if (explorerState.currentPage < totalPages) {
+      explorerState.currentPage++;
+      applySchemeExplorerFilters(false);
+      document.getElementById('scheme-explorer-section')?.scrollIntoView({ behavior: 'smooth' });
+    }
+  });
 
   // Initial render
   applySchemeExplorerFilters();
@@ -194,41 +224,30 @@ function initSchemeExplorer() {
 function switchExplorerTab(newTab) {
   if (explorerState.activeTab === newTab) return;
   explorerState.activeTab = newTab;
+  explorerState.currentPage = 1;
 
   // Highlight active tab
   document.querySelectorAll('#scheme-explorer-tabs .explorer-tab-btn').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-tab') === newTab);
   });
 
-  // Reset incompatible filters:
-  // Expense Ratio filter is incompatible with Stocks & Equity.
-  const expenseSelect = document.getElementById('explorer-expense-ratio');
-  const expenseNote = document.getElementById('expense-ratio-note');
-
-  if (newTab === 'STOCKS_EQUITY') {
-    explorerState.maxExpenseRatioFilter = 'ALL';
-    if (expenseSelect) {
-      expenseSelect.value = 'ALL';
-      expenseSelect.disabled = true;
-    }
-    if (expenseNote) expenseNote.style.display = 'block';
-  } else {
-    if (expenseSelect) expenseSelect.disabled = false;
-    if (expenseNote) expenseNote.style.display = 'none';
-  }
-
-  // Keep search query and compatible filter selections!
   applySchemeExplorerFilters();
 }
 
 function resetSchemeExplorerFilters() {
+  explorerState.activeTab = 'ALL';
   explorerState.searchQuery = '';
   explorerState.riskFilter = 'ALL';
+  explorerState.assetTypeFilter = 'ALL';
   explorerState.durationFilter = 'ALL';
-  explorerState.minInvestmentFilter = 'ALL';
-  explorerState.maxExpenseRatioFilter = 'ALL';
+  explorerState.goalFilter = 'ALL';
+  explorerState.amountFilter = null;
   explorerState.sortBy = 'relevance';
-  // Note: activeTab is preserved!
+  explorerState.currentPage = 1;
+
+  document.querySelectorAll('#scheme-explorer-tabs .explorer-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-tab') === 'ALL');
+  });
 
   const searchInput = document.getElementById('explorer-search');
   if (searchInput) searchInput.value = '';
@@ -236,14 +255,17 @@ function resetSchemeExplorerFilters() {
   const riskSelect = document.getElementById('explorer-risk');
   if (riskSelect) riskSelect.value = 'ALL';
 
+  const assetTypeSelect = document.getElementById('explorer-asset-type');
+  if (assetTypeSelect) assetTypeSelect.value = 'ALL';
+
   const durationSelect = document.getElementById('explorer-duration');
   if (durationSelect) durationSelect.value = 'ALL';
 
-  const minInvestSelect = document.getElementById('explorer-min-investment');
-  if (minInvestSelect) minInvestSelect.value = 'ALL';
+  const goalSelect = document.getElementById('explorer-goal');
+  if (goalSelect) goalSelect.value = 'ALL';
 
-  const expenseRatioSelect = document.getElementById('explorer-expense-ratio');
-  if (expenseRatioSelect) expenseRatioSelect.value = 'ALL';
+  const amountInput = document.getElementById('explorer-amount');
+  if (amountInput) amountInput.value = '';
 
   const sortSelect = document.getElementById('explorer-sort');
   if (sortSelect) sortSelect.value = 'relevance';
@@ -251,20 +273,37 @@ function resetSchemeExplorerFilters() {
   applySchemeExplorerFilters();
 }
 
-function applySchemeExplorerFilters() {
+function applySchemeExplorerFilters(resetPage = false) {
+  if (resetPage) {
+    explorerState.currentPage = 1;
+  }
   const filtered = computeFilteredSchemes();
-  renderExplorerResults(filtered);
+  const totalCount = filtered.length;
+  const totalPages = Math.ceil(totalCount / explorerState.pageSize) || 1;
+
+  // Guard current page bounds
+  if (explorerState.currentPage > totalPages) {
+    explorerState.currentPage = totalPages;
+  }
+  if (explorerState.currentPage < 1) {
+    explorerState.currentPage = 1;
+  }
+
+  const startIdx = (explorerState.currentPage - 1) * explorerState.pageSize;
+  const pageItems = filtered.slice(startIdx, startIdx + explorerState.pageSize);
+
+  renderExplorerResults(pageItems);
   renderActiveFilterChips();
-  updateResultsCount(filtered.length);
+  updateResultsCount(totalCount, filtered.some(s => s.is_fallback));
+  updatePaginationDOM(totalCount, totalPages);
 }
 
 function computeFilteredSchemes() {
-  // 1. Start with eligible, deduplicated product dataset
   let baseItems = Array.isArray(window.__ALL_SCHEMES__) && window.__ALL_SCHEMES__.length > 0
     ? [...window.__ALL_SCHEMES__]
     : [...cachedSchemes];
 
-  // Ensure deduplication by unique scheme/product ID
+  // Deduplicate by scheme ID
   const seenIds = new Set();
   let items = [];
   for (const item of baseItems) {
@@ -274,103 +313,203 @@ function computeFilteredSchemes() {
     }
   }
 
-  // 2. Apply selected main tab
-  if (explorerState.activeTab === 'STOCKS_EQUITY') {
-    items = items.filter(s => s.category === 'STOCKS_EQUITY');
-  } else if (explorerState.activeTab === 'EQUITY_MUTUAL_FUNDS') {
-    items = items.filter(s => s.category === 'EQUITY_MUTUAL_FUNDS');
-  } else if (explorerState.activeTab === 'SIP_INVESTMENTS') {
-    // Only eligible equity mutual funds that currently support SIP investments
-    items = items.filter(s => s.category === 'EQUITY_MUTUAL_FUNDS' && s.supports_sip === true);
-  } else if (explorerState.activeTab === 'GOLD') {
-    items = items.filter(s => s.category === 'GOLD');
-  } // 'ALL' keeps all eligible stocks, equity mutual funds, and gold
-
-  // 3. Apply search query (case-insensitive across name, company_name, ticker, subcategory)
-  const q = (explorerState.searchQuery || '').trim().toLowerCase();
-  if (q) {
+  // 1. Tab Filtering
+  if (explorerState.activeTab !== 'ALL') {
+    const tab = explorerState.activeTab;
     items = items.filter(s => {
-      const name = (s.name || '').toLowerCase();
-      const comp = (s.company_name || s.provider || '').toLowerCase();
-      const ticker = (s.ticker || '').toLowerCase();
-      const subcat = (s.subcategory || '').toLowerCase();
-      return name.includes(q) || comp.includes(q) || ticker.includes(q) || subcat.includes(q);
+      const type = (s.assetType || '').toUpperCase();
+      const cat = (s.category || '').toUpperCase();
+      const code = (s.category_code || '').toUpperCase();
+
+      if (tab === 'STOCKS' || tab === 'STOCKS_EQUITY') {
+        return type === 'STOCKS' || cat === 'STOCKS' || cat === 'STOCKS_EQUITY' || code === 'STOCKS';
+      }
+      if (tab === 'MUTUAL_FUNDS' || tab === 'EQUITY_MUTUAL_FUNDS') {
+        return type === 'MUTUAL FUNDS' || cat === 'MUTUAL_FUNDS' || cat === 'EQUITY_MUTUAL_FUNDS' || code === 'MUTUAL_FUNDS';
+      }
+      if (tab === 'ETFS') {
+        return type === 'ETFS' || cat === 'ETFS' || code === 'ETFS';
+      }
+      if (tab === 'FIXED_DEPOSITS') {
+        return type === 'FIXED DEPOSITS' || cat === 'FIXED_DEPOSITS' || code === 'FIXED_DEPOSITS';
+      }
+      if (tab === 'GOVT_SECURITIES') {
+        return type.includes('GOVERNMENT') || cat === 'GOVT_SECURITIES' || code === 'GOVT_SECURITIES';
+      }
+      if (tab === 'SMALL_SAVINGS') {
+        return type.includes('SMALL SAVINGS') || cat === 'SMALL_SAVINGS' || code === 'SMALL_SAVINGS';
+      }
+      if (tab === 'GOLD') {
+        return type === 'GOLD' || cat === 'GOLD' || code === 'GOLD';
+      }
+      if (tab === 'OTHER') {
+        return type.includes('OTHER') || cat === 'OTHER' || code === 'OTHER';
+      }
+      if (tab === 'SIP_INVESTMENTS') {
+        return s.supports_sip === true || cat === 'SIP_INVESTMENTS' || code === 'SIP_INVESTMENTS';
+      }
+      return type.includes(tab) || cat.includes(tab) || code === tab;
     });
   }
 
-  // 4. Apply all selected compatible filters using AND logic
-  // 4a. Risk Level
+  // 2. Risk Level Filter (Normalized)
   if (explorerState.riskFilter !== 'ALL') {
-    const targetRisk = explorerState.riskFilter.toLowerCase();
+    const target = explorerState.riskFilter.toLowerCase();
     items = items.filter(s => {
-      const r = (s.risk_level || '').trim().toLowerCase();
-      if (!r || r === 'not available' || r === 'unknown' || r === 'n/a') return false;
-      if (targetRisk === 'moderate') return r.includes('moderate');
-      return r === targetRisk;
+      const rLevel = (s.riskLevel || s.risk_level || '').trim().toLowerCase();
+      const score = s.riskScore || s.risk_score || 0;
+
+      if (target === 'low') {
+        return rLevel === 'low' || (score >= 1 && score <= 3);
+      }
+      if (target === 'medium' || target === 'moderate') {
+        return rLevel === 'medium' || rLevel === 'moderate' || (score >= 4 && score <= 6);
+      }
+      if (target === 'high' || target === 'very high') {
+        return rLevel === 'high' || rLevel === 'very high' || score >= 7;
+      }
+      return rLevel === target;
     });
   }
 
-  // 4b. Investment Duration
+  // 3. Investment Type (Asset Type) Filter
+  if (explorerState.assetTypeFilter !== 'ALL') {
+    const targetType = explorerState.assetTypeFilter.toLowerCase();
+    items = items.filter(s => (s.assetType || '').toLowerCase() === targetType);
+  }
+
+  // 4. Investment Duration Filter
   if (explorerState.durationFilter !== 'ALL') {
     const targetDur = explorerState.durationFilter;
     items = items.filter(s => {
       const durations = s.supported_durations || [];
-      return durations.includes(targetDur);
+      return durations.includes(targetDur) || (targetDur === 'MORE_THAN_5Y' && (durations.includes('5_TO_10Y') || durations.includes('MORE_THAN_10Y')));
     });
   }
 
-  // 4c. Minimum Investment threshold (in INR)
-  if (explorerState.minInvestmentFilter !== 'ALL') {
-    const maxThreshold = parseFloat(explorerState.minInvestmentFilter);
-    const isSipTab = (explorerState.activeTab === 'SIP_INVESTMENTS');
+  // 5. Investment Goal Filter
+  if (explorerState.goalFilter !== 'ALL') {
+    const targetGoal = explorerState.goalFilter.toLowerCase();
     items = items.filter(s => {
-      const val = isSipTab ? (s.min_sip ?? s.min_investment) : s.min_investment;
-      return val !== null && val !== undefined && val <= maxThreshold;
+      const goals = (s.supported_goals || []).map(g => g.toLowerCase());
+      const tags = (s.best_for_tags || []).map(t => t.toLowerCase());
+      return goals.some(g => g.includes(targetGoal)) || tags.some(t => t.includes(targetGoal.replace(/\s+/g, '-')));
     });
   }
 
-  // 4d. Expense Ratio (Applicable to mutual funds and SIP-enabled mutual funds only; not stocks)
-  if (explorerState.activeTab !== 'STOCKS_EQUITY' && explorerState.maxExpenseRatioFilter !== 'ALL') {
-    const maxTer = parseFloat(explorerState.maxExpenseRatioFilter);
+  // 6. Investment Amount Filter
+  if (explorerState.amountFilter !== null && explorerState.amountFilter > 0) {
+    const threshold = explorerState.amountFilter;
     items = items.filter(s => {
-      if (s.category === 'STOCKS_EQUITY') return false;
-      return s.expense_ratio_pct !== null && s.expense_ratio_pct !== undefined && s.expense_ratio_pct <= maxTer;
+      const minVal = s.minimumInvestment !== undefined ? s.minimumInvestment : (s.min_investment || 0);
+      return minVal <= threshold;
     });
   }
 
-  // 5. Sort filtered results
+  // 7. Search Query Filter
+  const q = (explorerState.searchQuery || '').trim().toLowerCase();
+  if (q) {
+    items = items.filter(s => {
+      const name = (s.name || '').toLowerCase();
+      const symbol = (s.symbol || s.ticker || '').toLowerCase();
+      const comp = (s.company_name || s.provider || '').toLowerCase();
+      const subcat = (s.investmentCategory || s.subcategory || '').toLowerCase();
+      const assetType = (s.assetType || '').toLowerCase();
+      const tags = (s.tags || s.best_for_tags || []).join(' ').toLowerCase();
+      return name.includes(q) || symbol.includes(q) || comp.includes(q) || subcat.includes(q) || assetType.includes(q) || tags.includes(q);
+    });
+  }
+
+  // 8. Sensible Fallback if strict filter yields 0 matches
+  const fallbackBanner = document.getElementById('explorer-fallback-banner');
+  const fallbackMsg = document.getElementById('explorer-fallback-message');
+
+  if (items.length === 0 && explorerState.riskFilter !== 'ALL') {
+    const targetRisk = explorerState.riskFilter.toLowerCase();
+    let fallbacks = baseItems.filter(s => {
+      const rLevel = (s.riskLevel || s.risk_level || '').trim().toLowerCase();
+      const score = s.riskScore || s.risk_score || 0;
+      if (targetRisk === 'low') return rLevel === 'low' || (score >= 1 && score <= 3);
+      if (targetRisk === 'medium' || targetRisk === 'moderate') return rLevel === 'medium' || rLevel === 'moderate' || (score >= 4 && score <= 6);
+      if (targetRisk === 'high' || targetRisk === 'very high') return rLevel === 'high' || rLevel === 'very high' || score >= 7;
+      return rLevel === targetRisk;
+    });
+
+    if (q) {
+      const queryFallbacks = fallbacks.filter(s => {
+        return (s.name || '').toLowerCase().includes(q) || (s.symbol || s.ticker || '').toLowerCase().includes(q);
+      });
+      if (queryFallbacks.length > 0) fallbacks = queryFallbacks;
+    }
+
+    if (fallbacks.length > 0) {
+      if (fallbackBanner) fallbackBanner.style.display = 'block';
+      if (fallbackMsg) {
+        fallbackMsg.innerText = `No exact matches for this specific combination. Displaying ${fallbacks.length} alternative investments within the ${explorerState.riskFilter} Risk category.`;
+      }
+      return fallbacks.map(f => ({ ...f, is_fallback: true }));
+    }
+  }
+
+  if (fallbackBanner) fallbackBanner.style.display = 'none';
+
+  // 9. Sorting
   const period = explorerState.returnPeriod || '5y';
   const cagrKey = `cagr_${period}`;
 
-  if (explorerState.sortBy === 'return_desc') {
-    // Place products with unavailable returns after products with valid values
-    items.sort((a, b) => {
-      const aVal = a[cagrKey];
-      const bVal = b[cagrKey];
-      const aValid = (aVal !== null && aVal !== undefined && !isNaN(aVal));
-      const bValid = (bVal !== null && bVal !== undefined && !isNaN(bVal));
-      if (aValid && bValid) return bVal - aVal;
-      if (aValid && !bValid) return -1;
-      if (!aValid && bValid) return 1;
-      return 0;
-    });
-  } else if (explorerState.sortBy === 'expense_asc') {
-    // Lowest Expense Ratio; unavailable values placed after valid values
-    items.sort((a, b) => {
-      const aVal = a.expense_ratio_pct;
-      const bVal = b.expense_ratio_pct;
-      const aValid = (aVal !== null && aVal !== undefined && !isNaN(aVal));
-      const bValid = (bVal !== null && bVal !== undefined && !isNaN(bVal));
-      if (aValid && bValid) return aVal - bVal;
-      if (aValid && !bValid) return -1;
-      if (!aValid && bValid) return 1;
-      return 0;
-    });
-  } else if (explorerState.sortBy === 'name_asc') {
+  if (explorerState.sortBy === 'name_asc') {
     items.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  } else if (explorerState.sortBy === 'name_desc') {
+    items.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+  } else if (explorerState.sortBy === 'risk_asc') {
+    items.sort((a, b) => (a.riskScore || a.risk_score || 5) - (b.riskScore || b.risk_score || 5));
+  } else if (explorerState.sortBy === 'risk_desc') {
+    items.sort((a, b) => (b.riskScore || b.risk_score || 5) - (a.riskScore || a.risk_score || 5));
+  } else if (explorerState.sortBy === 'min_inv_asc') {
+    items.sort((a, b) => (a.minimumInvestment ?? a.min_investment ?? 0) - (b.minimumInvestment ?? b.min_investment ?? 0));
+  } else if (explorerState.sortBy === 'min_inv_desc') {
+    items.sort((a, b) => (b.minimumInvestment ?? b.min_investment ?? 0) - (a.minimumInvestment ?? a.min_investment ?? 0));
+  } else if (explorerState.sortBy === 'return_desc') {
+    items.sort((a, b) => {
+      const aVal = a[cagrKey] ?? a.expected_annual_return ?? 0;
+      const bVal = b[cagrKey] ?? b.expected_annual_return ?? 0;
+      return bVal - aVal;
+    });
+  } else if (explorerState.sortBy === 'liquidity') {
+    items.sort((a, b) => {
+      const aLiq = (a.liquidity || '').toLowerCase();
+      const bLiq = (b.liquidity || '').toLowerCase();
+      const aScore = aLiq.includes('instant') ? 3 : (aLiq.includes('high') ? 2 : 1);
+      const bScore = bLiq.includes('instant') ? 3 : (bLiq.includes('high') ? 2 : 1);
+      return bScore - aScore;
+    });
   }
 
   return items;
+}
+
+function getFreshnessBadgeHtml(s) {
+  const status = s.freshness_status || (s.assetType === 'STOCKS' ? 'LIVE' : (s.assetType === 'MUTUAL FUNDS' ? 'OFFICIAL_AMFI_NAV' : 'VERIFIED'));
+  
+  if (status === 'LIVE') {
+    return `<span class="badge-pill" style="font-size:9px;font-weight:800;background:rgba(22,163,74,0.15);color:#16a34a;border:1px solid rgba(22,163,74,0.3);display:inline-flex;align-items:center;gap:3px;"><span style="display:inline-block;width:5px;height:5px;background:#22c55e;border-radius:50%;box-shadow:0 0 4px #22c55e;"></span> LIVE (NSE)</span>`;
+  }
+  if (status === 'LAST_TRADED') {
+    return `<span class="badge-pill" style="font-size:9px;font-weight:800;background:rgba(2,132,199,0.12);color:#0284c7;border:1px solid rgba(2,132,199,0.3);">NSE Traded</span>`;
+  }
+  if (status === 'OFFICIAL_AMFI_NAV') {
+    return `<span class="badge-pill" style="font-size:9px;font-weight:800;background:rgba(2,132,199,0.12);color:#0284c7;border:1px solid rgba(2,132,199,0.3);">AMFI NAV</span>`;
+  }
+  if (status === 'SPOT_BENCHMARK') {
+    return `<span class="badge-pill" style="font-size:9px;font-weight:800;background:rgba(202,138,4,0.15);color:#ca8a04;border:1px solid rgba(202,138,4,0.3);">IBJA Spot</span>`;
+  }
+  if (status === 'STATUTORY_RATE') {
+    return `<span class="badge-pill" style="font-size:9px;font-weight:800;background:rgba(99,102,241,0.12);color:#6366f1;border:1px solid rgba(99,102,241,0.3);">Sovereign</span>`;
+  }
+  if (status === 'CACHED_BASELINE') {
+    return `<span class="badge-pill" style="font-size:9px;font-weight:800;background:rgba(100,116,139,0.12);color:#64748b;border:1px solid rgba(100,116,139,0.25);">Verified Cache</span>`;
+  }
+  return `<span class="badge-pill" style="font-size:9px;font-weight:800;background:rgba(22,163,74,0.12);color:#16a34a;border:1px solid rgba(22,163,74,0.25);">Verified</span>`;
 }
 
 function renderExplorerResults(items) {
@@ -386,93 +525,146 @@ function renderExplorerResults(items) {
 
   if (emptyState) emptyState.style.display = 'none';
 
-  const period = explorerState.returnPeriod || '5y';
-  const periodLabel = period === '5y' ? '5Y CAGR' : (period === '3y' ? '3Y CAGR' : '1Y Return');
-  const isSipTab = (explorerState.activeTab === 'SIP_INVESTMENTS');
-
   grid.innerHTML = items.map(s => {
-    // Risk display
-    const rawRisk = s.risk_level;
-    const hasRisk = (rawRisk && rawRisk.trim().length > 0 && rawRisk.toLowerCase() !== 'not available');
-    const riskLabel = hasRisk ? rawRisk : 'Not Available';
-    let riskBadgeClass = 'badge-dark';
-    if (riskLabel === 'Very High' || riskLabel === 'High') riskBadgeClass = 'badge-danger';
-    else if (riskLabel === 'Moderate') riskBadgeClass = 'badge-peach';
+    // Risk display & styling
+    const riskLevel = s.riskLevel || s.risk_level || 'Medium';
+    const riskScore = s.riskScore || s.risk_score || 5;
+    let riskBadgeClass = 'badge-peach';
+    let riskBadgeStyle = 'background:#fef3c7;color:#92400e;border:1px solid #fde68a;';
 
-    // Historical Returns display
-    const cagrVal = s[`cagr_${period}`];
-    const hasReturn = (cagrVal !== null && cagrVal !== undefined && !isNaN(cagrVal));
-    const returnDisplay = hasReturn ? `+${cagrVal}% p.a.` : 'Not Available';
-    const returnColor = hasReturn ? '#16a34a' : 'var(--text-muted)';
-
-    // Minimum Investment display
-    const minVal = isSipTab ? (s.min_sip ?? s.min_investment) : s.min_investment;
-    const minLabel = isSipTab ? 'Min Monthly SIP' : 'Min Investment';
-    const minDisplay = minVal ? `₹${Number(minVal).toLocaleString('en-IN')}${isSipTab ? ' / month' : ''}` : 'Not Available';
-
-    // Expense Ratio display
-    let expenseDisplay = s.expense_ratio;
-    if (s.category === 'STOCKS_EQUITY') {
-      expenseDisplay = 'Not Applicable (Direct Equity)';
-    } else if (!expenseDisplay || expenseDisplay.trim() === '') {
-      expenseDisplay = 'Not Available';
+    if (riskLevel.toLowerCase() === 'low') {
+      riskBadgeClass = 'badge-mint';
+      riskBadgeStyle = 'background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;';
+    } else if (riskLevel.toLowerCase() === 'high' || riskLevel.toLowerCase() === 'very high') {
+      riskBadgeClass = 'badge-danger';
+      riskBadgeStyle = 'background:#fef2f2;color:#991b1b;border:1px solid #fecaca;';
     }
 
-    // Investment type display
-    let typeDisplay = s.investment_type || s.subcategory || 'Investment';
-    if (isSipTab) {
-      typeDisplay = `SIP Investment (${s.subcategory || 'Equity MF'})`;
+    // Capital protection badge
+    const capProtection = s.capitalProtection || 'Market-Linked';
+    let capBadgeClass = 'badge-subtle';
+    if (capProtection.includes('Sovereign')) {
+      capBadgeClass = 'badge-mint';
+    } else if (capProtection.includes('Guaranteed') || capProtection.includes('DICGC')) {
+      capBadgeClass = 'badge-blue';
     }
 
-    // Default projection method and amount
-    const projMethod = isSipTab ? 'SIP' : (s.category === 'EQUITY_MUTUAL_FUNDS' ? 'SIP' : 'LUMPSUM');
-    const projAmount = isSipTab ? (s.min_sip || 5000) : (s.category === 'EQUITY_MUTUAL_FUNDS' ? 5000 : (s.min_investment || 50000));
-    const projRate = (hasReturn ? cagrVal : (s.cagr_5y || s.expected_annual_return || 12.0));
+    // Return display
+    const returnDisplay = s.expectedReturnRange || (s.cagr_5y ? `+${s.cagr_5y}% CAGR` : `${s.expected_annual_return || 10}% p.a.`);
+    const returnColor = '#16a34a';
+
+    // Min investment display
+    const minVal = s.minimumInvestment ?? s.min_investment ?? 500;
+    const minDisplay = `₹${Number(minVal).toLocaleString('en-IN')}`;
+
+    // Asset type & subcategory
+    const assetTypeDisplay = s.assetType || s.category_label || 'Investment';
+    const subcatDisplay = s.investmentCategory || s.subcategory || '';
+
+    // Projection pre-fill parameters
+    const projMethod = s.supports_sip ? 'SIP' : 'LUMPSUM';
+    const projAmount = s.supports_sip ? (s.min_sip || 5000) : Math.max(minVal, 25000);
+    const projRate = s.expected_annual_return || s.cagr_5y || 12.0;
+
+    // Compounding pre-fill
+    let compFreq = 'MONTHLY';
+    if (assetTypeDisplay === 'Fixed Deposits' || s.id.includes('post-office') || s.id.includes('scss')) {
+      compFreq = 'QUARTERLY';
+    } else if (s.id.includes('ppf') || s.id.includes('ssy') || s.id.includes('nsc')) {
+      compFreq = 'ANNUALLY';
+    }
+
+    const benefits = (s.investmentBenefits || s.advantages || []).slice(0, 2);
+    const risks = (s.investmentLimitations || s.disadvantages || []).slice(0, 2);
 
     return `
-      <div class="scheme-card explorer-card" data-id="${s.id}">
+      <div class="scheme-card explorer-card ${s.is_fallback ? 'fallback-card' : ''}" data-id="${s.id}" style="display:flex;flex-direction:column;justify-content:space-between;padding:18px;border-radius:var(--radius-sm);background:var(--bg-card);border:1px solid var(--border-card);position:relative;">
+        
+        ${s.is_fallback ? `
+          <div style="position:absolute;top:0;right:0;background:#d97706;color:#fff;font-size:9px;font-weight:800;padding:2px 8px;border-bottom-left-radius:6px;text-transform:uppercase;">
+            Alternative Match
+          </div>
+        ` : ''}
+
         <div>
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;">
-            <span class="badge-pill badge-mint" style="font-size:10px;font-weight:700;">${typeDisplay}</span>
-            <span class="badge-pill ${riskBadgeClass}" style="font-size:10px;font-weight:700;">${riskLabel}</span>
+          <!-- Header Badges -->
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+            <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;">
+              <span class="badge-pill" style="font-size:10px;font-weight:700;background:var(--bg-subtle);color:var(--text-primary);border:1px solid var(--border-subtle);">${assetTypeDisplay}</span>
+              <span class="badge-pill ${capBadgeClass}" style="font-size:9px;font-weight:700;">${capProtection}</span>
+              ${getFreshnessBadgeHtml(s)}
+            </div>
+            <span class="badge-pill ${riskBadgeClass}" style="font-size:10px;font-weight:800;${riskBadgeStyle}">
+              ${riskLevel} Risk
+            </span>
           </div>
 
+          <!-- Title & Symbol -->
           <div class="scheme-title" style="font-size:15px;font-weight:800;color:var(--text-primary);margin-bottom:2px;line-height:1.3;">${s.name}</div>
-          <div class="scheme-provider" style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
-            ${s.company_name || s.provider} ${s.ticker ? `• Ticker: ${s.ticker}` : ''}
+          <div class="scheme-provider" style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">
+            ${s.dataSource || s.data_source || s.provider || ''} ${s.official_symbol || s.symbol ? `• Symbol: <strong>${s.official_symbol || s.symbol}</strong>` : ''}
           </div>
 
-          <div class="scheme-meta-grid" style="grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-            <div class="scheme-meta-item">
-              <div class="scheme-meta-label">Historical Returns (${periodLabel})</div>
-              <div class="scheme-meta-val" style="color:${returnColor};font-weight:800;">${returnDisplay}</div>
+          <!-- Risk Score & Description Pill -->
+          <div style="background:var(--bg-card-subtle);border:1px solid var(--border-subtle);border-radius:4px;padding:6px 10px;margin-bottom:12px;font-size:11px;line-height:1.4;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+              <strong style="color:var(--text-primary);">Risk Score: ${riskScore}/10</strong>
+              <span style="font-size:10px;color:var(--text-muted);">${subcatDisplay}</span>
             </div>
-            <div class="scheme-meta-item">
-              <div class="scheme-meta-label">${minLabel}</div>
-              <div class="scheme-meta-val" style="font-weight:800;color:var(--text-primary);">${minDisplay}</div>
-            </div>
-            <div class="scheme-meta-item">
-              <div class="scheme-meta-label">Expense Ratio</div>
-              <div class="scheme-meta-val">${expenseDisplay}</div>
-            </div>
-            <div class="scheme-meta-item">
-              <div class="scheme-meta-label">Settlement / Liquidity</div>
-              <div class="scheme-meta-val" style="font-size:10px;">${s.liquidity ? s.liquidity.substring(0, 32) + (s.liquidity.length > 32 ? '...' : '') : 'High Liquidity'}</div>
+            <div style="font-size:10.5px;color:var(--text-secondary);">
+              ${s.riskDescription ? s.riskDescription.substring(0, 95) + (s.riskDescription.length > 95 ? '...' : '') : ''}
             </div>
           </div>
 
-          ${isSipTab || s.supports_sip ? `
-            <div style="font-size:11px;color:#15803d;background:#f0fdf4;border-radius:4px;padding:6px 10px;margin-bottom:12px;border:1px solid #dcfce7;">
-              Underlying Fund • ${s.sip_availability || 'SIP Available'}
+          <!-- Metrics Grid -->
+          <div class="scheme-meta-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+            <div class="scheme-meta-item" style="background:var(--bg-subtle);padding:6px 8px;border-radius:4px;">
+              <div class="scheme-meta-label" style="font-size:10px;color:var(--text-muted);font-weight:700;">Expected Return</div>
+              <div class="scheme-meta-val" style="color:${returnColor};font-weight:800;font-size:12px;">${returnDisplay}</div>
+            </div>
+            <div class="scheme-meta-item" style="background:var(--bg-subtle);padding:6px 8px;border-radius:4px;">
+              <div class="scheme-meta-label" style="font-size:10px;color:var(--text-muted);font-weight:700;">Min Investment</div>
+              <div class="scheme-meta-val" style="font-weight:800;color:var(--text-primary);font-size:12px;">${minDisplay}</div>
+            </div>
+            <div class="scheme-meta-item" style="background:var(--bg-subtle);padding:6px 8px;border-radius:4px;">
+              <div class="scheme-meta-label" style="font-size:10px;color:var(--text-muted);font-weight:700;">Horizon</div>
+              <div class="scheme-meta-val" style="font-size:11px;font-weight:700;">${s.investmentHorizon || '3–5 Years'}</div>
+            </div>
+            <div class="scheme-meta-item" style="background:var(--bg-subtle);padding:6px 8px;border-radius:4px;">
+              <div class="scheme-meta-label" style="font-size:10px;color:var(--text-muted);font-weight:700;">Liquidity</div>
+              <div class="scheme-meta-val" style="font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${s.liquidity || 'High'}">${s.liquidity ? s.liquidity.substring(0, 24) + '...' : 'High Liquidity'}</div>
+            </div>
+          </div>
+
+          <!-- Purpose -->
+          ${s.investmentPurpose ? `
+            <div style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;line-height:1.4;">
+              <strong style="color:var(--text-primary);">Purpose:</strong> ${s.investmentPurpose.substring(0, 95)}${s.investmentPurpose.length > 95 ? '...' : ''}
             </div>
           ` : ''}
 
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--text-muted);padding-top:8px;border-top:1px solid rgba(0,0,0,0.05);">
-            <span>Source: ${s.data_source || 'Official Filings'}</span>
-            <span>${s.last_updated || 'October 2026'}</span>
+          <!-- Highlights (Benefits vs Risks) -->
+          <div style="font-size:10.5px;margin-bottom:12px;background:var(--bg-subtle);padding:8px 10px;border-radius:4px;">
+            ${benefits.length > 0 ? `
+              <div style="color:#15803d;display:flex;align-items:flex-start;gap:4px;margin-bottom:3px;">
+                <span>✓</span> <span>${benefits[0]}</span>
+              </div>
+            ` : ''}
+            ${risks.length > 0 ? `
+              <div style="color:#b91c1c;display:flex;align-items:flex-start;gap:4px;">
+                <span>⚠</span> <span>${risks[0]}</span>
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Footer Metadata -->
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--text-muted);padding-top:8px;border-top:1px solid rgba(0,0,0,0.06);">
+            <span>Price/NAV: <strong style="color:var(--text-primary);">${s.currentPrice || s.currentNAV || (s.price_numeric ? '₹' + Number(s.price_numeric).toLocaleString('en-IN') : 'Market')}</strong> ${s.day_change_pct ? `<span style="color:${s.day_change >= 0 ? '#16a34a' : '#dc2626'};font-weight:700;">(${s.day_change >= 0 ? '+' : ''}${s.day_change_pct}%)</span>` : ''}</span>
+            <span>${s.price_date || s.lastUpdated || 'October 2026'}</span>
           </div>
         </div>
 
+        <!-- Action Buttons -->
         <div class="scheme-card-actions" style="margin-top:14px;display:flex;gap:8px;">
           <button type="button" class="btn btn-secondary btn-sm action-view-details" data-id="${s.id}" style="flex:1;font-weight:700;">
             View Details
@@ -480,16 +672,46 @@ function renderExplorerResults(items) {
           <button type="button" class="btn btn-primary btn-sm action-project-scheme" 
             data-id="${s.id}" 
             data-name="${s.name}" 
+            data-category="${s.category || ''}"
+            data-risk="${s.risk_level || s.riskLevel || ''}"
             data-rate="${projRate}" 
             data-method="${projMethod}" 
-            data-amount="${projAmount}" 
-            style="flex:1;font-weight:700;">
-            Add to Projection
+            data-amount="${projAmount}"
+            data-comp="${compFreq}"
+            style="flex:1;font-weight:800;background:#cbf432;color:#121614;border:none;box-shadow:0 0 10px rgba(203,244,50,0.3);display:inline-flex;align-items:center;justify-content:center;gap:4px;">
+            <i data-lucide="sparkles" style="width:13px;height:13px;"></i> Add to Projection
           </button>
         </div>
+
       </div>
     `;
   }).join('');
+}
+
+function updatePaginationDOM(totalCount, totalPages) {
+  const container = document.getElementById('explorer-pagination');
+  const info = document.getElementById('explorer-pagination-info');
+  const btnPrev = document.getElementById('btn-page-prev');
+  const btnNext = document.getElementById('btn-page-next');
+
+  if (!container) return;
+
+  if (totalCount <= explorerState.pageSize) {
+    container.style.display = 'none';
+    return;
+  }
+
+  container.style.display = 'flex';
+  if (info) {
+    info.innerText = `Page ${explorerState.currentPage} of ${totalPages} (${totalCount} investments)`;
+  }
+
+  if (btnPrev) {
+    btnPrev.disabled = (explorerState.currentPage <= 1);
+  }
+  if (btnNext) {
+    btnNext.disabled = (explorerState.currentPage >= totalPages);
+  }
 }
 
 function renderActiveFilterChips() {
@@ -514,14 +736,21 @@ function renderActiveFilterChips() {
     });
   }
 
+  // Asset type chip
+  if (explorerState.assetTypeFilter !== 'ALL') {
+    chips.push({
+      key: 'asset_type',
+      label: `Type: ${explorerState.assetTypeFilter}`
+    });
+  }
+
   // Duration chip
   if (explorerState.durationFilter !== 'ALL') {
     const durLabels = {
-      'UP_TO_1Y': 'Up to 1 year',
+      'UP_TO_1Y': '< 1 year',
       '1_TO_3Y': '1–3 years',
       '3_TO_5Y': '3–5 years',
-      '5_TO_10Y': '5–10 years',
-      'MORE_THAN_10Y': 'More than 10 years'
+      'MORE_THAN_5Y': '> 5 years'
     };
     chips.push({
       key: 'duration',
@@ -529,32 +758,37 @@ function renderActiveFilterChips() {
     });
   }
 
-  // Min investment chip
-  if (explorerState.minInvestmentFilter !== 'ALL') {
+  // Goal chip
+  if (explorerState.goalFilter !== 'ALL') {
     chips.push({
-      key: 'min_investment',
-      label: `Min Investment: Up to ₹${Number(explorerState.minInvestmentFilter).toLocaleString('en-IN')}`
+      key: 'goal',
+      label: `Goal: ${explorerState.goalFilter}`
     });
   }
 
-  // Max expense ratio chip
-  if (explorerState.maxExpenseRatioFilter !== 'ALL' && explorerState.activeTab !== 'STOCKS_EQUITY') {
+  // Amount threshold chip
+  if (explorerState.amountFilter !== null && explorerState.amountFilter > 0) {
     chips.push({
-      key: 'expense_ratio',
-      label: `Max Expense: ${explorerState.maxExpenseRatioFilter}%`
+      key: 'amount',
+      label: `Amount: ≤ ₹${Number(explorerState.amountFilter).toLocaleString('en-IN')}`
     });
   }
 
   // Sort chip if not relevance
   if (explorerState.sortBy !== 'relevance') {
     const sortLabels = {
-      'return_desc': 'Sort: Returns High to Low',
-      'expense_asc': 'Sort: Lowest Expense',
-      'name_asc': 'Sort: Name A–Z'
+      'name_asc': 'Name: A–Z',
+      'name_desc': 'Name: Z–A',
+      'risk_asc': 'Risk: Low to High',
+      'risk_desc': 'Risk: High to Low',
+      'min_inv_asc': 'Min Inv: Low to High',
+      'min_inv_desc': 'Min Inv: High to Low',
+      'return_desc': 'Returns: High to Low',
+      'liquidity': 'Highest Liquidity'
     };
     chips.push({
       key: 'sort',
-      label: sortLabels[explorerState.sortBy] || 'Sorted'
+      label: `Sort: ${sortLabels[explorerState.sortBy] || explorerState.sortBy}`
     });
   }
 
@@ -571,7 +805,7 @@ function renderActiveFilterChips() {
   `).join('');
   if (window.refreshIcons) window.refreshIcons(container);
 
-  // Add click listeners to remove filter chip
+  // Click listeners to remove filter chip
   container.querySelectorAll('.active-filter-chip').forEach(btn => {
     btn.addEventListener('click', () => {
       const key = btn.getAttribute('data-chip-key');
@@ -589,31 +823,36 @@ function removeExplorerFilter(key) {
     explorerState.riskFilter = 'ALL';
     const select = document.getElementById('explorer-risk');
     if (select) select.value = 'ALL';
+  } else if (key === 'asset_type') {
+    explorerState.assetTypeFilter = 'ALL';
+    const select = document.getElementById('explorer-asset-type');
+    if (select) select.value = 'ALL';
   } else if (key === 'duration') {
     explorerState.durationFilter = 'ALL';
     const select = document.getElementById('explorer-duration');
     if (select) select.value = 'ALL';
-  } else if (key === 'min_investment') {
-    explorerState.minInvestmentFilter = 'ALL';
-    const select = document.getElementById('explorer-min-investment');
+  } else if (key === 'goal') {
+    explorerState.goalFilter = 'ALL';
+    const select = document.getElementById('explorer-goal');
     if (select) select.value = 'ALL';
-  } else if (key === 'expense_ratio') {
-    explorerState.maxExpenseRatioFilter = 'ALL';
-    const select = document.getElementById('explorer-expense-ratio');
-    if (select) select.value = 'ALL';
+  } else if (key === 'amount') {
+    explorerState.amountFilter = null;
+    const input = document.getElementById('explorer-amount');
+    if (input) input.value = '';
   } else if (key === 'sort') {
     explorerState.sortBy = 'relevance';
     const select = document.getElementById('explorer-sort');
     if (select) select.value = 'relevance';
   }
+  explorerState.currentPage = 1;
   applySchemeExplorerFilters();
 }
 
-function updateResultsCount(count) {
+function updateResultsCount(count, isFallback = false) {
   const badge = document.getElementById('explorer-results-count-badge');
   if (badge) {
     const word = count === 1 ? 'investment' : 'investments';
-    badge.innerText = `Showing ${count} ${word}`;
+    badge.innerText = `Showing ${count} ${word}${isFallback ? ' (Alternatives)' : ''}`;
   }
 }
 
@@ -782,15 +1021,20 @@ function renderRecommendationsDOM(recommendations) {
   container.innerHTML = recommendations.map(r => `
     <div class="scheme-card" style="border-top:3px solid var(--brand-lime);">
       <div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <span class="badge-pill badge-mint" style="font-size:10px;">${r.category_label || r.category}</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:4px;">
+          <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
+            <span class="badge-pill badge-mint" style="font-size:10px;">${r.category_label || r.category}</span>
+            ${getFreshnessBadgeHtml(r)}
+          </div>
           <span class="badge-pill" style="background:#eef8ed;color:#166534;font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">
             <i data-lucide="star" style="width:12px;height:12px;"></i> ${r.match_score}% Match
           </span>
         </div>
 
         <div class="scheme-title" style="font-size:15px;font-weight:800;">${r.name}</div>
-        <div class="scheme-provider" style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">${r.provider}</div>
+        <div class="scheme-provider" style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">
+          ${r.dataSource || r.data_source || r.provider || ''} ${r.official_symbol || r.symbol ? `• <strong>${r.official_symbol || r.symbol}</strong>` : ''}
+        </div>
 
         <div style="background:#fafbf9;border-left:3px solid var(--pastel-mint-accent);border-radius:4px;padding:10px 12px;margin-bottom:12px;font-size:11px;color:var(--text-secondary);line-height:1.5;">
           <strong style="color:var(--pastel-mint-accent);display:block;margin-bottom:2px;">Why Recommended:</strong>
@@ -811,8 +1055,8 @@ function renderRecommendationsDOM(recommendations) {
         </div>
 
         <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--text-muted);margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.04);">
-          <span>Source: ${r.data_source}</span>
-          <span>Updated: ${r.last_updated}</span>
+          <span>Price/NAV: <strong style="color:var(--text-primary);">${r.currentPrice || r.currentNAV || (r.price_numeric ? '₹' + Number(r.price_numeric).toLocaleString('en-IN') : 'Market')}</strong></span>
+          <span>${r.price_date || r.last_updated || 'October 2026'}</span>
         </div>
       </div>
 
@@ -822,8 +1066,13 @@ function renderRecommendationsDOM(recommendations) {
           data-id="${r.id}" 
           data-rate="${r.cagr_5y || r.expected_annual_return}" 
           data-name="${r.name}" 
+          data-category="${r.category || ''}"
+          data-risk="${r.risk_level || ''}"
           data-method="${r.category === 'SIP_INVESTMENTS' ? 'SIP' : 'LUMPSUM'}" 
-          data-amount="10000"><i data-lucide="chart-no-axes-combined"></i> Project</button>
+          data-amount="${r.category === 'SIP_INVESTMENTS' ? 5000 : 10000}"
+          style="display:inline-flex;align-items:center;background:#cbf432;color:#121614;font-weight:800;border:none;box-shadow:0 0 10px rgba(203,244,50,0.35);">
+          <i data-lucide="sparkles" style="width:13px;height:13px;margin-right:4px;"></i> Add to Projection
+        </button>
         <button type="button" class="btn btn-dark btn-sm action-add-portfolio" 
           data-id="${r.id}" 
           data-category="${r.category}" 
@@ -983,9 +1232,12 @@ function renderComparisonTable(comp) {
                 data-id="${s.id}" 
                 data-rate="${s.cagr_5y || 12.0}" 
                 data-name="${s.name}" 
+                data-category="${s.category || ''}"
+                data-risk="${s.risk_level || ''}"
                 data-method="${comp.parameters?.method || 'LUMPSUM'}" 
-                data-amount="${comp.parameters?.amount || 50000}">
-                <i data-lucide="chart-no-axes-combined"></i> Project
+                data-amount="${comp.parameters?.amount || 50000}"
+                style="background:#cbf432;color:#121614;font-weight:800;border:none;box-shadow:0 0 10px rgba(203,244,50,0.35);display:inline-flex;align-items:center;gap:4px;">
+                <i data-lucide="sparkles" style="width:13px;height:13px;"></i> Add to Projection
               </button>
             </td>
           `).join('')}
@@ -1021,10 +1273,15 @@ function initFutureCalc() {
     });
   }
 
-  const inputs = ['calc-initial', 'calc-periodic', 'calc-freq', 'calc-return', 'calc-duration', 'calc-step-up', 'calc-timing'];
+  const inputs = ['calc-initial', 'calc-periodic', 'calc-freq', 'calc-return', 'calc-duration', 'calc-step-up', 'calc-timing', 'calc-compounding-freq'];
   inputs.forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.addEventListener('input', debounce(recalculateInvestment, 200));
+    if (el) {
+      el.addEventListener('input', debounce(recalculateInvestment, 200));
+      if (el.tagName === 'SELECT') {
+        el.addEventListener('change', debounce(recalculateInvestment, 200));
+      }
+    }
   });
 
   document.getElementById('btn-reset-calc')?.addEventListener('click', () => {
@@ -1035,6 +1292,8 @@ function initFutureCalc() {
     document.getElementById('calc-return').value = '12.0';
     document.getElementById('calc-duration').value = '10';
     document.getElementById('calc-step-up').value = '0';
+    const compSel = document.getElementById('calc-compounding-freq');
+    if (compSel) compSel.value = 'MONTHLY';
     document.getElementById('active-linked-badge').innerText = 'Manual Custom Parameters';
     recalculateInvestment();
   });
@@ -1072,6 +1331,7 @@ async function recalculateInvestment() {
   const duration = parseInt(document.getElementById('calc-duration')?.value || 10);
   const timing = document.getElementById('calc-timing')?.value || 'BEGINNING';
   const stepUp = parseFloat(document.getElementById('calc-step-up')?.value || 0);
+  const compFreq = document.getElementById('calc-compounding-freq')?.value || 'MONTHLY';
   const schemeId = document.getElementById('calc-scheme-link')?.value || null;
 
   try {
@@ -1085,6 +1345,7 @@ async function recalculateInvestment() {
         duration_years: duration,
         timing: timing,
         step_up_pct: stepUp,
+        compounding_frequency: compFreq,
         scheme_id: schemeId
       })
     });
@@ -1392,17 +1653,254 @@ function resetPortfolioSummary() {
 }
 
 // ============================================================================
-// 10. TRANSFER PARAMETERS HELPER
+// 10. NEON PROJECTION BOX & TRANSFER HELPERS
 // ============================================================================
-function transferToProjection(data) {
+let currentNeonData = {
+  id: '',
+  name: 'Selected Investment',
+  category: 'EQUITY_MUTUAL_FUNDS',
+  risk: 'Moderate',
+  method: 'SIP',
+  amount: 10000,
+  duration: 10,
+  expected_return: 14.0,
+  step_up: 0,
+  compounding: 'MONTHLY'
+};
+
+function initNeonModal() {
+  const modal = document.getElementById('neon-projection-modal');
+  if (!modal) return;
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal('neon-projection-modal');
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.classList.contains('active')) {
+      closeModal('neon-projection-modal');
+    }
+  });
+}
+
+function openNeonProjectionBox(data) {
+  if (!data) return;
+
+  const schemeId = data.scheme_id || data.id;
+  let scheme = null;
+  if (schemeId && cachedSchemes.length) {
+    scheme = cachedSchemes.find(s => s.id === schemeId);
+  }
+  if (!scheme && schemeId && window.__ALL_SCHEMES__?.length) {
+    scheme = window.__ALL_SCHEMES__.find(s => s.id === schemeId);
+  }
+
+  currentNeonData.id = schemeId || (scheme ? scheme.id : 'custom-investment');
+  currentNeonData.name = data.name || (scheme ? scheme.name : 'Selected Investment');
+  currentNeonData.category = data.category || (scheme ? scheme.category : 'EQUITY_MUTUAL_FUNDS');
+  currentNeonData.risk = data.risk || (scheme ? scheme.risk_level : 'Moderate');
+
+  const rate = data.expected_return || (scheme ? (scheme.cagr_5y || scheme.expected_annual_return || 12.0) : 12.0);
+  currentNeonData.expected_return = parseFloat(rate) || 12.0;
+
+  if (data.method) {
+    currentNeonData.method = data.method;
+  } else if (currentNeonData.category === 'SIP_INVESTMENTS') {
+    currentNeonData.method = 'SIP';
+  } else {
+    currentNeonData.method = 'LUMPSUM';
+  }
+
+  if (data.amount && parseFloat(data.amount) > 0) {
+    currentNeonData.amount = parseFloat(data.amount);
+  } else if (currentNeonData.method === 'SIP') {
+    currentNeonData.amount = (scheme && scheme.min_sip) ? scheme.min_sip : 10000;
+  } else {
+    currentNeonData.amount = (scheme && scheme.min_investment) ? Math.max(50000, scheme.min_investment) : 50000;
+  }
+
+  currentNeonData.duration = data.duration ? parseInt(data.duration) : 10;
+  currentNeonData.step_up = data.step_up ? parseFloat(data.step_up) : 0;
+  currentNeonData.compounding = data.compounding_frequency || 'MONTHLY';
+
+  const nameEl = document.getElementById('neon-scheme-name');
+  if (nameEl) nameEl.innerText = currentNeonData.name;
+
+  const catEl = document.getElementById('neon-scheme-cat');
+  if (catEl) {
+    const catLabels = {
+      'STOCKS_EQUITY': 'Stocks & Equity',
+      'EQUITY_MUTUAL_FUNDS': 'Equity Mutual Funds',
+      'SIP_INVESTMENTS': 'SIP Investments',
+      'GOLD': 'Gold'
+    };
+    catEl.innerText = catLabels[currentNeonData.category] || currentNeonData.category;
+  }
+
+  const riskEl = document.getElementById('neon-scheme-risk');
+  if (riskEl) {
+    riskEl.innerText = `${currentNeonData.risk} Risk`;
+  }
+
+  const cagrEl = document.getElementById('neon-scheme-cagr-badge');
+  if (cagrEl) {
+    cagrEl.innerText = `CAGR: ~${currentNeonData.expected_return.toFixed(1)}%`;
+  }
+
+  const returnInput = document.getElementById('neon-input-return');
+  if (returnInput) returnInput.value = currentNeonData.expected_return.toFixed(2);
+
+  const durationRange = document.getElementById('neon-range-duration');
+  if (durationRange) durationRange.value = currentNeonData.duration;
+  const durLabel = document.getElementById('neon-duration-label');
+  if (durLabel) durLabel.innerText = `${currentNeonData.duration} Years`;
+
+  const stepUpSel = document.getElementById('neon-select-stepup');
+  if (stepUpSel) stepUpSel.value = String(currentNeonData.step_up);
+
+  const compSel = document.getElementById('neon-select-compounding');
+  if (compSel) compSel.value = currentNeonData.compounding;
+
+  setNeonMethod(currentNeonData.method, false);
+  setNeonAmount(currentNeonData.amount);
+  syncNeonDuration(currentNeonData.duration);
+
+  updateNeonProjection();
+
+  openModal('neon-projection-modal');
+  if (window.refreshIcons) {
+    window.refreshIcons(document.getElementById('neon-projection-modal'));
+  }
+}
+
+function setNeonMethod(method, recalculate = true) {
+  currentNeonData.method = method;
+  const btnSip = document.getElementById('neon-btn-method-sip');
+  const btnLump = document.getElementById('neon-btn-method-lump');
+  const amountLabel = document.getElementById('neon-amount-label');
+
+  if (method === 'SIP') {
+    if (btnSip) btnSip.classList.add('active');
+    if (btnLump) btnLump.classList.remove('active');
+    if (amountLabel) amountLabel.innerText = 'Monthly Contribution (₹)';
+  } else {
+    if (btnSip) btnSip.classList.remove('active');
+    if (btnLump) btnLump.classList.add('active');
+    if (amountLabel) amountLabel.innerText = 'One-Time Lump Sum Capital (₹)';
+  }
+
+  if (recalculate) {
+    updateNeonProjection();
+  }
+}
+
+function setNeonAmount(amt) {
+  currentNeonData.amount = parseFloat(amt) || 10000;
+  const input = document.getElementById('neon-input-amount');
+  if (input) input.value = currentNeonData.amount;
+
+  document.querySelectorAll('#neon-projection-modal .neon-chip').forEach(chip => {
+    const fnStr = chip.getAttribute('onclick') || '';
+    if (fnStr.includes(`(${currentNeonData.amount})`)) {
+      chip.classList.add('active');
+    } else {
+      chip.classList.remove('active');
+    }
+  });
+
+  updateNeonProjection();
+}
+
+function syncNeonDuration(years) {
+  const y = parseInt(years) || 10;
+  currentNeonData.duration = y;
+
+  const range = document.getElementById('neon-range-duration');
+  if (range) range.value = y;
+
+  const label = document.getElementById('neon-duration-label');
+  if (label) label.innerText = `${y} Years`;
+
+  document.querySelectorAll('#neon-projection-modal .neon-mini-chip').forEach(chip => {
+    const fnStr = chip.getAttribute('onclick') || '';
+    if (fnStr.includes(`(${y})`)) {
+      chip.classList.add('active');
+    } else {
+      chip.classList.remove('active');
+    }
+  });
+
+  updateNeonProjection();
+}
+
+function updateNeonProjection() {
+  const amtInput = document.getElementById('neon-input-amount');
+  const returnInput = document.getElementById('neon-input-return');
+  const rangeDur = document.getElementById('neon-range-duration');
+  const stepUpSel = document.getElementById('neon-select-stepup');
+  const compSel = document.getElementById('neon-select-compounding');
+
+  if (amtInput) currentNeonData.amount = parseFloat(amtInput.value) || 0;
+  if (returnInput) currentNeonData.expected_return = parseFloat(returnInput.value) || 0;
+  if (rangeDur) currentNeonData.duration = parseInt(rangeDur.value) || 10;
+  if (stepUpSel) currentNeonData.step_up = parseFloat(stepUpSel.value) || 0;
+  if (compSel) currentNeonData.compounding = compSel.value || 'MONTHLY';
+
+  const amountDisplay = document.getElementById('neon-amount-display');
+  if (amountDisplay) {
+    amountDisplay.innerText = formatINR(currentNeonData.amount);
+  }
+
+  const P = currentNeonData.amount;
+  const N = currentNeonData.duration;
+  const r = currentNeonData.expected_return / 100;
+  const s = currentNeonData.step_up / 100;
+  const isSip = currentNeonData.method === 'SIP';
+
+  let totalInvested = 0;
+  let futureValue = 0;
+
+  if (!isSip) {
+    totalInvested = P;
+    let k = 12;
+    if (currentNeonData.compounding === 'QUARTERLY') k = 4;
+    else if (currentNeonData.compounding === 'ANNUALLY') k = 1;
+    futureValue = P * Math.pow(1 + r / k, k * N);
+  } else {
+    const monthlyRate = r / 12;
+    const totalMonths = N * 12;
+    let balance = 0;
+
+    for (let m = 1; m <= totalMonths; m++) {
+      const yearIndex = Math.floor((m - 1) / 12);
+      const monthlyContribution = P * Math.pow(1 + s, yearIndex);
+      totalInvested += monthlyContribution;
+      balance = (balance + monthlyContribution) * (1 + monthlyRate);
+    }
+    futureValue = balance;
+  }
+
+  const estimatedGain = Math.max(0, futureValue - totalInvested);
+  const multiplier = totalInvested > 0 ? (futureValue / totalInvested) : 1;
+
+  const fvEl = document.getElementById('neon-res-fv');
+  const investedEl = document.getElementById('neon-res-invested');
+  const gainEl = document.getElementById('neon-res-gain');
+  const multEl = document.getElementById('neon-gain-multiplier');
+
+  if (fvEl) fvEl.innerText = formatINR(futureValue);
+  if (investedEl) investedEl.innerText = formatINR(totalInvested);
+  if (gainEl) gainEl.innerText = `+${formatINR(estimatedGain)}`;
+  if (multEl) multEl.innerText = `${multiplier.toFixed(2)}x Capital Growth`;
+}
+
+function applyNeonToMainCalculator() {
   const schemeSel = document.getElementById('calc-scheme-link');
-  if (schemeSel && data.scheme_id) {
-    schemeSel.value = data.scheme_id;
+  if (schemeSel && currentNeonData.id) {
+    schemeSel.value = currentNeonData.id;
   }
 
   const badge = document.getElementById('active-linked-badge');
   if (badge) {
-    badge.innerText = `Linked: ${data.name || 'Selected Instrument'}`;
+    badge.innerText = `Linked: ${currentNeonData.name}`;
   }
 
   const initialInput = document.getElementById('calc-initial');
@@ -1410,36 +1908,64 @@ function transferToProjection(data) {
   const freqSel = document.getElementById('calc-freq');
   const rateInput = document.getElementById('calc-return');
   const durInput = document.getElementById('calc-duration');
+  const stepUpInput = document.getElementById('calc-step-up');
+  const compSel = document.getElementById('calc-compounding-freq');
 
-  if (data.method === 'SIP') {
+  if (currentNeonData.method === 'SIP') {
     if (initialInput) initialInput.value = '0';
-    if (periodicInput) periodicInput.value = data.amount || 5000;
+    if (periodicInput) periodicInput.value = currentNeonData.amount;
     if (freqSel) freqSel.value = 'MONTHLY';
   } else {
-    if (initialInput) initialInput.value = data.amount || 50000;
+    if (initialInput) initialInput.value = currentNeonData.amount;
     if (periodicInput) periodicInput.value = '0';
     if (freqSel) freqSel.value = 'YEARLY';
   }
 
-  if (data.expected_return && rateInput) {
-    rateInput.value = parseFloat(data.expected_return).toFixed(2);
-  }
+  if (rateInput) rateInput.value = currentNeonData.expected_return.toFixed(2);
+  if (durInput) durInput.value = currentNeonData.duration;
+  if (stepUpInput) stepUpInput.value = currentNeonData.step_up;
+  if (compSel) compSel.value = currentNeonData.compounding;
 
-  if (data.duration && durInput) {
-    durInput.value = data.duration;
-  }
-
-  // Recalculate
+  closeModal('neon-projection-modal');
   recalculateInvestment();
+  switchTopTab('tab-future');
 
-  // Scroll to section 5 smoothly
   const sec = document.getElementById('section-future-projection');
   if (sec) {
     sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    sec.style.outline = '2px solid var(--brand-lime)';
-    setTimeout(() => { sec.style.outline = 'none'; }, 1200);
+    sec.classList.add('neon-section-highlight');
+    setTimeout(() => {
+      sec.classList.remove('neon-section-highlight');
+    }, 2400);
   }
 }
+
+function neonAddToPortfolio() {
+  addInvestmentToPortfolio({
+    id: currentNeonData.id,
+    name: currentNeonData.name,
+    category: currentNeonData.category || 'EQUITY_MUTUAL_FUNDS',
+    method: currentNeonData.method,
+    amount: currentNeonData.amount,
+    expected_return_pct: currentNeonData.expected_return
+  });
+
+  closeModal('neon-projection-modal');
+  showToast(`Added ${currentNeonData.name} to Combined Portfolio!`, 'success');
+}
+
+function transferToProjection(data) {
+  openNeonProjectionBox(data);
+}
+
+// Global exposure for inline events
+window.openNeonProjectionBox = openNeonProjectionBox;
+window.setNeonMethod = setNeonMethod;
+window.setNeonAmount = setNeonAmount;
+window.syncNeonDuration = syncNeonDuration;
+window.updateNeonProjection = updateNeonProjection;
+window.applyNeonToMainCalculator = applyNeonToMainCalculator;
+window.neonAddToPortfolio = neonAddToPortfolio;
 
 // ============================================================================
 // 11. CLICK DELEGATION FOR ALL CARDS
@@ -1454,21 +1980,28 @@ function initCardDelegation() {
       return;
     }
 
-    // 2. Project Scheme in Calculator
+    // 2. Project Scheme in Neon Box & Calculator
     const btnProject = e.target.closest('.action-project-scheme');
     if (btnProject) {
       const id = btnProject.getAttribute('data-id');
       const rate = btnProject.getAttribute('data-rate');
       const name = btnProject.getAttribute('data-name');
+      const category = btnProject.getAttribute('data-category') || '';
+      const risk = btnProject.getAttribute('data-risk') || '';
       const method = btnProject.getAttribute('data-method') || 'LUMPSUM';
       const amount = parseFloat(btnProject.getAttribute('data-amount') || 50000);
+      const comp = btnProject.getAttribute('data-comp') || 'MONTHLY';
 
-      transferToProjection({
+      openNeonProjectionBox({
         scheme_id: id,
+        id: id,
         name: name,
+        category: category,
+        risk: risk,
         method: method,
         amount: amount,
-        expected_return: rate
+        expected_return: rate,
+        compounding_frequency: comp
       });
       return;
     }
@@ -1581,6 +2114,22 @@ function updateWhatIfDOM(result) {
     document.getElementById('whatif-1y').innerText = s.cagr_1y ? `${s.cagr_1y}%` : 'N/A';
     document.getElementById('whatif-3y').innerText = s.cagr_3y ? `${s.cagr_3y}%` : 'N/A';
     document.getElementById('whatif-5y').innerText = s.cagr_5y ? `${s.cagr_5y}%` : 'N/A';
+  }
+
+  // Calculation Basis & Data Source
+  const basisEl = document.getElementById('whatif-calc-basis');
+  if (basisEl) {
+    if (sum.calculation_basis === 'OFFICIAL_HISTORICAL_SERIES') {
+      basisEl.innerText = 'Official Historical NAV Series';
+      basisEl.style.color = '#16a34a';
+    } else {
+      basisEl.innerText = 'Verified Regulatory CAGR Model';
+      basisEl.style.color = '#0284c7';
+    }
+  }
+  const sourceEl = document.getElementById('whatif-source-label');
+  if (sourceEl) {
+    sourceEl.innerText = sum.data_source || 'AMFI India / Verified';
   }
 
   // Schedule table
@@ -1700,13 +2249,17 @@ function initSchemeModal() {
 
   document.getElementById('modal-act-future')?.addEventListener('click', () => {
     if (activeModalScheme) {
+      const s = activeModalScheme;
       modal.classList.remove('active');
-      transferToProjection({
-        scheme_id: activeModalScheme.id,
-        name: activeModalScheme.name,
-        method: activeModalScheme.category === 'SIP_INVESTMENTS' ? 'SIP' : 'LUMPSUM',
-        amount: activeModalScheme.category === 'SIP_INVESTMENTS' ? (activeModalScheme.min_sip || 5000) : 50000,
-        expected_return: activeModalScheme.cagr_5y || activeModalScheme.expected_annual_return || 12
+      openNeonProjectionBox({
+        scheme_id: s.id,
+        id: s.id,
+        name: s.name,
+        category: s.category,
+        risk: s.risk_level,
+        method: s.category === 'SIP_INVESTMENTS' ? 'SIP' : 'LUMPSUM',
+        amount: s.category === 'SIP_INVESTMENTS' ? (s.min_sip || 5000) : 50000,
+        expected_return: s.cagr_5y || s.expected_annual_return || 12
       });
     }
   });
@@ -1738,13 +2291,82 @@ async function openSchemeDetailsModal(schemeId) {
   if (!scheme) return;
   activeModalScheme = scheme;
 
-  document.getElementById('modal-category').innerText = scheme.category_label || scheme.category;
-  document.getElementById('modal-risk').innerText = `${scheme.risk_level} Risk`;
+  const riskScore = scheme.riskScore || scheme.risk_score || 5;
+  const assetType = scheme.assetType || scheme.category_label || scheme.category;
+  document.getElementById('modal-category').innerText = assetType;
+  document.getElementById('modal-risk').innerText = `${scheme.riskLevel || scheme.risk_level} Risk (Score: ${riskScore}/10)`;
   document.getElementById('modal-title').innerText = scheme.name;
-  document.getElementById('modal-provider').innerText = `${scheme.provider} • ${scheme.category_label || scheme.category}`;
-  document.getElementById('modal-objective').innerText = scheme.objective;
-  document.getElementById('modal-how-it-works').innerText = scheme.how_it_works || 'Investments in this asset follow SEBI/AMFI regulatory guidelines.';
-  document.getElementById('modal-eligibility').innerText = scheme.eligibility || 'KYC-compliant Indian investors';
+
+  // Provider and official identifier
+  const provEl = document.getElementById('modal-provider');
+  if (provEl) {
+    const symbolStr = scheme.official_symbol || scheme.symbol ? ` • Symbol: ${scheme.official_symbol || scheme.symbol}` : '';
+    provEl.innerText = `${scheme.dataSource || scheme.data_source || scheme.provider || 'SEBI Regulated'}${symbolStr}`;
+  }
+
+  // Market strip: price, date, and plan details
+  const priceVal = scheme.currentPrice || scheme.currentNAV || (scheme.price_numeric ? '₹' + Number(scheme.price_numeric).toLocaleString('en-IN') : '-');
+  const marketPriceEl = document.getElementById('modal-market-price');
+  if (marketPriceEl) {
+    if (scheme.day_change_pct) {
+      marketPriceEl.innerHTML = `${priceVal} <span style="font-size:11px;color:${scheme.day_change >= 0 ? '#16a34a' : '#dc2626'};font-weight:700;">(${scheme.day_change >= 0 ? '+' : ''}${scheme.day_change_pct}%)</span>`;
+    } else {
+      marketPriceEl.innerText = priceVal;
+    }
+  }
+
+  const marketDateEl = document.getElementById('modal-market-date');
+  if (marketDateEl) marketDateEl.innerText = scheme.price_date || scheme.last_updated || 'Latest Session';
+
+  const freshnessBadge = document.getElementById('modal-freshness-badge');
+  if (freshnessBadge) {
+    const status = scheme.freshness_status || 'VERIFIED';
+    freshnessBadge.innerText = status.replace(/_/g, ' ');
+    if (status === 'LIVE') {
+      freshnessBadge.style.background = 'rgba(22,163,74,0.15)';
+      freshnessBadge.style.color = '#16a34a';
+      freshnessBadge.style.border = '1px solid rgba(22,163,74,0.3)';
+    } else if (status.includes('AMFI')) {
+      freshnessBadge.style.background = 'rgba(2,132,199,0.12)';
+      freshnessBadge.style.color = '#0284c7';
+      freshnessBadge.style.border = '1px solid rgba(2,132,199,0.3)';
+    } else if (status.includes('SPOT')) {
+      freshnessBadge.style.background = 'rgba(202,138,4,0.15)';
+      freshnessBadge.style.color = '#ca8a04';
+      freshnessBadge.style.border = '1px solid rgba(202,138,4,0.3)';
+    } else {
+      freshnessBadge.style.background = 'rgba(99,102,241,0.12)';
+      freshnessBadge.style.color = '#6366f1';
+      freshnessBadge.style.border = '1px solid rgba(99,102,241,0.3)';
+    }
+  }
+
+  const planInfoEl = document.getElementById('modal-plan-info');
+  if (planInfoEl) {
+    const parts = [];
+    if (scheme.amc) parts.push(`AMC: ${scheme.amc}`);
+    if (scheme.plan_type) parts.push(`Plan: ${scheme.plan_type}`);
+    if (scheme.option) parts.push(`Option: ${scheme.option}`);
+    if (scheme.amfi_code) parts.push(`AMFI: ${scheme.amfi_code}`);
+    planInfoEl.innerText = parts.length ? parts.join(' | ') : (scheme.sector ? `Sector: ${scheme.sector}` : '');
+  }
+
+  document.getElementById('modal-objective').innerText = scheme.investmentPurpose || scheme.objective || '';
+
+  // How it works + evidence-based risk methodology
+  const howEl = document.getElementById('modal-how-it-works');
+  if (howEl) {
+    let methodText = scheme.riskDescription || scheme.how_it_works || 'Investments in this asset follow regulatory guidelines.';
+    if (scheme.risk_methodology) {
+      methodText += `\n\nRisk Assessment Methodology: ${scheme.risk_methodology}`;
+    }
+    if (scheme.risk_classification_source) {
+      methodText += ` (Source: ${scheme.risk_classification_source})`;
+    }
+    howEl.innerText = methodText;
+  }
+
+  document.getElementById('modal-eligibility').innerText = scheme.eligibilityRequirements || scheme.eligibility || 'KYC-compliant Indian investors';
   document.getElementById('modal-min-invest').innerText = scheme.min_investment_formatted;
   document.getElementById('modal-lock-in').innerText = scheme.lock_in;
   document.getElementById('modal-expense').innerText = scheme.expense_ratio;
@@ -1769,7 +2391,7 @@ async function openSchemeDetailsModal(schemeId) {
   const srcEl = document.getElementById('modal-source');
   if (srcEl) srcEl.innerText = scheme.data_source || 'Official Disclosures';
   const updEl = document.getElementById('modal-updated');
-  if (updEl) updEl.innerText = scheme.last_updated || 'October 2026';
+  if (updEl) updEl.innerText = scheme.last_sync_time || scheme.price_date || scheme.last_updated || 'October 2026';
 
   modal.classList.add('active');
 }

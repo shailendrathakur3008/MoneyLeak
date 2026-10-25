@@ -4,37 +4,212 @@
 
 {% block extra_head %}
 <style>
-/* Scheme Explorer Text-Only Tabs */
+/* ==========================================================================
+   SCHEME EXPLORER NEON BOX CONTAINER & TABS
+   Ultra-high visibility neon box styling ensuring all options are 100% visible
+   ========================================================================== */
+.scheme-explorer-neon-box {
+  background: linear-gradient(135deg, #0b110e 0%, #131a15 50%, #0c120f 100%);
+  border: 2px solid #cbf432;
+  border-radius: 18px;
+  padding: 22px 24px;
+  margin-bottom: 22px;
+  box-shadow: 0 0 28px rgba(203, 244, 50, 0.4), 
+              0 0 65px rgba(203, 244, 50, 0.16), 
+              inset 0 0 22px rgba(203, 244, 50, 0.06);
+  position: relative;
+  overflow: hidden;
+  color: #ffffff;
+}
+
+.scheme-explorer-neon-box::after {
+  content: '';
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 170px;
+  height: 170px;
+  background: radial-gradient(circle, rgba(203, 244, 50, 0.22) 0%, transparent 70%);
+  pointer-events: none;
+  border-radius: 50%;
+}
+
+.neon-box-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.neon-box-title-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.neon-live-pulse-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #cbf432;
+  box-shadow: 0 0 10px #cbf432, 0 0 20px #cbf432;
+  animation: neonDotPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes neonDotPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 10px #cbf432, 0 0 20px #cbf432;
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.85);
+    box-shadow: 0 0 4px #cbf432, 0 0 10px #cbf432;
+  }
+}
+
+.neon-box-tag {
+  font-size: 11.5px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #cbf432;
+  text-shadow: 0 0 12px rgba(203, 244, 50, 0.45);
+}
+
+.neon-count-pill {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(203, 244, 50, 0.16);
+  color: #cbf432;
+  border: 1px solid rgba(203, 244, 50, 0.45);
+  box-shadow: 0 0 12px rgba(203, 244, 50, 0.25);
+  letter-spacing: 0.2px;
+}
+
+.neon-box-description {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.92);
+  margin: 0 0 16px 0;
+  font-weight: 500;
+  max-width: 950px;
+}
+
 .scheme-explorer-tabs {
   display: flex;
-  gap: 6px;
+  gap: 10px;
   flex-wrap: wrap;
+  align-items: center;
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
 }
+
+/* Tab button inside Neon Box - Inactive State */
 .explorer-tab-btn {
-  padding: 8px 16px;
-  font-size: 12px;
+  padding: 10px 18px;
+  font-size: 13px;
   font-weight: 700;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
-  color: var(--text-secondary);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  border: 1.5px solid rgba(203, 244, 50, 0.35) !important;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   line-height: 1.4;
   text-align: center;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  user-select: none;
 }
+
+.explorer-tab-btn i,
+.explorer-tab-btn svg,
+.explorer-tab-btn .lucide {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.2px;
+  color: #cbf432 !important;
+  stroke: #cbf432 !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.explorer-tab-btn span {
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+/* Tab button hover */
 .explorer-tab-btn:hover {
-  background: var(--bg-subtle);
-  color: var(--text-primary);
-  border-color: var(--border-focus);
+  background: rgba(203, 244, 50, 0.22) !important;
+  border-color: #cbf432 !important;
+  color: #cbf432 !important;
+  box-shadow: 0 0 16px rgba(203, 244, 50, 0.65), 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  transform: translateY(-2px);
 }
+
+.explorer-tab-btn:hover span {
+  color: #cbf432 !important;
+}
+
+.explorer-tab-btn:hover i,
+.explorer-tab-btn:hover svg,
+.explorer-tab-btn:hover .lucide {
+  color: #cbf432 !important;
+  stroke: #cbf432 !important;
+}
+
+/* Tab button ACTIVE State - Radiant Neon Lime */
 .explorer-tab-btn.active {
-  background: var(--brand-primary);
-  color: var(--text-on-dark);
-  border-color: var(--brand-primary);
+  background: #cbf432 !important;
+  color: #0f1411 !important;
+  border: 2px solid #bde724 !important;
+  box-shadow: 0 0 22px rgba(203, 244, 50, 0.95), 0 0 45px rgba(203, 244, 50, 0.45) !important;
+  font-weight: 900 !important;
+  transform: translateY(-1px);
+}
+
+.explorer-tab-btn.active i,
+.explorer-tab-btn.active svg,
+.explorer-tab-btn.active .lucide {
+  color: #0f1411 !important;
+  stroke: #0f1411 !important;
+  stroke-width: 2.6px !important;
+}
+
+.explorer-tab-btn.active span {
+  color: #0f1411 !important;
+  font-weight: 900 !important;
+}
+
+/* Dark theme explicitly identical for maximum neon radiance */
+[data-theme="dark"] .explorer-tab-btn {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  border: 1.5px solid rgba(203, 244, 50, 0.35) !important;
+}
+
+[data-theme="dark"] .explorer-tab-btn.active {
+  background: #cbf432 !important;
+  color: #0f1411 !important;
+  border: 2px solid #cbf432 !important;
+  box-shadow: 0 0 22px rgba(203, 244, 50, 0.95), 0 0 45px rgba(203, 244, 50, 0.45) !important;
+}
+
+[data-theme="dark"] .explorer-tab-btn.active i,
+[data-theme="dark"] .explorer-tab-btn.active svg,
+[data-theme="dark"] .explorer-tab-btn.active .lucide,
+[data-theme="dark"] .explorer-tab-btn.active span {
+  color: #0f1411 !important;
+  stroke: #0f1411 !important;
 }
 
 /* Active Removable Filter Text Chips */
@@ -87,7 +262,7 @@
       Investment Scheme Explorer & Future Wealth Projection
     </h1>
     <div class="greeting-sub">
-      Explore 4 approved Indian asset categories: Stocks & Equity, Equity Mutual Funds, SIP Investments, and Gold. Model compound future wealth, personalized recommendations, and multi-asset portfolio projections.
+      Explore vetted Indian investments across all risk categories: Low (Score 1–3), Medium (Score 4–6), and High (Score 7–10). Filter across Defensive Bluechips, Debt & Gilt Funds, Bank Term Deposits, Sovereign G-Secs, Small Savings (PPF, NSC, POMIS, SSY, SCSS), Gold, and Growth Equities.
     </div>
   </div>
 </div>
@@ -109,53 +284,87 @@
 
   <!-- 1. SCHEME EXPLORER -->
   <section class="calc-section card" id="scheme-explorer-section" style="margin-bottom:20px;padding:18px 20px;">
-    <div class="card-header-flex" style="margin-bottom:14px;">
+    <!-- 1. SCHEME EXPLORER HEADER -->
+    <div class="card-header-flex" style="margin-bottom:16px;">
       <div>
-        <h2 class="card-title" style="font-size:17px;font-weight:800;margin:0;letter-spacing:-0.3px;display:flex;align-items:center;gap:8px;">
-          <i data-lucide="search" style="width:16px;height:16px;"></i>
+        <h2 class="card-title" style="font-size:18px;font-weight:800;margin:0;letter-spacing:-0.3px;display:flex;align-items:center;gap:8px;">
+          <i data-lucide="compass" style="width:18px;height:18px;color:#cbf432;"></i>
           <span>Scheme Explorer</span>
         </h2>
-        <div class="card-subtitle" style="margin-top:2px;">
-          Filter vetted Indian investments across approved asset classes. Refine by risk level, duration horizon, minimum contribution, and expense ratio.
+      </div>
+    </div>
+
+    <!-- SCHEME EXPLORER NEON BOX -->
+    <div class="scheme-explorer-neon-box">
+      <!-- Neon Box Top Header -->
+      <div class="neon-box-top-bar">
+        <div class="neon-box-title-group">
+          <span class="neon-live-pulse-dot"></span>
+          <span class="neon-box-tag">⚡ Asset Class Explorer • Approved Indian Catalogue</span>
+        </div>
+        <div id="explorer-results-count-badge" class="neon-count-pill">
+          Showing {{ schemes|length }} investments
         </div>
       </div>
-      <div id="explorer-results-count-badge" class="badge-pill badge-dark" style="font-size:11px;padding:5px 12px;font-weight:700;">
-        Showing {{ schemes|length }} investments
+
+      <!-- Description from user request -->
+      <p class="neon-box-description">
+        Filter vetted Indian investments across approved asset classes. Refine by risk level, duration horizon, minimum contribution, and expense ratio.
+      </p>
+
+      <!-- Main Asset Class Tabs in Neon Box -->
+      <div class="scheme-explorer-tabs" id="scheme-explorer-tabs">
+        <button type="button" class="explorer-tab-btn active" data-tab="ALL" id="tab-all-schemes" title="View all vetted Indian investments">
+          <i data-lucide="chart-no-axes-combined"></i>
+          <span>All Investments</span>
+        </button>
+        <button type="button" class="explorer-tab-btn" data-tab="STOCKS" id="tab-stocks" title="Stocks & Direct Equity across 9 Sectors">
+          <i data-lucide="chart-candlestick"></i>
+          <span>Stocks & Equity</span>
+        </button>
+        <button type="button" class="explorer-tab-btn" data-tab="MUTUAL_FUNDS" id="tab-mutual-funds" title="Equity Mutual Funds across 11 Categories">
+          <i data-lucide="chart-pie"></i>
+          <span>Equity Mutual Funds</span>
+        </button>
+        <button type="button" class="explorer-tab-btn" data-tab="SIP_INVESTMENTS" id="tab-sip" title="Eligible Monthly Systematic Investment Plans (SIP)">
+          <i data-lucide="calendar-clock"></i>
+          <span>SIP Investments</span>
+        </button>
+        <button type="button" class="explorer-tab-btn" data-tab="GOLD" id="tab-gold" title="Physical Gold, ETFs, Mutual Funds & Sovereign Gold Bonds">
+          <i data-lucide="coins"></i>
+          <span>Gold</span>
+        </button>
+        <button type="button" class="explorer-tab-btn" data-tab="ETFS" id="tab-etfs" title="Exchange Traded Funds">
+          <i data-lucide="layers"></i>
+          <span>ETFs</span>
+        </button>
+        <button type="button" class="explorer-tab-btn" data-tab="FIXED_DEPOSITS" id="tab-fd" title="Bank & Post Office Term Deposits">
+          <i data-lucide="landmark"></i>
+          <span>Fixed Deposits</span>
+        </button>
+        <button type="button" class="explorer-tab-btn" data-tab="GOVT_SECURITIES" id="tab-gsec" title="Government Dated Bonds & Treasury Bills">
+          <i data-lucide="shield-check"></i>
+          <span>Govt Securities</span>
+        </button>
+        <button type="button" class="explorer-tab-btn" data-tab="SMALL_SAVINGS" id="tab-small-savings" title="Small Savings Schemes (PPF, SSY, NSC, POMIS)">
+          <i data-lucide="piggy-bank"></i>
+          <span>Small Savings</span>
+        </button>
+        <button type="button" class="explorer-tab-btn" data-tab="OTHER" id="tab-other" title="Other Supported Instruments">
+          <i data-lucide="briefcase"></i>
+          <span>Other</span>
+        </button>
       </div>
     </div>
 
-    <!-- 1. MAIN ASSET CLASS TABS WITH CONSISTENT OUTLINE ICONS -->
-    <div class="scheme-explorer-tabs" id="scheme-explorer-tabs" style="border-bottom:2px solid rgba(0,0,0,0.06);padding-bottom:12px;margin-bottom:20px;">
-      <button type="button" class="explorer-tab-btn active" data-tab="ALL" id="tab-all-schemes">
-        <i data-lucide="chart-no-axes-combined"></i>
-        <span>All Schemes</span>
-      </button>
-      <button type="button" class="explorer-tab-btn" data-tab="STOCKS_EQUITY" id="tab-stocks">
-        <i data-lucide="chart-candlestick"></i>
-        <span>Stocks & Equity</span>
-      </button>
-      <button type="button" class="explorer-tab-btn" data-tab="EQUITY_MUTUAL_FUNDS" id="tab-mutual-funds">
-        <i data-lucide="chart-pie"></i>
-        <span>Equity Mutual Funds</span>
-      </button>
-      <button type="button" class="explorer-tab-btn" data-tab="SIP_INVESTMENTS" id="tab-sip">
-        <i data-lucide="calendar-clock"></i>
-        <span>SIP Investments</span>
-      </button>
-      <button type="button" class="explorer-tab-btn" data-tab="GOLD" id="tab-gold">
-        <i data-lucide="coins"></i>
-        <span>Gold</span>
-      </button>
-    </div>
-
-    <!-- 2. FUNCTIONAL FILTER BAR (Directly below tabs) -->
+    <!-- 2. FUNCTIONAL FILTER BAR -->
     <div class="explorer-filter-bar" style="background:var(--bg-card-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:16px;margin-bottom:16px;">
       <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;align-items:end;">
         
         <!-- Search Input -->
         <div class="form-group" style="margin-bottom:0;grid-column:span 2;">
-          <label class="form-label" for="explorer-search" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Search Schemes</label>
-          <input type="text" id="explorer-search" class="form-control form-control-sm" placeholder="Search by scheme name, company, ticker, or category...">
+          <label class="form-label" for="explorer-search" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Search Catalogue</label>
+          <input type="text" id="explorer-search" class="form-control form-control-sm" placeholder="Search by name, symbol, ticker, provider, or category...">
         </div>
 
         <!-- Risk Level -->
@@ -163,10 +372,25 @@
           <label class="form-label" for="explorer-risk" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Risk Level</label>
           <select id="explorer-risk" class="form-control form-control-sm">
             <option value="ALL">All Risk Levels</option>
-            <option value="Low">Low</option>
-            <option value="Moderate">Moderate</option>
-            <option value="High">High</option>
-            <option value="Very High">Very High</option>
+            <option value="Low">Low Risk (Score 1–3)</option>
+            <option value="Medium">Medium Risk (Score 4–6)</option>
+            <option value="High">High Risk (Score 7–10)</option>
+          </select>
+        </div>
+
+        <!-- Investment Type (Asset Category) -->
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" for="explorer-asset-type" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Investment Type</label>
+          <select id="explorer-asset-type" class="form-control form-control-sm">
+            <option value="ALL">All Investment Types</option>
+            <option value="Stocks">Stocks</option>
+            <option value="Mutual Funds">Mutual Funds</option>
+            <option value="ETFs">ETFs</option>
+            <option value="Fixed Deposits">Fixed Deposits</option>
+            <option value="Government Securities">Government Securities</option>
+            <option value="Small Savings Schemes">Small Savings Schemes</option>
+            <option value="Gold">Gold</option>
+            <option value="Other Supported Investments">Other Supported Investments</option>
           </select>
         </div>
 
@@ -175,47 +399,32 @@
           <label class="form-label" for="explorer-duration" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Investment Duration</label>
           <select id="explorer-duration" class="form-control form-control-sm">
             <option value="ALL">All Durations</option>
-            <option value="UP_TO_1Y">Up to 1 year</option>
+            <option value="UP_TO_1Y">Less than 1 year</option>
             <option value="1_TO_3Y">1–3 years</option>
             <option value="3_TO_5Y">3–5 years</option>
-            <option value="5_TO_10Y">5–10 years</option>
-            <option value="MORE_THAN_10Y">More than 10 years</option>
+            <option value="MORE_THAN_5Y">More than 5 years</option>
           </select>
         </div>
 
-        <!-- Minimum Investment (in INR) -->
+        <!-- Investment Goal -->
         <div class="form-group" style="margin-bottom:0;">
-          <label class="form-label" for="explorer-min-investment" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Min Investment (₹)</label>
-          <select id="explorer-min-investment" class="form-control form-control-sm">
-            <option value="ALL">Any Amount</option>
-            <option value="500">Up to ₹500</option>
-            <option value="1000">Up to ₹1,000</option>
-            <option value="2500">Up to ₹2,500</option>
-            <option value="5000">Up to ₹5,000</option>
+          <label class="form-label" for="explorer-goal" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Investment Goal</label>
+          <select id="explorer-goal" class="form-control form-control-sm">
+            <option value="ALL">All Investment Goals</option>
+            <option value="Capital Preservation">Capital Preservation</option>
+            <option value="Regular Income">Regular Income</option>
+            <option value="Long-Term Wealth Creation">Long-Term Wealth Creation</option>
+            <option value="Retirement Planning">Retirement Planning</option>
+            <option value="Tax Planning">Tax Planning</option>
+            <option value="Education Planning">Education Planning</option>
+            <option value="Short-Term Savings">Short-Term Savings</option>
           </select>
         </div>
 
-        <!-- Expense Ratio (Max TER) -->
-        <div class="form-group" style="margin-bottom:0;" id="group-expense-ratio">
-          <label class="form-label" for="explorer-expense-ratio" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Max Expense Ratio</label>
-          <select id="explorer-expense-ratio" class="form-control form-control-sm">
-            <option value="ALL">Any Expense Ratio</option>
-            <option value="0.25">Up to 0.25%</option>
-            <option value="0.50">Up to 0.50%</option>
-            <option value="0.75">Up to 0.75%</option>
-            <option value="1.00">Up to 1.00%</option>
-          </select>
-          <div id="expense-ratio-note" style="display:none;font-size:10px;color:var(--text-muted);margin-top:2px;">Not applicable to stocks</div>
-        </div>
-
-        <!-- Historical Returns Period -->
+        <!-- Investment Amount Threshold (INR) -->
         <div class="form-group" style="margin-bottom:0;">
-          <label class="form-label" for="explorer-return-period" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Return Period</label>
-          <select id="explorer-return-period" class="form-control form-control-sm">
-            <option value="5y" selected>5 Years (CAGR)</option>
-            <option value="3y">3 Years (CAGR)</option>
-            <option value="1y">1 Year (Absolute)</option>
-          </select>
+          <label class="form-label" for="explorer-amount" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Investment Amount (₹)</label>
+          <input type="number" id="explorer-amount" class="form-control form-control-sm" placeholder="e.g. 50000" min="0" step="500">
         </div>
 
         <!-- Sorting -->
@@ -223,9 +432,14 @@
           <label class="form-label" for="explorer-sort" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Sort Results</label>
           <select id="explorer-sort" class="form-control form-control-sm">
             <option value="relevance" selected>Relevance</option>
-            <option value="return_desc">Historical Returns: High to Low</option>
-            <option value="expense_asc">Lowest Expense Ratio</option>
             <option value="name_asc">Name: A–Z</option>
+            <option value="name_desc">Name: Z–A</option>
+            <option value="risk_asc">Risk Level: Low to High</option>
+            <option value="risk_desc">Risk Level: High to Low</option>
+            <option value="min_inv_asc">Min Investment: Low to High</option>
+            <option value="min_inv_desc">Min Investment: High to Low</option>
+            <option value="return_desc">Expected Return: High to Low</option>
+            <option value="liquidity">Highest Liquidity</option>
           </select>
         </div>
 
@@ -239,27 +453,48 @@
       </div>
     </div>
 
-    <!-- 3. ACTIVE FILTER CHIPS (Removable text chips without icons or logos) & RETURN BASIS -->
+    <!-- 3. FALLBACK ALTERNATIVES ALERT BANNER -->
+    <div id="explorer-fallback-banner" style="display:none;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:8px;color:#d97706;font-size:12px;font-weight:700;">
+        <i data-lucide="info" style="width:16px;height:16px;flex-shrink:0;"></i>
+        <span id="explorer-fallback-message">No exact matches for this specific combination. Displaying relevant alternative investments within your selected risk category.</span>
+      </div>
+    </div>
+
+    <!-- 4. ACTIVE FILTER CHIPS & RETURN BASIS -->
     <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;">
       <div id="explorer-active-chips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:26px;">
         <!-- Injected via JavaScript as removable text chips -->
       </div>
       <div style="font-size:11px;color:var(--text-muted);">
-        Return basis: Annualized CAGR based on NAV / exchange data. Historical returns do not indicate future performance.
+        Return basis: Historically supported CAGR / Statutory fixed rates. Projections are mathematical estimates.
       </div>
     </div>
 
-    <!-- 4. RESULTS GRID -->
+    <!-- 5. RESULTS GRID -->
     <div class="schemes-grid" id="explorer-results-grid">
-      <!-- Dynamically rendered via JavaScript based on 6-step filter logic -->
+      <!-- Dynamically rendered via JavaScript -->
     </div>
 
-    <!-- 5. EMPTY STATE -->
+    <!-- 6. PAGINATION CONTROLS -->
+    <div id="explorer-pagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding:12px 16px;background:var(--bg-card-subtle);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+      <button type="button" id="btn-page-prev" class="btn btn-secondary btn-sm" style="font-weight:700;display:inline-flex;align-items:center;gap:4px;">
+        <i data-lucide="chevron-left" style="width:14px;height:14px;"></i> Previous
+      </button>
+      <div id="explorer-pagination-info" style="font-size:12px;font-weight:700;color:var(--text-secondary);">
+        Page 1 of 1
+      </div>
+      <button type="button" id="btn-page-next" class="btn btn-secondary btn-sm" style="font-weight:700;display:inline-flex;align-items:center;gap:4px;">
+        Next <i data-lucide="chevron-right" style="width:14px;height:14px;"></i>
+      </button>
+    </div>
+
+    <!-- 7. EMPTY STATE (shown only when 0 items exist anywhere in selected criteria) -->
     <div id="explorer-empty-state" style="display:none;padding:48px 24px;text-align:center;background:var(--bg-card-subtle);border:1px dashed var(--border-card);border-radius:var(--radius-sm);margin-top:16px;">
       <h3 style="font-size:17px;font-weight:800;color:var(--text-primary);margin-bottom:6px;">No matching investments found.</h3>
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Try removing a filter or changing your search.</p>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Try clearing filters or broadening your search terms.</p>
       <button type="button" id="btn-empty-reset" class="btn btn-dark btn-sm" style="font-weight:700;padding:8px 18px;">
-        Reset Filters
+        Reset All Filters
       </button>
     </div>
 
@@ -413,8 +648,8 @@
 
           <div class="scheme-card-actions" style="margin-top:12px;">
             <button type="button" class="btn btn-secondary btn-sm action-view-details" data-id="{{ r.id }}">Details</button>
-            <button type="button" class="btn btn-primary btn-sm action-project-scheme" data-id="{{ r.id }}" data-rate="{{ r.cagr_5y or r.expected_annual_return }}" data-name="{{ r.name }}" data-method="{% if r.category == 'SIP_INVESTMENTS' %}SIP{% else %}LUMPSUM{% endif %}" data-amount="10000" style="display:inline-flex;align-items:center;">
-              <i data-lucide="chart-no-axes-combined" style="width:13px;height:13px;margin-right:4px;"></i> Project
+            <button type="button" class="btn btn-primary btn-sm action-project-scheme" data-id="{{ r.id }}" data-rate="{{ r.cagr_5y or r.expected_annual_return }}" data-name="{{ r.name }}" data-category="{{ r.category }}" data-risk="{{ r.risk_level }}" data-method="{% if r.category == 'SIP_INVESTMENTS' %}SIP{% else %}LUMPSUM{% endif %}" data-amount="{% if r.category == 'SIP_INVESTMENTS' %}5000{% else %}10000{% endif %}" style="display:inline-flex;align-items:center;background:#cbf432;color:#121614;font-weight:800;border:none;">
+              <i data-lucide="sparkles" style="width:13px;height:13px;margin-right:4px;"></i> Add to Projection
             </button>
             <button type="button" class="btn btn-dark btn-sm action-add-portfolio" data-id="{{ r.id }}" data-category="{{ r.category }}" data-underlying="{{ r.underlying_scheme_id or '' }}" data-rate="{{ r.cagr_5y or r.expected_annual_return }}" data-name="{{ r.name }}" data-method="{% if r.category == 'SIP_INVESTMENTS' %}SIP{% else %}LUMPSUM{% endif %}" data-amount="10000" style="display:inline-flex;align-items:center;">
               <i data-lucide="plus" style="width:13px;height:13px;margin-right:4px;"></i> Portfolio
@@ -738,12 +973,24 @@
               </div>
             </div>
 
-            <div class="form-group">
-              <label class="form-label">Deposit Timing</label>
-              <select id="calc-timing" class="form-control">
-                <option value="BEGINNING" selected>Beginning of Month (Annuity Due)</option>
-                <option value="END">End of Month (Ordinary Annuity)</option>
-              </select>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div class="form-group">
+                <label class="form-label">Deposit Timing</label>
+                <select id="calc-timing" class="form-control">
+                  <option value="BEGINNING" selected>Beginning of Month (Annuity Due)</option>
+                  <option value="END">End of Month (Ordinary Annuity)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Compounding Frequency</label>
+                <select id="calc-compounding-freq" class="form-control">
+                  <option value="MONTHLY" selected>Monthly (Mutual Fund SIPs)</option>
+                  <option value="QUARTERLY">Quarterly (Bank FDs & Small Savings)</option>
+                  <option value="SEMI_ANNUALLY">Semi-Annually (Govt Bonds)</option>
+                  <option value="ANNUALLY">Annually (PPF)</option>
+                </select>
+              </div>
             </div>
 
             <button type="button" id="btn-add-current-to-portfolio" class="btn btn-dark" style="width:100%;margin-top:10px;">
@@ -1054,6 +1301,12 @@
                 <strong id="whatif-5y">{{ default_what_if.scheme.cagr_5y }}%</strong>
               </div>
             </div>
+
+            <!-- Calculation Basis & Transparency Badge -->
+            <div id="whatif-data-source-badge" style="margin-top:12px;padding:8px 12px;border-radius:6px;background:rgba(203,244,50,0.08);border:1px solid rgba(203,244,50,0.3);font-size:11px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+              <span>Calculation Basis: <strong id="whatif-calc-basis" style="color:#16a34a;">Official Historical Series</strong></span>
+              <span id="whatif-source-label" style="color:var(--text-muted);font-size:10.5px;">AMFI India</span>
+            </div>
           </div>
         </form>
       </div>
@@ -1115,12 +1368,18 @@
   <div class="modal-card scheme-modal-card">
     <div class="modal-header">
       <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
           <span id="modal-category" class="badge-pill badge-mint">Category</span>
           <span id="modal-risk" class="badge-pill badge-dark">Risk</span>
+          <span id="modal-freshness-badge" class="badge-pill" style="font-size:9.5px;font-weight:800;background:rgba(22,163,74,0.15);color:#16a34a;border:1px solid rgba(22,163,74,0.3);">Verified</span>
         </div>
-        <h2 id="modal-title" style="font-size:20px;font-weight:800;letter-spacing:-0.4px;">Scheme Name</h2>
-        <div id="modal-provider" style="font-size:13px;color:var(--text-muted);font-weight:600;">Provider / Entity</div>
+        <h2 id="modal-title" style="font-size:20px;font-weight:800;letter-spacing:-0.4px;margin-bottom:4px;">Scheme Name</h2>
+        <div id="modal-provider" style="font-size:12px;color:var(--text-muted);font-weight:600;">Provider / Entity</div>
+        <div id="modal-market-strip" style="display:flex;align-items:center;gap:12px;margin-top:8px;padding:6px 12px;background:var(--bg-card-subtle);border:1px solid var(--border-subtle);border-radius:6px;font-size:11px;flex-wrap:wrap;">
+          <span>Price/NAV: <strong id="modal-market-price" style="color:var(--text-primary);font-size:13px;font-weight:800;">-</strong></span>
+          <span style="color:var(--text-muted);">As of: <span id="modal-market-date" style="font-weight:700;color:var(--text-primary);">-</span></span>
+          <span id="modal-plan-info" style="color:var(--text-secondary);font-weight:600;"></span>
+        </div>
       </div>
       <button type="button" class="modal-close-btn" id="btn-close-scheme-modal"><i data-lucide="x" style="width:18px;height:18px;"></i></button>
     </div>
@@ -1211,16 +1470,192 @@
     <!-- Modal Action Buttons -->
     <div style="display:flex;gap:10px;justify-content:flex-end;">
       <button type="button" class="btn btn-secondary" id="modal-act-compare"><i data-lucide="scale"></i> Add to Compare</button>
-      <button type="button" class="btn btn-dark" id="modal-act-future"><i data-lucide="chart-no-axes-combined"></i> Project Future</button>
-      <button type="button" class="btn btn-primary" id="modal-act-whatif"><i data-lucide="calendar-clock"></i> What-If Earlier</button>
+      <button type="button" class="btn btn-primary" id="modal-act-future" style="background:#cbf432;color:#121614;font-weight:800;border:none;box-shadow:0 0 12px rgba(203,244,50,0.4);"><i data-lucide="sparkles"></i> Add to Projection</button>
+      <button type="button" class="btn btn-dark" id="modal-act-whatif"><i data-lucide="calendar-clock"></i> What-If Earlier</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- NEON PROJECTION MODAL BOX                                                 -->
+<!-- ========================================================================= -->
+<div id="neon-projection-modal" class="modal-backdrop">
+  <div class="modal-card neon-box-container" style="max-width:640px;padding:0;background:#0f1311;border:2px solid #cbf432;border-radius:20px;box-shadow:0 0 35px rgba(203,244,50,0.4), 0 0 75px rgba(203,244,50,0.18), inset 0 0 20px rgba(203,244,50,0.06);overflow:hidden;color:#ffffff;">
+    
+    <!-- Neon Top Accent Banner -->
+    <div style="background:linear-gradient(90deg, rgba(203,244,50,0.2) 0%, rgba(203,244,50,0.05) 100%);border-bottom:1px solid rgba(203,244,50,0.3);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="neon-pulse-dot"></span>
+        <span style="font-size:11px;font-weight:800;letter-spacing:1px;color:#cbf432;text-transform:uppercase;text-shadow:0 0 10px rgba(203,244,50,0.7);">
+          ⚡ Neon Wealth Projection Options
+        </span>
+      </div>
+      <button type="button" class="modal-close-btn neon-close-btn" onclick="closeModal('neon-projection-modal')" aria-label="Close" style="color:#cbf432;background:rgba(203,244,50,0.1);border:1px solid rgba(203,244,50,0.3);width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      </button>
+    </div>
+
+    <div style="padding:22px 24px;max-height:85vh;overflow-y:auto;">
+      <!-- Linked Asset Header -->
+      <div style="margin-bottom:18px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+          <span id="neon-scheme-cat" class="badge-pill" style="background:rgba(203,244,50,0.15);color:#cbf432;border:1px solid rgba(203,244,50,0.3);font-size:10px;font-weight:700;">Stocks &amp; Equity</span>
+          <span id="neon-scheme-risk" class="badge-pill badge-dark" style="border:1px solid rgba(255,255,255,0.15);font-size:10px;">High Risk</span>
+          <span id="neon-scheme-cagr-badge" class="badge-pill" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);font-size:10px;font-weight:700;">CAGR: ~18.2%</span>
+        </div>
+        <h2 id="neon-scheme-name" style="font-size:20px;font-weight:900;letter-spacing:-0.4px;color:#ffffff;margin:0 0 4px 0;">Selected Investment</h2>
+        <div style="font-size:12px;color:rgba(255,255,255,0.65);">Interactive wealth accumulation parameters. Adjust options below for live instant calculations.</div>
+      </div>
+
+      <!-- Projection Mode Switcher -->
+      <div style="margin-bottom:18px;">
+        <label style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block;">Investment Method</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;background:rgba(255,255,255,0.04);padding:4px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);">
+          <button type="button" id="neon-btn-method-sip" class="neon-method-btn active" onclick="setNeonMethod('SIP')" style="padding:8px 14px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:800;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;">
+            <i data-lucide="calendar-sync" style="width:14px;height:14px;"></i> Monthly SIP Deposit
+          </button>
+          <button type="button" id="neon-btn-method-lump" class="neon-method-btn" onclick="setNeonMethod('LUMPSUM')" style="padding:8px 14px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:800;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;">
+            <i data-lucide="layers" style="width:14px;height:14px;"></i> One-Time Lump Sum
+          </button>
+        </div>
+      </div>
+
+      <!-- Options Form Inputs -->
+      <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px;">
+        <!-- Amount Input & Quick Chips -->
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <label id="neon-amount-label" style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.85);margin:0;">Monthly Contribution ({{ user.currency }})</label>
+            <span id="neon-amount-display" style="font-size:12px;font-weight:800;color:#cbf432;font-variant-numeric:tabular-nums;">₹10,000</span>
+          </div>
+          <div style="position:relative;margin-bottom:8px;">
+            <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-weight:800;color:#cbf432;font-size:16px;">₹</span>
+            <input type="number" id="neon-input-amount" value="10000" min="500" step="500" class="neon-glow-input" style="width:100%;padding:10px 14px 10px 32px;background:rgba(255,255,255,0.06);border:1px solid rgba(203,244,50,0.4);border-radius:10px;color:#ffffff;font-size:16px;font-weight:800;outline:none;" oninput="updateNeonProjection()">
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button type="button" class="neon-chip" onclick="setNeonAmount(2500)">₹2.5k</button>
+            <button type="button" class="neon-chip" onclick="setNeonAmount(5000)">₹5k</button>
+            <button type="button" class="neon-chip active" onclick="setNeonAmount(10000)">₹10k</button>
+            <button type="button" class="neon-chip" onclick="setNeonAmount(25000)">₹25k</button>
+            <button type="button" class="neon-chip" onclick="setNeonAmount(50000)">₹50k</button>
+            <button type="button" class="neon-chip" onclick="setNeonAmount(100000)">₹1 Lakh</button>
+          </div>
+        </div>
+
+        <!-- 2 Column: Duration & Return Rate -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <label style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.85);margin:0;">Duration</label>
+              <span id="neon-duration-label" style="font-size:12px;font-weight:800;color:#cbf432;">10 Years</span>
+            </div>
+            <input type="range" id="neon-range-duration" min="1" max="35" step="1" value="10" class="neon-range" style="width:100%;accent-color:#cbf432;" oninput="syncNeonDuration(this.value)">
+            <div style="display:flex;gap:4px;margin-top:6px;justify-content:space-between;">
+              <button type="button" class="neon-mini-chip" onclick="syncNeonDuration(3)">3Y</button>
+              <button type="button" class="neon-mini-chip" onclick="syncNeonDuration(5)">5Y</button>
+              <button type="button" class="neon-mini-chip active" onclick="syncNeonDuration(10)">10Y</button>
+              <button type="button" class="neon-mini-chip" onclick="syncNeonDuration(15)">15Y</button>
+              <button type="button" class="neon-mini-chip" onclick="syncNeonDuration(20)">20Y</button>
+            </div>
+          </div>
+
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <label style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.85);margin:0;">Expected Return</label>
+              <span id="neon-return-tag" style="font-size:11px;color:#38bdf8;font-weight:700;">Asset CAGR</span>
+            </div>
+            <div style="position:relative;">
+              <input type="number" id="neon-input-return" value="14.0" step="0.25" min="1" max="50" class="neon-glow-input" style="width:100%;padding:10px 32px 10px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(203,244,50,0.4);border-radius:10px;color:#ffffff;font-size:15px;font-weight:800;outline:none;" oninput="updateNeonProjection()">
+              <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-weight:800;color:rgba(255,255,255,0.6);font-size:13px;">% p.a.</span>
+            </div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:6px;">Pre-filled from verified historical CAGR.</div>
+          </div>
+        </div>
+
+        <!-- Advanced Tuning: Step-Up & Compounding (Collapsible) -->
+        <details style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px 12px;">
+          <summary style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);cursor:pointer;user-select:none;display:flex;align-items:center;gap:6px;">
+            <i data-lucide="sliders" style="width:13px;height:13px;color:#cbf432;"></i>
+            <span>Advanced Parameters: Step-Up SIP &amp; Compounding Frequency</span>
+          </summary>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);">
+            <div>
+              <label style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:600;display:block;margin-bottom:4px;">Annual Step-Up (%)</label>
+              <select id="neon-select-stepup" style="width:100%;padding:8px;background:#161917;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#ffffff;font-size:12px;font-weight:700;" onchange="updateNeonProjection()">
+                <option value="0" selected>0% (Fixed Contribution)</option>
+                <option value="5">5% Yearly Step-Up</option>
+                <option value="10">10% Yearly Step-Up (Recommended)</option>
+                <option value="15">15% Yearly Step-Up</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:600;display:block;margin-bottom:4px;">Compounding Frequency</label>
+              <select id="neon-select-compounding" style="width:100%;padding:8px;background:#161917;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#ffffff;font-size:12px;font-weight:700;" onchange="updateNeonProjection()">
+                <option value="MONTHLY" selected>Monthly (Mutual Fund SIPs)</option>
+                <option value="QUARTERLY">Quarterly (Bank FDs)</option>
+                <option value="ANNUALLY">Annually (PPF / Bonds)</option>
+              </select>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <!-- LIVE NEON RESULTS CARD -->
+      <div style="background:rgba(203,244,50,0.07);border:1.5px solid #cbf432;border-radius:14px;padding:16px 18px;margin-bottom:20px;box-shadow:0 0 20px rgba(203,244,50,0.2), inset 0 0 15px rgba(203,244,50,0.04);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div style="font-size:10px;font-weight:800;letter-spacing:0.8px;color:#cbf432;text-transform:uppercase;display:flex;align-items:center;gap:6px;">
+            <i data-lucide="zap" style="width:13px;height:13px;color:#cbf432;"></i>
+            <span>Projected Wealth Outcomes</span>
+          </div>
+          <span id="neon-gain-multiplier" class="badge-pill" style="background:#cbf432;color:#121614;font-size:10px;font-weight:800;padding:2px 8px;">
+            2.38x Capital Growth
+          </span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:12px;align-items:center;">
+          <!-- Future Value -->
+          <div style="background:rgba(0,0,0,0.4);border:1px solid rgba(203,244,50,0.3);border-radius:10px;padding:10px 14px;">
+            <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.4px;">Maturity Corpus (FV)</div>
+            <div id="neon-res-fv" style="font-size:22px;font-weight:900;color:#cbf432;text-shadow:0 0 14px rgba(203,244,50,0.6);margin-top:2px;font-variant-numeric:tabular-nums;">₹27,86,573</div>
+          </div>
+
+          <!-- Total Invested -->
+          <div style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px;">
+            <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.4px;">Total Invested</div>
+            <div id="neon-res-invested" style="font-size:16px;font-weight:800;color:#ffffff;margin-top:2px;font-variant-numeric:tabular-nums;">₹12,00,000</div>
+          </div>
+
+          <!-- Total Gain -->
+          <div style="background:rgba(0,0,0,0.25);border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:10px 12px;">
+            <div style="font-size:10px;font-weight:700;color:rgba(74,222,128,0.8);text-transform:uppercase;letter-spacing:0.4px;">Estimated Gain</div>
+            <div id="neon-res-gain" style="font-size:16px;font-weight:800;color:#4ade80;margin-top:2px;font-variant-numeric:tabular-nums;">+₹15,86,573</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('neon-projection-modal')" style="background:rgba(255,255,255,0.08);color:#ffffff;border:1px solid rgba(255,255,255,0.15);font-weight:700;padding:8px 16px;">
+          Close
+        </button>
+        <button type="button" id="neon-btn-add-portfolio" class="btn btn-dark btn-sm" onclick="neonAddToPortfolio()" style="background:#1e2420;color:#ffffff;border:1px solid rgba(255,255,255,0.2);font-weight:700;padding:8px 16px;display:inline-flex;align-items:center;gap:6px;">
+          <i data-lucide="plus" style="width:14px;height:14px;"></i> Add to Portfolio
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="applyNeonToMainCalculator()" style="background:#cbf432;color:#121614;font-weight:900;border:none;box-shadow:0 0 16px rgba(203,244,50,0.45);padding:8px 18px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+          <span>View Full Trajectory &amp; Schedules</span>
+          <i data-lucide="arrow-down" style="width:14px;height:14px;"></i>
+        </button>
+      </div>
+
     </div>
   </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+<script id="all-schemes-data" type="application/json">{{ schemes|tojson|safe }}</script>
 <script>
-  window.__ALL_SCHEMES__ = {{ schemes|tojson }};
+  window.__ALL_SCHEMES__ = JSON.parse(document.getElementById('all-schemes-data').textContent || '[]');
 </script>
 <script src="{{ url_for('static', filename='js/calculator.js') }}"></script>
 {% endblock %}

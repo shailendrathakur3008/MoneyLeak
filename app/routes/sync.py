@@ -4,6 +4,7 @@ Handles bank connections, Account Aggregator consent, manual statement imports,
 receipt matching, transaction review queue, and synchronization audits.
 """
 import json
+import logging
 from datetime import datetime
 from flask import Blueprint, render_template, request, jsonify, g, flash, redirect, url_for
 from app.extensions import db, csrf
@@ -18,10 +19,12 @@ from app.models.sync import (
 )
 from app.services.sync.sync_engine import SyncEngine
 from app.services.sync.aa_client import AccountAggregatorClient, SUPPORTED_FIPS
+from app.services.sync.bank_directory import BankDirectoryService
 from app.services.sync.statement_parser import StatementParser
 from app.services.sync.receipt_parser import ReceiptParser
 from app.services.money import format_money
 
+logger = logging.getLogger(__name__)
 sync_bp = Blueprint('sync', __name__)
 
 
@@ -37,13 +40,20 @@ def view_sync():
         Category.is_active.is_(True)
     ).order_by(Category.name.asc()).all()
 
+    aa_client = AccountAggregatorClient()
+    provider_status = aa_client.get_provider_status()
+    all_institutions = BankDirectoryService.get_directory()
+    last_refreshed_at = BankDirectoryService.get_last_refreshed_at()
+
     return render_template(
         'sync.html',
         user=user,
         overview=overview,
         connections=connections,
         categories=categories,
-        supported_fips=SUPPORTED_FIPS
+        supported_fips=all_institutions,
+        provider_status=provider_status,
+        last_refreshed_at=last_refreshed_at.isoformat() if last_refreshed_at else None
     )
 
 
@@ -56,6 +66,64 @@ def api_get_overview():
     return jsonify({'success': True, 'overview': overview})
 
 
+@sync_bp.route('/api/sync/institutions', methods=['GET'])
+@login_required
+def api_get_institutions():
+    """
+    Dynamic discovery endpoint: Returns verified Indian institutions with honest availability statuses.
+    Supports query search and category filtering.
+    """
+    user = g.current_user
+    query = request.args.get('q', '').strip()
+    category = request.args.get('category', 'ALL').strip().upper()
+
+    aa_client = AccountAggregatorClient()
+    is_configured = aa_client.is_configured()
+    is_sandbox = not aa_client.is_production()
+
+    # Get codes of already connected accounts for this user
+    active_conns = FinancialConnection.query.filter_by(
+        user_id=user.id,
+        status='CONNECTED'
+    ).all()
+    connected_codes = [c.institution_code for c in active_conns]
+
+    institutions = BankDirectoryService.search_and_filter(
+        search_query=query,
+        category=category,
+        user_connected_codes=connected_codes,
+        is_provider_ready=is_configured,
+        is_sandbox_simulation=is_sandbox and not is_configured
+    )
+
+    last_refreshed = BankDirectoryService.get_last_refreshed_at()
+    return jsonify({
+        'success': True,
+        'institutions': institutions,
+        'total_count': len(institutions),
+        'last_refreshed_at': last_refreshed.isoformat() if last_refreshed else None,
+        'provider_status': aa_client.get_provider_status()
+    })
+
+
+@sync_bp.route('/api/sync/institutions/refresh', methods=['POST'])
+@login_required
+def api_refresh_institutions():
+    """Force directory cache refresh and health probe."""
+    directory = BankDirectoryService.get_directory(force_refresh=True)
+    aa_client = AccountAggregatorClient()
+    health = aa_client.check_provider_health()
+    last_refreshed = BankDirectoryService.get_last_refreshed_at()
+
+    return jsonify({
+        'success': True,
+        'message': f"Successfully refreshed directory: {len(directory)} institutions available.",
+        'total_count': len(directory),
+        'last_refreshed_at': last_refreshed.isoformat() if last_refreshed else None,
+        'health': health
+    })
+
+
 @sync_bp.route('/api/sync/connections', methods=['GET'])
 @login_required
 def api_get_connections():
@@ -65,7 +133,7 @@ def api_get_connections():
     return jsonify({
         'success': True,
         'connections': [c.to_dict() for c in connections],
-        'supported_fips': SUPPORTED_FIPS
+        'supported_fips': BankDirectoryService.get_directory()
     })
 
 
@@ -73,61 +141,214 @@ def api_get_connections():
 @login_required
 def api_connect_institution():
     """
-    Initiate Account Aggregator connection with chosen bank / FIP.
+    Initiate Account Aggregator connection. Supports multiple accounts and institutions.
+    In live mode: redirects user to Setu consent portal with OTP.
+    In sandbox mode: activates simulated Indian banking feed.
     """
     user = g.current_user
     data = request.get_json() or {}
 
-    fip_code = data.get('fip_code', 'HDFC').upper()
+    fip_code = data.get('fip_code', 'SBIN').upper()
     phone = data.get('phone') or user.phone_number or '9876543210'
     account_types = data.get('account_types') or ['SAVINGS']
+    account_name = data.get('account_name')
+    target_mask = data.get('account_mask')
 
-    selected_fip = next((f for f in SUPPORTED_FIPS if f['code'] == fip_code), SUPPORTED_FIPS[0])
+    selected_fip = BankDirectoryService.find_institution_by_code(fip_code)
+    if not selected_fip:
+        return jsonify({'success': False, 'error': f"Unknown institution code '{fip_code}'."}), 400
 
-    # Check if this institution is already connected
-    existing = FinancialConnection.query.filter_by(
+    # Prevent connecting duplicate exact account
+    existing_query = FinancialConnection.query.filter_by(
         user_id=user.id,
         institution_code=fip_code,
         status='CONNECTED'
-    ).first()
+    )
+    if target_mask:
+        existing_query = existing_query.filter_by(account_mask=target_mask)
 
-    if existing:
-        return jsonify({'success': False, 'error': f"{selected_fip['name']} is already connected."}), 400
+    # If the user already has this specific account connected:
+    existing = existing_query.first()
+    if existing and not data.get('allow_additional_account', False):
+        return jsonify({
+            'success': False,
+            'error': f"{selected_fip['name']} ({existing.account_mask}) is already connected. You can sync or manage it in Connected Accounts."
+        }), 400
 
     aa_client = AccountAggregatorClient()
+    callback_url = url_for('sync.consent_callback', _external=True)
+
     consent_res = aa_client.create_consent_request(
         user_phone=phone,
         fip_code=fip_code,
-        account_types=account_types
+        account_types=account_types,
+        redirect_url=callback_url
     )
 
     if not consent_res.get('success'):
-        return jsonify({'success': False, 'error': consent_res.get('message', 'Failed to initiate consent.')}), 500
+        error_msg = consent_res.get('message') or consent_res.get('error') or 'Failed to initiate consent.'
+        status_code = 400 if consent_res.get('error') == 'PROVIDER_SETUP_REQUIRED' else 500
+        return jsonify({
+            'success': False,
+            'error': error_msg,
+            'setup_required': consent_res.get('error') == 'PROVIDER_SETUP_REQUIRED',
+            'mode': consent_res.get('mode')
+        }), status_code
 
-    # Create connection record
+    mode = consent_res.get('mode', 'SANDBOX_SIMULATION')
+    is_live = mode == 'LIVE_API'
+
+    # Register Financial Connection record (prefer target_mask if provided)
+    account_mask = target_mask or consent_res.get('account_mask') or '•••• 4821'
     new_conn = FinancialConnection(
         user_id=user.id,
         institution_name=selected_fip['name'],
         institution_code=fip_code,
-        account_mask=consent_res.get('account_mask', '•••• 4821'),
+        account_mask=account_mask,
+        account_reference=consent_res.get('account_reference'),
+        account_name=account_name or f"{selected_fip['name']} {account_types[0].capitalize()}",
         account_type=account_types[0] if account_types else 'SAVINGS',
         provider='ACCOUNT_AGGREGATOR',
         consent_id=consent_res.get('consent_id'),
-        consent_status='ACTIVE',
-        status='CONNECTED'
+        consent_status='PENDING' if is_live else 'ACTIVE',
+        status='PENDING' if is_live else 'CONNECTED',
+        is_demo=bool(consent_res.get('is_demo', False))
     )
     db.session.add(new_conn)
     db.session.commit()
 
-    # Automatically perform initial sync for instant data visibility
+    # If Live API: Return redirect URL to frontend for user to authenticate via Setu webview OTP
+    if is_live:
+        return jsonify({
+            'success': True,
+            'mode': 'LIVE_API',
+            'redirect_url': consent_res.get('url'),
+            'consent_id': consent_res.get('consent_id'),
+            'connection_id': new_conn.id,
+            'message': f"Consent request created for {selected_fip['name']}. Redirecting to authorization webview..."
+        }), 201
+
+    # In Sandbox Simulation Mode: Perform instant initial sync
     sync_res = SyncEngine.sync_connection(user.id, new_conn.id, sync_type='INITIAL_SYNC')
 
     return jsonify({
         'success': True,
+        'mode': 'SANDBOX_SIMULATION',
         'message': f"Successfully linked {selected_fip['name']} via Account Aggregator.",
         'connection': new_conn.to_dict(),
         'sync_result': sync_res
     }), 201
+
+
+@sync_bp.route('/sync/callback')
+@login_required
+def consent_callback():
+    """
+    Handle return redirect from Setu Account Aggregator webview.
+    Query parameters: consent_id, status (SUCCESS, FAILED, CANCELLED)
+    """
+    user = g.current_user
+    consent_id = request.args.get('consent_id')
+    status_param = request.args.get('status', '').upper()
+
+    if not consent_id:
+        flash("Consent authorization failed: Missing consent token.", "error")
+        return redirect(url_for('sync.view_sync'))
+
+    conn = FinancialConnection.query.filter_by(user_id=user.id, consent_id=consent_id).first()
+    if not conn:
+        flash("Financial connection record not found for this authorization.", "error")
+        return redirect(url_for('sync.view_sync'))
+
+    # If status explicitly indicates cancellation, denial, or failure
+    if status_param in ('CANCELLED', 'FAILED', 'REJECTED', 'DENIED'):
+        conn.status = 'ERROR'
+        conn.consent_status = 'REJECTED'
+        conn.error_message = f'Consent authorization was {status_param.lower()} by user.'
+        db.session.commit()
+        flash(f"Consent authorization for {conn.institution_name} was {status_param.lower()}.", "error")
+        return redirect(url_for('sync.view_sync'))
+
+    aa_client = AccountAggregatorClient()
+    auth_check = aa_client.complete_authorization(consent_id)
+
+    if auth_check.get('success') or status_param == 'SUCCESS':
+        conn.status = 'CONNECTED'
+        conn.consent_status = 'ACTIVE'
+        conn.error_message = ''
+        db.session.commit()
+
+        # Trigger immediate initial transaction sync
+        SyncEngine.sync_connection(user.id, conn.id, sync_type='INITIAL_SYNC')
+        flash(f"Successfully authorized and connected {conn.institution_name}!", "success")
+    else:
+        conn.status = 'ERROR'
+        conn.consent_status = 'REJECTED'
+        conn.error_message = 'Consent authorization was cancelled or rejected by user.'
+        db.session.commit()
+        flash(f"Consent authorization for {conn.institution_name} was denied or expired.", "error")
+
+    return redirect(url_for('sync.view_sync'))
+
+
+@sync_bp.route('/api/sync/consents/<consent_id>/check', methods=['POST'])
+@login_required
+def api_check_consent_status(consent_id):
+    """Poll consent status from provider for active webviews."""
+    user = g.current_user
+    conn = FinancialConnection.query.filter_by(user_id=user.id, consent_id=consent_id).first()
+    if not conn:
+        return jsonify({'success': False, 'error': 'Connection not found.'}), 404
+
+    aa_client = AccountAggregatorClient()
+    status_res = aa_client.get_consent_status(consent_id)
+    is_active = status_res.get('is_active', False)
+
+    if is_active and conn.status != 'CONNECTED':
+        conn.status = 'CONNECTED'
+        conn.consent_status = 'ACTIVE'
+        conn.error_message = ''
+        db.session.commit()
+        SyncEngine.sync_connection(user.id, conn.id, sync_type='INITIAL_SYNC')
+
+    return jsonify({
+        'success': True,
+        'consent_id': consent_id,
+        'status': status_res.get('status'),
+        'is_active': is_active,
+        'connection': conn.to_dict()
+    })
+
+
+@sync_bp.route('/api/sync/webhook', methods=['POST'])
+@csrf.exempt
+def api_provider_webhook():
+    """
+    Setu Account Aggregator Webhook handler for async notifications.
+    Supports CONSENT_STATUS_UPDATE and FI_NOTIFICATION.
+    """
+    payload = request.get_json(silent=True) or {}
+    event_type = payload.get('type') or payload.get('event')
+    consent_id = payload.get('consentId') or payload.get('consent_id')
+
+    logger.info(f"Received Setu AA Webhook event: {event_type} for consent {consent_id}")
+
+    if consent_id:
+        conn = FinancialConnection.query.filter_by(consent_id=consent_id).first()
+        if conn:
+            new_status = payload.get('status', '').upper()
+            if new_status == 'ACTIVE':
+                conn.status = 'CONNECTED'
+                conn.consent_status = 'ACTIVE'
+                db.session.commit()
+                SyncEngine.sync_connection(conn.user_id, conn.id, sync_type='AUTOMATIC_WEBHOOK')
+            elif new_status in ('REVOKED', 'EXPIRED'):
+                conn.status = 'DISCONNECTED'
+                conn.consent_status = new_status
+                db.session.commit()
+
+    return jsonify({'success': True, 'acknowledged': True}), 200
+
 
 
 @sync_bp.route('/api/sync/connections/<int:conn_id>/sync', methods=['POST'])

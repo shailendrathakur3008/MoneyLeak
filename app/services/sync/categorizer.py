@@ -9,124 +9,187 @@ from app.models.category import Category
 from app.models.sync import MerchantCategoryPreference
 
 
-# Comprehensive pattern registry for Indian and Global merchants
+# Comprehensive pattern registry for Indian and Global merchants covering all 21 categories
 MERCHANT_RULES = [
-    # Food & Dining
+    # 1. Food & Dining
     {
-        'pattern': r'(zomato|swiggy(?!\s*instamart)|mcdonald|starbucks|domino|pizza\s*hut|kfc|burger\s*king|haldiram|chai\s*point|blue\s*tokai|wow\s*momo|rebel\s*foods|behrouz|faasos|ovenstory|subway|barbeque\s*nation|cafe\s*coffee\s*day|eatfit)',
-        'merchant': 'Food Delivery / Dining',
-        'category_keywords': ['dining out', 'food', 'cafes', 'restaurants', 'meals'],
+        'pattern': r'(zomato|swiggy(?!\s*instamart)|mcdonald|starbucks|domino|pizza\s*hut|kfc|burger\s*king|haldiram|chai\s*point|blue\s*tokai|wow\s*momo|rebel\s*foods|behrouz|faasos|ovenstory|subway|barbeque\s*nation|cafe\s*coffee\s*day|eatfit|dining|restaurant|cafe)',
+        'merchant': 'Food & Dining',
+        'category_keywords': ['dining out', 'food', 'cafes', 'restaurants', 'meals', 'dining out & cafes', 'food delivery apps'],
         'default_group': 'WANTS',
         'transaction_type': 'EXPENSE',
         'confidence': 0.95
     },
-    # Groceries
+    # 2. Groceries
     {
-        'pattern': r'(blinkit|zepto|bigbasket|bb\s*now|instamart|nature.?s\s*basket|dmart|d-mart|spencer|dunzo|milkbasket|country\s*delight|reliance\s*smart|jiomart|more\s*retail|grofer|fresh\s*to\s*home|licious)',
-        'merchant': 'Groceries & Essentials',
-        'category_keywords': ['groceries', 'essential groceries', 'supermarket', 'food'],
+        'pattern': r'(blinkit|zepto|bigbasket|bb\s*now|instamart|nature.?s\s*basket|dmart|d-mart|spencer|dunzo|milkbasket|country\s*delight|reliance\s*smart|jiomart|more\s*retail|grofer|fresh\s*to\s*home|licious|supermarket|grocery|groceries)',
+        'merchant': 'Groceries',
+        'category_keywords': ['essential groceries', 'groceries', 'supermarket', 'food'],
         'default_group': 'NEEDS',
         'transaction_type': 'EXPENSE',
         'confidence': 0.95
     },
-    # Shopping & Clothing
+    # 3. Shopping
     {
-        'pattern': r'(amazon(?!\s*pay\s*recharge)|flipkart|myntra|ajio|meesho|zara|h&m|nykaa|tata\s*cliq|croma|reliance\s*digital|lenskart|decathlon|uniqlo|shoppers\s*stop|westside|lifestyle|snapdeal|urbanic)',
-        'merchant': 'Shopping & Clothing',
-        'category_keywords': ['shopping', 'clothing', 'apparel', 'personal'],
+        'pattern': r'(amazon(?!\s*pay\s*recharge)|flipkart|myntra|ajio|meesho|zara|h&m|nykaa|tata\s*cliq|croma|reliance\s*digital|lenskart|decathlon|uniqlo|shoppers\s*stop|westside|lifestyle|snapdeal|urbanic|shopping|clothing|apparel)',
+        'merchant': 'Shopping',
+        'category_keywords': ['shopping & lifestyle', 'shopping', 'clothing', 'apparel', 'personal'],
         'default_group': 'WANTS',
         'transaction_type': 'EXPENSE',
         'confidence': 0.92
     },
-    # Transport & Commute
+    # 4. Transport
     {
-        'pattern': r'(uber|ola\s*cabs|ola|rapido|namma\s*metro|dmrc|delhi\s*metro|mumbai\s*metro|chalo|blusmart|auto\s*stand|fuel|petrol|hpcl|bpcl|iocl|shell)',
-        'merchant': 'Transport & Commute',
-        'category_keywords': ['transport', 'commute', 'travel', 'fuel', 'metro'],
+        'pattern': r'(uber|ola\s*cabs|ola(?!\s*electric)|rapido|namma\s*metro|dmrc|delhi\s*metro|mumbai\s*metro|chalo|blusmart|auto\s*stand|bus\s*pass|commute)',
+        'merchant': 'Transport',
+        'category_keywords': ['essential commute & fuel', 'transport', 'commute', 'metro', 'travel'],
         'default_group': 'NEEDS',
         'transaction_type': 'EXPENSE',
         'confidence': 0.90
     },
-    # Travel & Accommodation
+    # 5. Fuel
     {
-        'pattern': r'(irctc|makemytrip|mmt|cleartrip|yatra|indigo|air\s*india|spicejet|vistara|goibibo|redbus|abhibus|oyo|airbnb|booking\.com|agoda)',
-        'merchant': 'Travel & Stays',
-        'category_keywords': ['travel', 'vacation', 'trips', 'flights', 'hotels'],
-        'default_group': 'WANTS',
+        'pattern': r'(fuel|petrol|diesel|cng|hpcl|bpcl|iocl|indian\s*oil|bharat\s*petroleum|hindustan\s*petroleum|shell\s*petrol|gas\s*station)',
+        'merchant': 'Fuel',
+        'category_keywords': ['essential commute & fuel', 'fuel', 'petrol', 'transport'],
+        'default_group': 'NEEDS',
         'transaction_type': 'EXPENSE',
         'confidence': 0.92
     },
-    # Bills & Utilities
+    # 6. Bills & Utilities
     {
-        'pattern': r'(bescom|tneb|tata\s*power|adani\s*electricity|mseb|bses|torrent\s*power|igl|mahanagar\s*gas|gujarat\s*gas|bwssb|delhi\s*jal|electricity|water\s*bill|gas\s*utility)',
+        'pattern': r'(bescom|tneb|tata\s*power|adani\s*electricity|mseb|bses|torrent\s*power|igl|mahanagar\s*gas|gujarat\s*gas|bwssb|delhi\s*jal|electricity|water\s*bill|gas\s*utility|airtel|jio|vodafone|vi\s*prepaid|vi\s*postpaid|act\s*fibernet|hathway|tata\s*play|broadband)',
         'merchant': 'Bills & Utilities',
-        'category_keywords': ['utilities', 'electricity', 'bills', 'water'],
+        'category_keywords': ['utilities (power, water, gas)', 'utilities', 'basic internet & mobile', 'electricity', 'bills', 'water'],
         'default_group': 'NEEDS',
         'transaction_type': 'EXPENSE',
         'confidence': 0.95
     },
-    # Mobile & Broadband
+    # 7. Rent & Housing
     {
-        'pattern': r'(airtel|jio|vodafone|vi\s*prepaid|vi\s*postpaid|act\s*fibernet|hathway|tata\s*play\s*fiber|excitel|bsnl)',
-        'merchant': 'Mobile & Internet',
-        'category_keywords': ['utilities', 'mobile', 'internet', 'broadband', 'phone'],
+        'pattern': r'(nobroker|housing\.com|magicbricks|society\s*maintenance|flat\s*maintenance|house\s*rent|apartment\s*rent|pg\s*rent|landlord|nestaway|rent\s*payment)',
+        'merchant': 'Rent & Housing',
+        'category_keywords': ['housing & rent', 'rent', 'accommodation', 'housing'],
+        'default_group': 'NEEDS',
+        'transaction_type': 'EXPENSE',
+        'confidence': 0.95
+    },
+    # 8. Healthcare
+    {
+        'pattern': r'(apollo\s*pharmacy|apollo|1mg|tata\s*1mg|pharmeasy|netmeds|medplus|practo|dr\s*lal|max\s*healthcare|fortis|hospital|clinic|pharmacy|diagnostic|thyrocare|metropolis)',
+        'merchant': 'Healthcare',
+        'category_keywords': ['healthcare & pharmacy', 'healthcare', 'medical', 'medicine', 'pharmacy', 'health'],
         'default_group': 'NEEDS',
         'transaction_type': 'EXPENSE',
         'confidence': 0.92
     },
-    # Healthcare & Pharmacy
+    # 9. Education
     {
-        'pattern': r'(apollo\s*pharmacy|apollo|1mg|tata\s*1mg|pharmeasy|netmeds|medplus|practo|dr\s*lal|max\s*healthcare|fortis|hospital|clinic|pharmacy)',
-        'merchant': 'Healthcare & Medicine',
-        'category_keywords': ['healthcare', 'medical', 'medicine', 'pharmacy', 'health'],
+        'pattern': r'(byju|unacademy|coursera|udemy|edx|upgrad|simplilearn|school\s*fee|college\s*fee|tuition|exam\s*fee|university|coaching|allen|aakash|vedantu)',
+        'merchant': 'Education',
+        'category_keywords': ['education fees', 'books and stationery', 'education', 'tuition'],
         'default_group': 'NEEDS',
         'transaction_type': 'EXPENSE',
         'confidence': 0.92
     },
-    # Subscriptions & Entertainment
+    # 10. Entertainment
     {
-        'pattern': r'(netflix|spotify|prime\s*video|hotstar|disney|youtube\s*premium|apple\.com|apple\s*services|sonyliv|zee5|audible|chatgpt|openai|bookmyshow|pvr|inox|cinepolis)',
-        'merchant': 'Subscriptions & Media',
-        'category_keywords': ['subscriptions', 'entertainment', 'movies', 'ott'],
+        'pattern': r'(netflix|spotify|prime\s*video|hotstar|disney|youtube\s*premium|apple\.com|apple\s*services|sonyliv|zee5|audible|chatgpt|openai|bookmyshow|pvr|inox|cinepolis|entertainment|movies)',
+        'merchant': 'Entertainment',
+        'category_keywords': ['entertainment & outings', 'subscriptions & streaming', 'entertainment', 'subscriptions'],
         'default_group': 'WANTS',
         'transaction_type': 'EXPENSE',
         'confidence': 0.95
     },
-    # Investments & Wealth (Savings Contribution, NOT consumption!)
+    # 11. Travel
     {
-        'pattern': r'(zerodha|groww|upstox|kuvera|smallcase|coin|indmoney|nippon\s*india|hdfc\s*mf|sbi\s*mutual|icici\s*pru|axis\s*mutual|mirae\s*asset|uti\s*mf|parag\s*parikh|ppfas|ppf|nps|mutual\s*fund|sip\s*debit|stocks|shares)',
-        'merchant': 'Investments & Wealth',
-        'category_keywords': ['investments', 'savings', 'mutual funds', 'sip', 'wealth'],
+        'pattern': r'(irctc|makemytrip|mmt|cleartrip|yatra|indigo|air\s*india|spicejet|vistara|goibibo|redbus|abhibus|oyo|airbnb|booking\.com|agoda|flights|hotel)',
+        'merchant': 'Travel',
+        'category_keywords': ['vacation & leisure travel', 'travel', 'vacation', 'trips', 'flights', 'hotels'],
+        'default_group': 'WANTS',
+        'transaction_type': 'EXPENSE',
+        'confidence': 0.92
+    },
+    # 12. Personal Care
+    {
+        'pattern': r'(urban\s*company|salon|spa|enrich|naturals\s*salon|geetanjali|jawed\s*habib|kaya\s*skin|barber|parlour|massage|grooming)',
+        'merchant': 'Personal Care',
+        'category_keywords': ['shopping & lifestyle', 'personal care', 'personal', 'lifestyle'],
+        'default_group': 'WANTS',
+        'transaction_type': 'EXPENSE',
+        'confidence': 0.90
+    },
+    # 13. Investments (Savings Contribution, NOT consumption!)
+    {
+        'pattern': r'(zerodha|groww|upstox|kuvera|smallcase|coin|indmoney|nippon\s*india|hdfc\s*mf|sbi\s*mutual|icici\s*pru|axis\s*mutual|mirae\s*asset|uti\s*mf|parag\s*parikh|ppfas|ppf|nps|mutual\s*fund|sip\s*debit|stocks|shares|investment)',
+        'merchant': 'Investments',
+        'category_keywords': ['mutual funds & stocks', 'investments', 'savings', 'mutual funds', 'sip', 'wealth'],
         'default_group': 'SAVINGS',
         'transaction_type': 'SAVINGS_CONTRIBUTION',
         'confidence': 0.95
     },
-    # Credit Card Bill Payment & Self Transfers (Transfers / Debt Repayments)
+    # 14. Insurance
     {
-        'pattern': r'(cred(?!\s*rent)|cheq|cc\s*payment|credit\s*card\s*bill|billdesk.*card|self\s*transfer|transfer\s*to\s*self|to\s*own\s*a/c|sweep\s*trf)',
-        'merchant': 'Credit Card Bill / Transfer',
-        'category_keywords': ['transfers', 'debt repayment', 'credit card payment', 'self transfer'],
+        'pattern': r'(lic\s*of\s*india|lic\s*premium|hdfc\s*life|icici\s*prudential\s*life|icici\s*lombard|sbi\s*life|max\s*life|star\s*health|tata\s*aig|bajaj\s*allianz|care\s*health|policybazaar|insurance\s*premium|general\s*insurance)',
+        'merchant': 'Insurance',
+        'category_keywords': ['healthcare & pharmacy', 'insurance', 'life cover', 'medical insurance'],
         'default_group': 'NEEDS',
+        'transaction_type': 'EXPENSE',
+        'confidence': 0.93
+    },
+    # 15. Loan Payments
+    {
+        'pattern': r'(home\s*loan|auto\s*loan|car\s*loan|personal\s*loan|bajaj\s*finance|bajaj\s*finserv|hdb\s*financial|tata\s*capital|muthoot|manappuram|loan\s*emi|emi\s*debit|minimum\s*loan)',
+        'merchant': 'Loan Payments',
+        'category_keywords': ['minimum loan emis', 'additional debt prepayment', 'debt repayment', 'loan emi'],
+        'default_group': 'NEEDS',
+        'transaction_type': 'DEBT_REPAYMENT',
+        'confidence': 0.94
+    },
+    # 16. ATM Withdrawals
+    {
+        'pattern': r'(atm\s*wdl|cash\s*wdl|nfs\s*atm|atm\s*cash|cash\s*withdrawal)',
+        'merchant': 'ATM Cash Withdrawal',
+        'category_keywords': ['shopping & lifestyle', 'atm withdrawals', 'cash', 'other'],
+        'default_group': 'WANTS',
+        'transaction_type': 'EXPENSE',
+        'confidence': 0.95
+    },
+    # 17. Bank Charges
+    {
+        'pattern': r'(imps\s*charge|sms\s*alert|min\s*bal|consolidated\s*charges|debit\s*card\s*annual\s*fee|cheque\s*return\s*charge|service\s*charge|bank\s*charge)',
+        'merchant': 'Bank Charges',
+        'category_keywords': ['utilities (power, water, gas)', 'bank charges', 'other'],
+        'default_group': 'NEEDS',
+        'transaction_type': 'EXPENSE',
+        'confidence': 0.92
+    },
+    # 18. Transfers & CC Bill Payments
+    {
+        'pattern': r'(cred(?!\s*rent)|cheq|cc\s*payment|credit\s*card\s*bill|billdesk.*card|self\s*transfer|transfer\s*to\s*self|to\s*own\s*a/c|sweep\s*trf|account\s*transfer|inter\s*account)',
+        'merchant': 'Account Transfer',
+        'category_keywords': ['account transfer', 'transfers', 'self transfer'],
+        'default_group': 'SAVINGS',
         'transaction_type': 'TRANSFER',
         'confidence': 0.90
     },
-    # Salary & Earnings (Income)
+    # 19. Salary & Earnings (Income)
     {
-        'pattern': r'(salary|payroll|stipend|wages|infosys|tcs|wipro|accenture|cognizant|google|amazon\s*dev|microsoft|hcl\s*tech|tech\s*mahindra|flipkart\s*internet|paycheck)',
+        'pattern': r'(salary|payroll|stipend|wages|infosys|tcs|wipro|accenture|cognizant|google|amazon\s*dev|microsoft|hcl\s*tech|tech\s*mahindra|flipkart\s*internet|paycheck|monthly\s*salary)',
         'merchant': 'Salary / Employer',
         'category_keywords': ['salary', 'income', 'part-time income', 'earnings'],
         'default_group': 'SAVINGS',
         'transaction_type': 'INCOME',
         'confidence': 0.95
     },
-    # Refunds & Reversals
+    # 20. Refunds & Reversals
     {
-        'pattern': r'(refund|reversal|cashback|cash\s*back|chargeback|reimbursement)',
+        'pattern': r'(refund|reversal|cashback|cash\s*back|chargeback|reimbursement|return\s*credit)',
         'merchant': 'Refund / Cash Back',
-        'category_keywords': ['refund', 'reimbursement', 'dining out', 'shopping'],
-        'default_group': 'WANTS',
+        'category_keywords': ['refund & cashbacks', 'refund', 'reimbursement'],
+        'default_group': 'NEEDS',
         'transaction_type': 'REFUND',
-        'confidence': 0.90
+        'confidence': 0.92
     }
 ]
 

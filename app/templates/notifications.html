@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+
+{% block title %}Notification Center - MoneyLeak{% endblock %}
+
+{% block content %}
+<div class="dashboard-container" style="max-width: 900px; margin: 0 auto; padding: 24px 16px;">
+  <!-- Header Bar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:24px;">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="brand-icon-box" style="width:36px;height:36px;border-radius:10px;background:rgba(203,244,50,0.15);color:var(--brand-primary);display:flex;align-items:center;justify-content:center;">
+          <i data-lucide="bell" style="width:20px;height:20px;"></i>
+        </div>
+        <h1 style="font-size:24px;font-weight:900;color:var(--text-primary);margin:0;letter-spacing:-0.5px;">Notification Center</h1>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);margin:4px 0 0 0;">Automatic payment reminders, SIP schedules, and status updates.</p>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="markAllNotificationsRead()" style="display:inline-flex;align-items:center;gap:6px;">
+        <i data-lucide="check-check" style="width:14px;height:14px;"></i> Mark all as read
+      </button>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="clearReadNotifications()" style="display:inline-flex;align-items:center;gap:6px;">
+        <i data-lucide="trash-2" style="width:14px;height:14px;"></i> Clear read
+      </button>
+    </div>
+  </div>
+
+  <!-- Browser Push Status Banner (If not yet enabled) -->
+  <div id="push-permission-banner" class="card" style="margin-bottom:20px;background:linear-gradient(135deg, rgba(203,244,50,0.08) 0%, rgba(22,25,23,0.8) 100%);border:1px solid rgba(203,244,50,0.25);border-radius:14px;padding:18px 20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+      <div style="display:flex;align-items:flex-start;gap:12px;">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(203,244,50,0.2);display:flex;align-items:center;justify-content:center;color:var(--brand-primary);flex-shrink:0;">
+          <i data-lucide="send" style="width:18px;height:18px;"></i>
+        </div>
+        <div>
+          <div style="font-weight:800;font-size:14px;color:var(--text-primary);">Enable Browser Push Notifications</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;max-width:540px;">
+            Get timely reminders 3 days before, 1 day before, and on the due date for upcoming SIP installments, EMIs, and bills even when this tab is closed.
+          </div>
+        </div>
+      </div>
+      <button type="button" class="btn btn-primary btn-sm btn-enable-browser-push" onclick="enableBrowserPushNotifications()" style="display:inline-flex;align-items:center;gap:6px;font-weight:800;">
+        <i data-lucide="bell-ring" style="width:14px;height:14px;"></i> Enable Browser Notifications
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter Navigation Tabs -->
+  <div class="tabs-nav" style="display:flex;gap:8px;border-bottom:1px solid var(--border-subtle);margin-bottom:20px;overflow-x:auto;padding-bottom:8px;">
+    <button type="button" class="tab-btn active" data-filter="all" onclick="changeNotifFilter('all', this)">All</button>
+    <button type="button" class="tab-btn" data-filter="unread" onclick="changeNotifFilter('unread', this)">Unread</button>
+    <button type="button" class="tab-btn" data-filter="reminders" onclick="changeNotifFilter('reminders', this)">Payment Reminders</button>
+    <button type="button" class="tab-btn" data-filter="updates" onclick="changeNotifFilter('updates', this)">Payment Updates</button>
+    <button type="button" class="tab-btn" data-filter="system" onclick="changeNotifFilter('system', this)">System</button>
+  </div>
+
+  <!-- Notifications List Container -->
+  <div id="notifications-list-container">
+    <div style="text-align:center;padding:40px;color:var(--text-muted);">
+      <div class="spinner-border" style="width:24px;height:24px;border:2px solid var(--border-subtle);border-top-color:var(--brand-primary);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px auto;"></div>
+      Loading notifications...
+    </div>
+  </div>
+
+  <!-- Pagination Controls -->
+  <div id="notif-pagination" style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;display:none;">
+    <button type="button" id="btn-prev-page" class="btn btn-secondary btn-sm" onclick="prevNotifPage()" disabled>&larr; Previous</button>
+    <span id="page-indicator" style="font-size:12px;color:var(--text-muted);font-weight:700;">Page 1</span>
+    <button type="button" id="btn-next-page" class="btn btn-secondary btn-sm" onclick="nextNotifPage()">Next &rarr;</button>
+  </div>
+</div>
+
+<script>
+  window.VAPID_PUBLIC_KEY = "{{ vapid_public_key }}";
+  let currentNotifFilter = 'all';
+  let currentNotifPage = 1;
+
+  async function loadNotificationsCenter() {
+    const container = document.getElementById('notifications-list-container');
+    if (!container) return;
+
+    try {
+      const res = await fetch(`/api/notifications?filter=${currentNotifFilter}&page=${currentNotifPage}&per_page=15`);
+      const data = await res.json();
+
+      if (!data.success || !data.notifications || data.notifications.length === 0) {
+        container.innerHTML = `
+          <div class="card" style="text-align:center;padding:60px 20px;border:1px dashed var(--border-subtle);border-radius:14px;">
+            <div style="width:48px;height:48px;border-radius:50%;background:var(--bg-subtle);display:flex;align-items:center;justify-content:center;margin:0 auto 14px auto;color:var(--text-muted);">
+              <i data-lucide="bell-off" style="width:24px;height:24px;"></i>
+            </div>
+            <h3 style="font-size:16px;font-weight:800;color:var(--text-primary);margin:0 0 4px 0;">No notifications found</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin:0 0 16px 0;">You're completely up to date with your scheduled obligations.</p>
+            <a href="/payments" class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
+              <i data-lucide="calendar" style="width:14px;height:14px;"></i> View Upcoming Payments
+            </a>
+          </div>
+        `;
+        document.getElementById('notif-pagination').style.display = 'none';
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = data.notifications.map(n => `
+        <div class="card notif-card ${n.is_read ? '' : 'unread-card'}" style="padding:16px 20px;margin-bottom:12px;border-radius:12px;border:1px solid ${n.is_read ? 'var(--border-subtle)' : 'rgba(203,244,50,0.3)'};background:${n.is_read ? 'var(--bg-card)' : 'rgba(203,244,50,0.03)'};display:flex;align-items:flex-start;justify-content:space-between;gap:14px;transition:all 0.2s ease;">
+          <div style="display:flex;align-items:flex-start;gap:14px;flex:1;min-width:0;">
+            <div style="width:38px;height:38px;border-radius:10px;background:${getNotifBgColor(n.notification_type)};color:${getNotifTextColor(n.notification_type)};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              ${getNotifIcon(n.notification_type)}
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+                <span class="badge-pill" style="font-size:10px;padding:2px 7px;font-weight:800;text-transform:uppercase;background:var(--bg-subtle);color:var(--text-muted);border:1px solid var(--border-subtle);">${formatChannel(n.channel)}</span>
+                <span style="font-size:11px;color:var(--text-muted);">${formatIsoDate(n.scheduled_at)}</span>
+                ${n.is_read ? '' : '<span class="badge-pill badge-lime" style="font-size:9px;padding:1px 6px;">NEW</span>'}
+              </div>
+              <div style="font-weight:800;font-size:14px;color:var(--text-primary);margin-bottom:4px;">${escapeHtml(n.title)}</div>
+              <div style="font-size:13px;color:var(--text-secondary);line-height:1.5;">${escapeHtml(n.message)}</div>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+            <a href="${n.link_url || '/payments'}" class="btn btn-secondary btn-sm" style="padding:6px 10px;font-size:11px;display:inline-flex;align-items:center;gap:4px;">
+              View <i data-lucide="arrow-right" style="width:12px;height:12px;"></i>
+            </a>
+            ${n.is_read ? '' : `
+              <button type="button" class="btn btn-secondary btn-sm" onclick="markSingleRead(${n.id})" title="Mark read" style="padding:6px 8px;">
+                <i data-lucide="check" style="width:12px;height:12px;"></i>
+              </button>
+            `}
+          </div>
+        </div>
+      `).join('');
+
+      // Setup pagination
+      const totalPages = Math.ceil(data.total / data.per_page);
+      if (totalPages > 1) {
+        document.getElementById('notif-pagination').style.display = 'flex';
+        document.getElementById('page-indicator').textContent = `Page ${data.page} of ${totalPages}`;
+        document.getElementById('btn-prev-page').disabled = data.page <= 1;
+        document.getElementById('btn-next-page').disabled = data.page >= totalPages;
+      } else {
+        document.getElementById('notif-pagination').style.display = 'none';
+      }
+
+      if (window.lucide) lucide.createIcons();
+    } catch (e) {
+      container.innerHTML = '<div style="padding:30px;text-align:center;color:var(--accent-red);">Failed to load notifications. Please try again.</div>';
+    }
+  }
+
+  function changeNotifFilter(filter, btn) {
+    currentNotifFilter = filter;
+    currentNotifPage = 1;
+    document.querySelectorAll('.tabs-nav .tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadNotificationsCenter();
+  }
+
+  function prevNotifPage() {
+    if (currentNotifPage > 1) {
+      currentNotifPage--;
+      loadNotificationsCenter();
+    }
+  }
+
+  function nextNotifPage() {
+    currentNotifPage++;
+    loadNotificationsCenter();
+  }
+
+  async function markSingleRead(id) {
+    try {
+      await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
+      loadNotificationsCenter();
+    } catch (e) {}
+  }
+
+  async function clearReadNotifications() {
+    if (!confirm('Clear all read notifications?')) return;
+    try {
+      await fetch('/api/notifications/clear-all', { method: 'POST' });
+      loadNotificationsCenter();
+    } catch (e) {}
+  }
+
+  function formatChannel(ch) {
+    if (ch === 'BROWSER_PUSH') return 'Web Push';
+    if (ch === 'EMAIL') return 'Email';
+    return 'In-App';
+  }
+
+  function getNotifBgColor(type) {
+    if (type.includes('SIP')) return 'rgba(203,244,50,0.15)';
+    if (type.includes('EMI')) return 'rgba(56,189,248,0.15)';
+    if (type.includes('OVERDUE')) return 'rgba(239,68,68,0.15)';
+    if (type.includes('CONFIRMED')) return 'rgba(16,185,129,0.15)';
+    return 'rgba(255,255,255,0.06)';
+  }
+
+  function getNotifTextColor(type) {
+    if (type.includes('SIP')) return 'var(--brand-primary)';
+    if (type.includes('EMI')) return '#38bdf8';
+    if (type.includes('OVERDUE')) return '#ef4444';
+    if (type.includes('CONFIRMED')) return '#10b981';
+    return 'var(--text-primary)';
+  }
+
+  function getNotifIcon(type) {
+    if (type.includes('SIP')) return '<i data-lucide="trending-up" style="width:18px;height:18px;"></i>';
+    if (type.includes('SUBSCRIPTION')) return '<i data-lucide="refresh-cw" style="width:18px;height:18px;"></i>';
+    if (type.includes('EMI')) return '<i data-lucide="landmark" style="width:18px;height:18px;"></i>';
+    if (type.includes('OVERDUE')) return '<i data-lucide="alert-triangle" style="width:18px;height:18px;"></i>';
+    if (type.includes('CONFIRMED')) return '<i data-lucide="check-check" style="width:18px;height:18px;"></i>';
+    return '<i data-lucide="bell" style="width:18px;height:18px;"></i>';
+  }
+
+  function formatIsoDate(iso) {
+    if (!iso) return '';
+    return new Date(iso).toLocaleString('en-IN', {
+      day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadNotificationsCenter();
+  });
+</script>
+{% endblock %}

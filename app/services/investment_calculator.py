@@ -2,11 +2,11 @@
 Educational Investment Calculator for MoneyLeak.
 
 Implements mathematically accurate compound growth projections.
-Supports Lump-Sum, Periodic SIP, and Step-Up SIP (annual contribution increase).
+Supports Lump-Sum, Periodic Monthly SIP, Annual Step-Up SIP, and
+selectable Compounding Frequency (Annual, Semi-Annual, Quarterly, Monthly).
 Discloses all assumptions, risk factors, and educational purpose.
 """
 from typing import Dict, Any, List, Optional
-from decimal import Decimal
 from app.services.money import format_money, to_minor_units
 from app.services.scheme_data import get_scheme_by_id
 
@@ -20,43 +20,62 @@ def calculate_compound_growth(
     timing: str = 'BEGINNING',  # 'BEGINNING' (annuity due) or 'END' (ordinary annuity)
     currency: str = 'INR',
     step_up_pct: float = 0.0,   # Optional annual percentage increase in periodic contribution
+    compounding_frequency: str = 'MONTHLY',  # 'ANNUALLY', 'SEMI_ANNUALLY', 'QUARTERLY', 'MONTHLY'
     scheme_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Compute mathematically correct compound growth schedule and future value.
-    Supports optional Step-Up SIP where contribution increases annually by `step_up_pct`%.
+    Supports selectable compounding frequencies:
+    - ANNUALLY (m=1)
+    - SEMI_ANNUALLY (m=2)
+    - QUARTERLY (m=4, standard for Indian bank FDs and post office schemes)
+    - MONTHLY (m=12, standard for mutual fund SIPs)
     """
     duration_years = max(1, min(50, int(duration_years)))
     annual_rate = max(0.0, float(annual_return_pct)) / 100.0
     step_up_rate = max(0.0, float(step_up_pct)) / 100.0
 
-    if frequency.upper() == 'YEARLY':
-        periods_per_year = 1
+    # Determine compounding periods per year (m)
+    comp_freq_upper = (compounding_frequency or 'MONTHLY').upper()
+    if comp_freq_upper in ['ANNUALLY', 'ANNUAL', 'YEARLY']:
+        m = 1
+    elif comp_freq_upper in ['SEMI_ANNUALLY', 'SEMI-ANNUAL', 'HALF_YEARLY']:
+        m = 2
+    elif comp_freq_upper in ['QUARTERLY', 'QUARTER']:
+        m = 4
     else:
-        periods_per_year = 12  # Monthly default
+        m = 12  # Monthly default
 
-    periodic_rate = annual_rate / periods_per_year
+    # Effective monthly rate rm such that (1 + rm)^12 == (1 + annual_rate / m)^m
+    if annual_rate == 0.0:
+        monthly_rate = 0.0
+    else:
+        monthly_rate = (1.0 + annual_rate / m) ** (m / 12.0) - 1.0
+
+    is_monthly_deposit = (frequency.upper() != 'YEARLY')
 
     current_balance = float(initial_amount)
     total_invested = float(initial_amount)
     current_periodic_deposit = float(periodic_contribution)
     schedule: List[Dict[str, Any]] = []
 
-    # Yearly aggregation for charts
     for yr in range(1, duration_years + 1):
-        # Apply step-up to periodic deposit after year 1
+        # Apply annual step-up to periodic deposit after year 1
         if yr > 1 and step_up_rate > 0:
-            current_periodic_deposit = current_periodic_deposit * (1.0 + step_up_rate)
+            current_periodic_deposit *= (1.0 + step_up_rate)
 
-        for _ in range(periods_per_year):
+        for mo in range(1, 13):
+            # If monthly deposit: occurs every month. If yearly deposit: occurs in month 1 of each year.
+            deposit = current_periodic_deposit if (is_monthly_deposit or mo == 1) else 0.0
+
             if timing.upper() == 'BEGINNING':
-                current_balance += current_periodic_deposit
-                total_invested += current_periodic_deposit
-                current_balance *= (1.0 + periodic_rate)
+                current_balance += deposit
+                total_invested += deposit
+                current_balance *= (1.0 + monthly_rate)
             else:
-                current_balance *= (1.0 + periodic_rate)
-                current_balance += current_periodic_deposit
-                total_invested += current_periodic_deposit
+                current_balance *= (1.0 + monthly_rate)
+                current_balance += deposit
+                total_invested += deposit
 
         interest_earned = max(0.0, current_balance - total_invested)
         schedule.append({
@@ -82,9 +101,12 @@ def calculate_compound_growth(
             scheme_info = {
                 'id': s['id'],
                 'name': s['name'],
-                'category': s['category'],
-                'risk_level': s['risk_level'],
-                'tax_treatment': s['tax_treatment']
+                'assetType': s.get('assetType'),
+                'category': s.get('category'),
+                'riskLevel': s.get('riskLevel'),
+                'riskScore': s.get('riskScore'),
+                'capitalProtection': s.get('capitalProtection'),
+                'taxInformation': s.get('taxInformation')
             }
 
     return {
@@ -97,6 +119,7 @@ def calculate_compound_growth(
             'timing': timing,
             'currency': currency,
             'step_up_pct': step_up_pct,
+            'compounding_frequency': comp_freq_upper,
             'scheme_id': scheme_id
         },
         'summary': {
@@ -115,9 +138,10 @@ def calculate_compound_growth(
         'scheme': scheme_info,
         'schedule': schedule,
         'disclosures': [
-            "Projections are purely educational and illustrative; they do not guarantee future performance.",
-            "Market-linked returns fluctuate with market conditions and can be negative in shorter durations.",
-            "Capital gains taxes (e.g. LTCG @ 12.5% for equities, slab rate for debt/FDs), inflation, and fund expense ratios are not subtracted in this baseline model.",
+            "Projections are purely educational and illustrative mathematical estimates; they do not guarantee future performance.",
+            "Market-linked investments (stocks, mutual funds, gold) fluctuate with market conditions and returns can be negative in shorter durations.",
+            "For instruments with fixed contractual interest rates (e.g., FDs, PPF, SCSS), returns follow the applicable statutory or bank rate.",
+            "Capital gains taxes (e.g. LTCG @ 12.5% for equities, slab rate for debt/FDs) and inflation are not subtracted in this baseline model.",
             "Past performance of indices or asset classes is not indicative of future returns."
         ]
     }

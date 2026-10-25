@@ -16,6 +16,9 @@ class FinancialAlert(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     dismissed_at = db.Column(db.DateTime, nullable=True)
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     @property
     def supporting_data(self):
         try:

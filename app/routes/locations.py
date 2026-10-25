@@ -11,13 +11,24 @@ from app.services.location_service import (
     get_districts_for_state,
     search_cities_for_state,
     validate_indian_pincode,
+    validate_location_combination,
     calculate_adaptive_budget_recommendation,
+    get_dataset_metadata,
     BUDGET_PRESETS,
     CLASSIFICATION_LABELS
 )
 from app.services.money import to_minor_units
 
 locations_bp = Blueprint('locations', __name__)
+
+
+@locations_bp.route('/api/locations/metadata', methods=['GET'])
+def api_get_metadata():
+    """Returns official geographical dataset metadata, version, and urban coverage."""
+    return jsonify({
+        'success': True,
+        'metadata': get_dataset_metadata()
+    })
 
 
 @locations_bp.route('/api/locations/countries', methods=['GET'])
@@ -31,38 +42,53 @@ def api_get_countries():
 
 @locations_bp.route('/api/locations/states', methods=['GET'])
 def api_get_states():
-    """Returns all 28 Indian States and 8 Union Territories."""
+    """Returns all 28 Indian States and 8 Union Territories with optional search."""
+    query = request.args.get('q', '').strip() or None
+    states = get_all_states(query=query)
+    total_states = sum(1 for s in states if s.get('type') == 'State')
+    total_uts = sum(1 for s in states if s.get('type') == 'Union Territory')
     return jsonify({
         'success': True,
-        'states': get_all_states()
+        'states': states,
+        'total': len(states),
+        'total_states': total_states,
+        'total_uts': total_uts
     })
 
 
 @locations_bp.route('/api/locations/districts', methods=['GET'])
 def api_get_districts():
-    """Returns administrative districts for a given state ID."""
+    """Returns administrative districts for a given state ID with optional search."""
     state_id = request.args.get('state_id', '').strip()
+    query = request.args.get('q', '').strip() or None
     if not state_id:
         return jsonify({'success': False, 'error': 'state_id parameter is required.'}), 400
 
-    districts = get_districts_for_state(state_id)
+    from app.services.location_service import STATE_BY_ID
+    state_obj = STATE_BY_ID.get(state_id)
+    state_name = state_obj.get('name') if state_obj else state_id
+
+    districts = get_districts_for_state(state_id, query=query)
     return jsonify({
         'success': True,
         'state_id': state_id,
-        'districts': districts
+        'state_name': state_name,
+        'districts': districts,
+        'total': len(districts)
     })
 
 
 @locations_bp.route('/api/locations/cities', methods=['GET'])
 def api_get_cities():
     """
-    Search cities for a state and optional district.
-    Handles autocomplete, aliases, transliterations, and Tier classification.
+    Search recognized cities and statutory/census towns for a state and optional district.
+    Strictly excludes villages.
+    Handles autocomplete, aliases, transliterations, duplicate disambiguation, and Tier classification.
     """
     state_id = request.args.get('state_id', '').strip()
     district_id = request.args.get('district_id', '').strip() or None
     query = request.args.get('q', '').strip() or None
-    limit = int(request.args.get('limit', 50))
+    limit = int(request.args.get('limit', 100))
 
     if not state_id:
         return jsonify({'success': False, 'error': 'state_id parameter is required.'}), 400
@@ -72,7 +98,10 @@ def api_get_cities():
         'success': True,
         'state_id': state_id,
         'district_id': district_id,
-        'cities': cities
+        'cities': cities,
+        'total': len(cities),
+        'villages_excluded': True,
+        'dataset_version': get_dataset_metadata().get('dataset_version')
     })
 
 
@@ -125,3 +154,31 @@ def api_recommend_budget():
         'success': True,
         'recommendation': recommendation
     })
+
+
+@locations_bp.route('/api/locations/validate', methods=['POST'])
+@csrf.exempt
+def api_validate_location():
+    """
+    Validates hierarchical geographical dependency:
+    Country -> State/UT -> District -> City/Town.
+    Rejects invalid cross-state or cross-district combinations.
+    """
+    data = request.get_json() or {}
+    state_id = data.get('state_id')
+    district_id = data.get('district_id')
+    city_id = data.get('city_id')
+    is_custom_city = bool(data.get('is_custom_city', False))
+    city_name = data.get('city_name')
+    country = data.get('country') or 'India'
+
+    result = validate_location_combination(
+        state_id=state_id,
+        district_id=district_id,
+        city_id=city_id,
+        is_custom_city=is_custom_city,
+        city_name=city_name,
+        country=country
+    )
+    status_code = 200 if result.get('valid') else 400
+    return jsonify({'success': result.get('valid', False), **result}), status_code

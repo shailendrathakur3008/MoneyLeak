@@ -14,6 +14,8 @@ from app.routes.assistant import assistant_bp
 from app.routes.locations import locations_bp
 from app.routes.trips import trips_bp
 from app.routes.sync import sync_bp
+from app.routes.notifications import notifications_bp
+from app.routes.payments import payments_bp
 
 def register_blueprints(app):
     app.register_blueprint(auth_bp)
@@ -32,3 +34,5 @@ def register_blueprints(app):
     app.register_blueprint(assistant_bp)
     app.register_blueprint(locations_bp)
     app.register_blueprint(trips_bp)
+    app.register_blueprint(notifications_bp)
+    app.register_blueprint(payments_bp)

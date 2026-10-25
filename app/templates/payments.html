@@ -1,0 +1,518 @@
+{% extends 'base.html' %}
+
+{% block title %}Upcoming Payments & Reminders - MoneyLeak{% endblock %}
+
+{% block content %}
+<div class="dashboard-container" style="max-width: 1140px; margin: 0 auto; padding: 24px 16px;">
+  <!-- Header Bar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:24px;">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="brand-icon-box" style="width:36px;height:36px;border-radius:10px;background:rgba(203,244,50,0.15);color:var(--brand-primary);display:flex;align-items:center;justify-content:center;">
+          <i data-lucide="calendar-clock" style="width:20px;height:20px;"></i>
+        </div>
+        <h1 style="font-size:24px;font-weight:900;color:var(--text-primary);margin:0;letter-spacing:-0.5px;">Upcoming Payments</h1>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);margin:4px 0 0 0;">Automated reminders for mutual fund SIPs, subscriptions, EMIs, and recurring bills.</p>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;">
+      <a href="/notifications" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
+        <i data-lucide="bell" style="width:14px;height:14px;"></i> Notification Center
+      </a>
+      <button type="button" class="btn btn-primary btn-sm" onclick="openModal('add-payment-modal')" style="display:inline-flex;align-items:center;gap:6px;font-weight:800;">
+        <i data-lucide="plus" style="width:14px;height:14px;"></i> Schedule Payment
+      </button>
+    </div>
+  </div>
+
+  <!-- Browser Push Enablement Banner -->
+  <div id="push-permission-banner" class="card" style="margin-bottom:24px;background:linear-gradient(135deg, rgba(203,244,50,0.06) 0%, rgba(22,25,23,0.85) 100%);border:1px solid rgba(203,244,50,0.2);border-radius:14px;padding:16px 20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:34px;height:34px;border-radius:8px;background:rgba(203,244,50,0.15);display:flex;align-items:center;justify-content:center;color:var(--brand-primary);">
+          <i data-lucide="bell-ring" style="width:16px;height:16px;"></i>
+        </div>
+        <div>
+          <div style="font-weight:800;font-size:13px;color:var(--text-primary);">Never miss an auto-debit deadline</div>
+          <div style="font-size:12px;color:var(--text-secondary);">Enable browser notifications to receive alerts 3 days, 1 day, and on due date even when offline.</div>
+        </div>
+      </div>
+      <button type="button" class="btn btn-primary btn-sm btn-enable-browser-push" onclick="enableBrowserPushNotifications()" style="font-size:12px;padding:6px 14px;font-weight:800;">
+        Enable Browser Notifications
+      </button>
+    </div>
+  </div>
+
+  <!-- Metric Statistics Cards -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:14px;margin-bottom:24px;">
+    <!-- Card 1: Next Payment -->
+    <div class="card" style="padding:16px;border-radius:12px;border:1px solid var(--border-subtle);background:var(--bg-card);">
+      <div style="display:flex;align-items:center;justify-content:space-between;color:var(--text-muted);font-size:12px;font-weight:700;margin-bottom:8px;">
+        <span>NEXT DUE PAYMENT</span>
+        <i data-lucide="clock" style="width:16px;height:16px;color:var(--brand-primary);"></i>
+      </div>
+      <div id="stat-next-amount" style="font-size:22px;font-weight:900;color:var(--text-primary);">₹0</div>
+      <div id="stat-next-desc" style="font-size:12px;color:var(--text-secondary);margin-top:2px;">No upcoming payments</div>
+    </div>
+
+    <!-- Card 2: Next 7 Days -->
+    <div class="card" style="padding:16px;border-radius:12px;border:1px solid var(--border-subtle);background:var(--bg-card);">
+      <div style="display:flex;align-items:center;justify-content:space-between;color:var(--text-muted);font-size:12px;font-weight:700;margin-bottom:8px;">
+        <span>DUE IN NEXT 7 DAYS</span>
+        <i data-lucide="calendar" style="width:16px;height:16px;color:#38bdf8;"></i>
+      </div>
+      <div id="stat-7days" style="font-size:22px;font-weight:900;color:#38bdf8;">₹0</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Upcoming short-term obligations</div>
+    </div>
+
+    <!-- Card 3: Next 30 Days -->
+    <div class="card" style="padding:16px;border-radius:12px;border:1px solid var(--border-subtle);background:var(--bg-card);">
+      <div style="display:flex;align-items:center;justify-content:space-between;color:var(--text-muted);font-size:12px;font-weight:700;margin-bottom:8px;">
+        <span>DUE IN NEXT 30 DAYS</span>
+        <i data-lucide="trending-up" style="width:16px;height:16px;color:#a855f7;"></i>
+      </div>
+      <div id="stat-30days" style="font-size:22px;font-weight:900;color:var(--text-primary);">₹0</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Total monthly cycle commitments</div>
+    </div>
+
+    <!-- Card 4: Overdue Alert -->
+    <div class="card" style="padding:16px;border-radius:12px;border:1px solid var(--border-subtle);background:var(--bg-card);">
+      <div style="display:flex;align-items:center;justify-content:space-between;color:var(--text-muted);font-size:12px;font-weight:700;margin-bottom:8px;">
+        <span>OVERDUE OBLIGATIONS</span>
+        <i data-lucide="alert-circle" style="width:16px;height:16px;color:#ef4444;"></i>
+      </div>
+      <div id="stat-overdue-count" style="font-size:22px;font-weight:900;color:#ef4444;">0</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Requires your review / status update</div>
+    </div>
+  </div>
+
+  <!-- View Switcher & Filters -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+    <div class="tabs-nav" style="display:flex;gap:8px;border-bottom:none;margin:0;">
+      <button type="button" class="tab-btn active" id="btn-tab-list" onclick="switchView('list')">
+        <i data-lucide="list" style="width:14px;height:14px;margin-right:4px;"></i> List View
+      </button>
+      <button type="button" class="tab-btn" id="btn-tab-calendar" onclick="switchView('calendar')">
+        <i data-lucide="calendar" style="width:14px;height:14px;margin-right:4px;"></i> Calendar View
+      </button>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <select id="filter-category" class="form-control" style="width:auto;font-size:12px;padding:6px 10px;" onchange="renderPaymentsList()">
+        <option value="ALL">All Categories</option>
+        <option value="MUTUAL_FUND_SIP">Mutual Fund SIPs</option>
+        <option value="STOCK_INVESTMENT">Stock / Investments</option>
+        <option value="SUBSCRIPTION">Subscriptions</option>
+        <option value="LOAN_EMI">Loan EMIs</option>
+        <option value="CREDIT_CARD_BILL">Credit Card Bills</option>
+        <option value="INSURANCE_PREMIUM">Insurance</option>
+        <option value="UTILITY_BILL">Utilities</option>
+        <option value="TELECOM_BILL">Internet & Mobile</option>
+        <option value="RENT">Rent</option>
+        <option value="EDUCATION_FEE">Education</option>
+        <option value="CUSTOM">Custom</option>
+      </select>
+
+      <select id="filter-status" class="form-control" style="width:auto;font-size:12px;padding:6px 10px;" onchange="renderPaymentsList()">
+        <option value="ALL">All Statuses</option>
+        <option value="PENDING">Pending / Upcoming</option>
+        <option value="PAID">Paid / Confirmed</option>
+        <option value="OVERDUE">Overdue</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- View 1: List View -->
+  <div id="view-list-container">
+    <div id="payments-table-card" class="card" style="border-radius:14px;border:1px solid var(--border-subtle);background:var(--bg-card);overflow:hidden;">
+      <div style="overflow-x:auto;">
+        <table class="data-table" style="width:100%;border-collapse:collapse;text-align:left;font-size:13px;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border-subtle);background:rgba(255,255,255,0.02);color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">
+              <th style="padding:14px 16px;">Payment / Scheme</th>
+              <th style="padding:14px 16px;">Category</th>
+              <th style="padding:14px 16px;">Amount</th>
+              <th style="padding:14px 16px;">Due Date</th>
+              <th style="padding:14px 16px;">Status</th>
+              <th style="padding:14px 16px;text-align:right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="payments-table-body">
+            <tr>
+              <td colspan="6" style="padding:40px;text-align:center;color:var(--text-muted);">
+                <div class="spinner-border" style="width:20px;height:20px;border:2px solid var(--border-subtle);border-top-color:var(--brand-primary);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 10px auto;"></div>
+                Loading scheduled obligations...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- View 2: Calendar View -->
+  <div id="view-calendar-container" style="display:none;">
+    <div class="card" style="padding:20px;border-radius:14px;border:1px solid var(--border-subtle);background:var(--bg-card);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-weight:900;font-size:16px;color:var(--text-primary);" id="cal-month-title">This Month</div>
+        <div style="font-size:12px;color:var(--text-muted);">Interactive monthly due dates</div>
+      </div>
+      <div id="calendar-grid" style="display:grid;grid-template-columns:repeat(7, 1fr);gap:8px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: ADD SCHEDULED PAYMENT -->
+<!-- ========================================================================= -->
+<div id="add-payment-modal" class="modal-backdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+  <div class="card modal-dialog" style="max-width:540px;width:100%;border-radius:16px;border:1px solid var(--border-subtle);background:#161917;padding:24px;box-shadow:0 20px 40px rgba(0,0,0,0.6);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <h3 style="font-size:18px;font-weight:800;color:var(--text-primary);margin:0;">Schedule Recurring Payment</h3>
+      <button type="button" class="btn-close" onclick="closeModal('add-payment-modal')" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">&times;</button>
+    </div>
+
+    <form id="add-payment-form" onsubmit="submitAddPayment(event)">
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label" style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">Payment Name *</label>
+        <input type="text" id="add-payment-name" class="form-control" placeholder="e.g. Parag Parikh Flexi Cap SIP, Netflix, HDFC Home Loan" required>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">Category *</label>
+          <select id="add-payment-category" class="form-control" onchange="toggleSchemeInput()" required>
+            <option value="MUTUAL_FUND_SIP">Mutual Fund SIP</option>
+            <option value="STOCK_INVESTMENT">Stock / Investment</option>
+            <option value="SUBSCRIPTION">Recurring Subscription</option>
+            <option value="LOAN_EMI">Loan EMI</option>
+            <option value="CREDIT_CARD_BILL">Credit Card Bill</option>
+            <option value="INSURANCE_PREMIUM">Insurance Premium</option>
+            <option value="UTILITY_BILL">Electricity / Water Bill</option>
+            <option value="TELECOM_BILL">Internet / Mobile Bill</option>
+            <option value="RENT">Rent</option>
+            <option value="EDUCATION_FEE">Education Fee</option>
+            <option value="RECURRING_DEPOSIT">Recurring Deposit</option>
+            <option value="CUSTOM">Custom Payment</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">Amount (₹) *</label>
+          <input type="number" id="add-payment-amount" class="form-control" step="0.01" min="1" placeholder="5000" required>
+        </div>
+      </div>
+
+      <div id="scheme-name-group" class="form-group" style="margin-bottom:14px;">
+        <label class="form-label" style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">Mutual Fund Scheme / Asset Name</label>
+        <input type="text" id="add-payment-scheme" class="form-control" placeholder="e.g. UTI Nifty 50 Index Fund - Growth Direct">
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">Frequency *</label>
+          <select id="add-payment-frequency" class="form-control" required>
+            <option value="MONTHLY">Monthly</option>
+            <option value="WEEKLY">Weekly</option>
+            <option value="QUARTERLY">Quarterly</option>
+            <option value="YEARLY">Yearly</option>
+            <option value="ONCE">One-Time</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">Next Due Date *</label>
+          <input type="date" id="add-payment-date" class="form-control" required>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:18px;">
+        <label class="form-label" style="font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;">Notes (Optional)</label>
+        <textarea id="add-payment-notes" class="form-control" rows="2" placeholder="e.g. Debited from SBI Salary Account on the 15th"></textarea>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:8px;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('add-payment-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm" style="font-weight:800;">Save Schedule</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  let paymentsData = { schedules: [], occurrences: [] };
+  let currentViewMode = 'list';
+
+  function switchView(mode) {
+    currentViewMode = mode;
+    document.getElementById('btn-tab-list').classList.toggle('active', mode === 'list');
+    document.getElementById('btn-tab-calendar').classList.toggle('active', mode === 'calendar');
+    document.getElementById('view-list-container').style.display = mode === 'list' ? 'block' : 'none';
+    document.getElementById('view-calendar-container').style.display = mode === 'calendar' ? 'block' : 'none';
+    if (mode === 'calendar') {
+      renderCalendar();
+    }
+  }
+
+  function toggleSchemeInput() {
+    const cat = document.getElementById('add-payment-category').value;
+    const isInvest = cat.includes('SIP') || cat.includes('INVESTMENT') || cat.includes('RECURRING_DEPOSIT');
+    document.getElementById('scheme-name-group').style.display = isInvest ? 'block' : 'none';
+  }
+
+  async function loadPaymentsData() {
+    try {
+      const res = await fetch('/api/payments');
+      const data = await res.json();
+      if (!data.success) return;
+
+      paymentsData = data;
+
+      // Update Top Metrics
+      const stats = data.statistics || {};
+      if (stats.next_payment) {
+        document.getElementById('stat-next-amount').textContent = `₹${stats.next_payment.amount.toLocaleString('en-IN')}`;
+        document.getElementById('stat-next-desc').textContent = `${stats.next_payment.payment_name} on ${new Date(stats.next_payment.due_date).toLocaleDateString('en-IN', {day:'numeric', month:'short'})}`;
+      } else {
+        document.getElementById('stat-next-amount').textContent = '₹0';
+        document.getElementById('stat-next-desc').textContent = 'No upcoming obligations';
+      }
+
+      document.getElementById('stat-7days').textContent = stats.next_7_days_formatted || '₹0';
+      document.getElementById('stat-30days').textContent = stats.next_30_days_formatted || '₹0';
+      document.getElementById('stat-overdue-count').textContent = stats.overdue_count || 0;
+
+      renderPaymentsList();
+      if (currentViewMode === 'calendar') {
+        renderCalendar();
+      }
+    } catch (e) {
+      console.error('Error loading payments:', e);
+    }
+  }
+
+  function renderPaymentsList() {
+    const tbody = document.getElementById('payments-table-body');
+    if (!tbody) return;
+
+    const catFilter = document.getElementById('filter-category').value;
+    const statusFilter = document.getElementById('filter-status').value;
+
+    let items = paymentsData.occurrences || [];
+
+    if (catFilter !== 'ALL') {
+      items = items.filter(o => o.category === catFilter);
+    }
+
+    if (statusFilter === 'PENDING') {
+      items = items.filter(o => !o.is_paid && o.status !== 'OVERDUE');
+    } else if (statusFilter === 'PAID') {
+      items = items.filter(o => o.is_paid);
+    } else if (statusFilter === 'OVERDUE') {
+      items = items.filter(o => o.status === 'OVERDUE');
+    }
+
+    if (items.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="padding:40px;text-align:center;color:var(--text-muted);">
+            No scheduled payment occurrences found matching your filters.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = items.map(o => `
+      <tr style="border-bottom:1px solid var(--border-subtle);transition:background 0.15s ease;">
+        <td style="padding:14px 16px;">
+          <div style="font-weight:800;color:var(--text-primary);">${escapeHtml(o.payment_name)}</div>
+          ${o.scheme_name && o.scheme_name !== o.payment_name ? `<div style="font-size:11px;color:var(--text-muted);">${escapeHtml(o.scheme_name)}</div>` : ''}
+        </td>
+        <td style="padding:14px 16px;">
+          <span class="badge-pill" style="font-size:10px;padding:3px 8px;background:var(--bg-subtle);border:1px solid var(--border-subtle);color:var(--text-secondary);text-transform:uppercase;">
+            ${(o.category || 'CUSTOM').replace(/_/g, ' ')}
+          </span>
+        </td>
+        <td style="padding:14px 16px;font-weight:800;color:var(--text-primary);">
+          ₹${o.amount.toLocaleString('en-IN', {minimumFractionDigits: 2})}
+        </td>
+        <td style="padding:14px 16px;color:var(--text-secondary);">
+          ${formatDateDisplay(o.due_date)}
+        </td>
+        <td style="padding:14px 16px;">
+          ${getStatusBadge(o)}
+        </td>
+        <td style="padding:14px 16px;text-align:right;">
+          <div style="display:inline-flex;align-items:center;gap:6px;">
+            ${!o.is_paid ? `
+              <button type="button" class="btn btn-primary btn-sm" onclick="markPaid(${o.id})" style="padding:4px 10px;font-size:11px;font-weight:800;">
+                <i data-lucide="check" style="width:12px;height:12px;"></i> Mark Paid
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="snoozePayment(${o.id})" title="Snooze reminder by 3 days" style="padding:4px 8px;">
+                <i data-lucide="clock" style="width:12px;height:12px;"></i>
+              </button>
+            ` : `
+              <span style="font-size:11px;color:#10b981;font-weight:700;display:inline-flex;align-items:center;gap:4px;">
+                <i data-lucide="check-circle" style="width:13px;height:13px;"></i> Done
+              </span>
+            `}
+            <button type="button" class="btn btn-secondary btn-sm" onclick="cancelSchedule(${o.payment_schedule_id})" title="Cancel schedule" style="padding:4px 8px;color:#ef4444;">
+              <i data-lucide="x" style="width:12px;height:12px;"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function getStatusBadge(occ) {
+    if (occ.status === 'CONFIRMED_EXTERNAL') {
+      return '<span class="badge-pill" style="font-size:10px;padding:3px 8px;background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3);font-weight:800;">VERIFIED BANK CONFIRMATION</span>';
+    }
+    if (occ.status === 'PAID_MANUAL') {
+      return '<span class="badge-pill" style="font-size:10px;padding:3px 8px;background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3);font-weight:800;">PAID (MANUAL)</span>';
+    }
+    if (occ.status === 'OVERDUE') {
+      return '<span class="badge-pill" style="font-size:10px;padding:3px 8px;background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);font-weight:800;">OVERDUE</span>';
+    }
+    if (occ.status === 'AWAITING_CONFIRMATION') {
+      return '<span class="badge-pill" style="font-size:10px;padding:3px 8px;background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3);font-weight:800;">AWAITING CONFIRMATION</span>';
+    }
+    return '<span class="badge-pill badge-lime" style="font-size:10px;padding:3px 8px;font-weight:800;">UPCOMING</span>';
+  }
+
+  function renderCalendar() {
+    const grid = document.getElementById('calendar-grid');
+    if (!grid) return;
+
+    const now = new Date();
+    document.getElementById('cal-month-title').textContent = now.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    let html = '';
+
+    // Day headers
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    html += dayNames.map(d => `<div style="text-align:center;font-size:11px;font-weight:800;color:var(--text-muted);padding:6px 0;">${d}</div>`).join('');
+
+    const firstDayIndex = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+    for (let i = 0; i < firstDayIndex; i++) {
+      html += '<div style="background:transparent;height:80px;"></div>';
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayDateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const dayOccs = (paymentsData.occurrences || []).filter(o => o.due_date === dayDateStr);
+      const isToday = day === now.getDate();
+
+      html += `
+        <div style="background:var(--bg-subtle);border-radius:8px;padding:6px;min-height:80px;border:1px solid ${isToday ? 'var(--brand-primary)' : 'var(--border-subtle)'};">
+          <div style="font-size:11px;font-weight:${isToday ? '900' : '700'};color:${isToday ? 'var(--brand-primary)' : 'var(--text-muted)'};margin-bottom:4px;">${day}</div>
+          ${dayOccs.map(o => `
+            <div style="background:${o.is_paid ? 'rgba(16,185,129,0.15)' : 'rgba(203,244,50,0.15)'};color:${o.is_paid ? '#10b981' : 'var(--brand-primary)'};padding:2px 4px;border-radius:4px;font-size:10px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(o.payment_name)} - ₹${o.amount}">
+              ₹${o.amount} ${escapeHtml(o.payment_name)}
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    grid.innerHTML = html;
+  }
+
+  async function submitAddPayment(e) {
+    e.preventDefault();
+    const payload = {
+      name: document.getElementById('add-payment-name').value.trim(),
+      category: document.getElementById('add-payment-category').value,
+      amount: parseFloat(document.getElementById('add-payment-amount').value),
+      scheme_name: document.getElementById('add-payment-scheme').value.trim(),
+      frequency: document.getElementById('add-payment-frequency').value,
+      next_due_date: document.getElementById('add-payment-date').value,
+      notes: document.getElementById('add-payment-notes').value.trim()
+    };
+
+    try {
+      const res = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (window.showToast) window.showToast('Scheduled payment added successfully!', 'success');
+        closeModal('add-payment-modal');
+        document.getElementById('add-payment-form').reset();
+        loadPaymentsData();
+      } else {
+        alert(data.error || 'Failed to add payment schedule.');
+      }
+    } catch (err) {
+      alert('Error saving payment schedule.');
+    }
+  }
+
+  async function markPaid(occId) {
+    try {
+      const res = await fetch(`/api/payments/occurrences/${occId}/mark-paid`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        if (window.showToast) window.showToast('Payment marked as paid.', 'success');
+        loadPaymentsData();
+      }
+    } catch (err) {}
+  }
+
+  async function snoozePayment(occId) {
+    try {
+      const res = await fetch(`/api/payments/occurrences/${occId}/snooze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ days: 3 })
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (window.showToast) window.showToast(data.message, 'success');
+        loadPaymentsData();
+      }
+    } catch (err) {}
+  }
+
+  async function cancelSchedule(schedId) {
+    if (!confirm('Are you sure you want to cancel this payment schedule and stop future reminders?')) return;
+    try {
+      const res = await fetch(`/api/payments/${schedId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        if (window.showToast) window.showToast('Schedule cancelled.', 'success');
+        loadPaymentsData();
+      }
+    } catch (err) {}
+  }
+
+  function formatDateDisplay(dStr) {
+    if (!dStr) return '';
+    return new Date(dStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Set default date in add form to tomorrow
+    const tom = new Date();
+    tom.setDate(tom.getDate() + 1);
+    const dateInput = document.getElementById('add-payment-date');
+    if (dateInput) {
+      dateInput.value = tom.toISOString().split('T')[0];
+    }
+    loadPaymentsData();
+  });
+</script>
+{% endblock %}

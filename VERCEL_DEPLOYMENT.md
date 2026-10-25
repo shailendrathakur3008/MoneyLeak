@@ -43,7 +43,10 @@ git push origin main
 | `FLASK_ENV` | `production` | Production mode |
 | `SECRET_KEY` | *(Enter a random 32-character string)* | Session encryption key |
 | `SESSION_COOKIE_SECURE` | `true` | Secure HTTPS cookies |
-| `AA_ENVIRONMENT` | `sandbox` | Universal Sync test mode |
+| `SETU_AA_CLIENT_ID` | *(From Setu Bridge Dashboard)* | **Genuine Bank Connectivity**: Setu FIU Client ID |
+| `SETU_AA_CLIENT_SECRET` | *(From Setu Bridge Dashboard)* | **Genuine Bank Connectivity**: Setu FIU Client Secret |
+| `SETU_AA_PRODUCT_INSTANCE_ID` | *(From Setu Bridge Dashboard)* | **Genuine Bank Connectivity**: Setu Product Instance ID |
+| `AA_ENVIRONMENT` | `production` *(or `sandbox` for test)* | Account Aggregator gateway environment |
 | `RESEND_API_KEY` | *(Optional, e.g. `re_...`)* | **Real Email Delivery** via Resend (3,000 free emails/mo) |
 | `SMTP_USER` | *(Optional, e.g. `yourname@gmail.com`)* | Direct SMTP username |
 | `SMTP_PASS` | *(Optional, Google App Password)* | 16-character Google App Password |

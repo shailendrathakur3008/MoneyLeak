@@ -21,14 +21,16 @@ class EmailOTP(db.Model):
         is_used: bool = False,
         **kwargs
     ):
-        super().__init__(
-            email=email,
-            otp_code=otp_code,
-            purpose=purpose,
-            expires_at=expires_at,
-            is_used=is_used,
-            **kwargs
-        )
+        super().__init__(**kwargs)
+        if email is not None:
+            self.email = email
+        if otp_code is not None:
+            self.otp_code = otp_code
+        if purpose is not None:
+            self.purpose = purpose
+        if expires_at is not None:
+            self.expires_at = expires_at
+        self.is_used = is_used
 
     def is_valid(self, code: str) -> bool:
         if self.is_used:

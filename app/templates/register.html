@@ -43,7 +43,7 @@
     .auth-card {
       background: var(--bg-surface);
       border-radius: var(--radius-xl);
-      max-width: 460px;
+      max-width: 520px;
       width: 100%;
       padding: 34px 28px;
       box-shadow: var(--shadow-md);
@@ -183,7 +183,7 @@
         </div>
       </div>
 
-      <div class="form-group" style="margin-bottom:16px;">
+      <div class="form-group" style="margin-bottom:14px;">
         <label class="form-label" style="font-size:12px;">Currency</label>
         <select name="currency" class="form-control">
           <option value="INR" selected>INR (₹) — Indian Rupee</option>
@@ -194,7 +194,82 @@
         </select>
       </div>
 
-      <button type="submit" class="btn btn-primary" style="width:100%;padding:11px;font-size:14px;font-weight:700;">
+      <!-- Location Profile Selection (All India & Global) -->
+      <div style="margin-top:14px;margin-bottom:18px;padding-top:14px;border-top:1px dashed var(--border-subtle);">
+        <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+          <i data-lucide="map-pin" style="width:14px;height:14px;color:#15803d;"></i>
+          <span>Location & Living Benchmark (Optional during signup)</span>
+        </div>
+
+        <!-- Country -->
+        <div class="form-group" style="margin-bottom:12px;">
+          <label class="form-label" style="font-size:12px;">Country</label>
+          <select id="reg-country" name="country" class="form-control">
+            {% for c in all_countries %}
+              <option value="{{ c.name }}" {% if c.code == 'IN' or c.name == 'India' %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- State or Union Territory -->
+        <div class="form-group" id="reg-group-state" style="margin-bottom:12px;">
+          <label class="form-label" style="font-size:12px;">
+            <span>State / Union Territory</span>
+            <span style="font-size:11px;color:var(--text-muted);font-weight:normal;">(28 States & 8 UTs)</span>
+          </label>
+          <div id="reg-state-wrap"></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <!-- District -->
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label" style="font-size:12px;">
+              <span>District</span>
+              <span style="font-size:10px;color:var(--text-muted);">(788 Official)</span>
+            </label>
+            <div id="reg-district-wrap"></div>
+          </div>
+
+          <!-- City / Town -->
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label" style="font-size:12px;">
+              <span>City / Town</span>
+              <span style="font-size:10px;color:var(--text-muted);">(Searchable • Excludes Villages)</span>
+            </label>
+            <div id="reg-city-wrap"></div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px;">
+          <!-- PIN Code -->
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label" style="font-size:12px;">PIN Code <span style="font-size:10px;color:var(--text-muted);">(6 digits)</span></label>
+            <input type="text" id="reg-pincode" name="pincode" class="form-control" maxlength="6" placeholder="e.g. 400001">
+            <div id="reg-pincode-feedback" style="font-size:11px;margin-top:3px;"></div>
+          </div>
+
+          <!-- Tier Benchmark Indicator -->
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label" style="font-size:12px;">Living Benchmark Tier</label>
+            <div style="padding:7px 10px;background:var(--bg-subtle);border-radius:var(--radius-md);border:1px solid var(--border-subtle);display:flex;align-items:center;min-height:38px;">
+              <span id="reg-tier-pill" style="font-size:11px;font-weight:700;color:var(--text-secondary);">General Baseline</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hidden inputs for backend form processing -->
+        <input type="hidden" name="state_id" id="hidden-reg-state-id" value="">
+        <input type="hidden" name="state_name" id="hidden-reg-state-name" value="">
+        <input type="hidden" name="district_id" id="hidden-reg-district-id" value="">
+        <input type="hidden" name="district_name" id="hidden-reg-district-name" value="">
+        <input type="hidden" name="city_id" id="hidden-reg-city-id" value="">
+        <input type="hidden" name="city_name" id="hidden-reg-city-name" value="">
+        <input type="hidden" name="settlement_type" id="hidden-reg-settlement-type" value="">
+        <input type="hidden" name="is_custom_city" id="hidden-reg-is-custom-city" value="false">
+        <input type="hidden" name="location_tier" id="hidden-reg-location-tier" value="UNCLASSIFIED">
+      </div>
+
+      <button type="submit" id="btn-submit-register" class="btn btn-primary" style="width:100%;padding:11px;font-size:14px;font-weight:700;">
         Create Account & Configure Profile
       </button>
     </form>
@@ -305,6 +380,7 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/lucide.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/location_selector.js') }}"></script>
 <script>
   const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
@@ -320,6 +396,57 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) window.lucide.createIcons();
+
+    // Initialize Indian Location Coordinator for Registration Form
+    try {
+      window.regLocationCoordinator = new IndiaLocationCoordinator({
+        countrySelector: '#reg-country',
+        stateSelector: '#reg-state-wrap',
+        districtSelector: '#reg-district-wrap',
+        citySelector: '#reg-city-wrap',
+        pincodeInput: '#reg-pincode',
+        pincodeFeedback: '#reg-pincode-feedback',
+        tierPill: '#reg-tier-pill',
+        hiddenInputs: {
+          stateId: '#hidden-reg-state-id',
+          stateName: '#hidden-reg-state-name',
+          districtId: '#hidden-reg-district-id',
+          districtName: '#hidden-reg-district-name',
+          cityId: '#hidden-reg-city-id',
+          cityName: '#hidden-reg-city-name',
+          settlementType: '#hidden-reg-settlement-type',
+          isCustomCity: '#hidden-reg-is-custom-city',
+          locationTier: '#hidden-reg-location-tier'
+        }
+      });
+    } catch (e) {
+      console.error('[Registration] Failed initializing location coordinator:', e);
+    }
+
+    // Form submission validation for registration
+    const regForm = document.querySelector('form[action="{{ url_for("auth.register") }}"]');
+    if (regForm) {
+      regForm.addEventListener('submit', (e) => {
+        const country = document.getElementById('reg-country')?.value || 'India';
+        const stateId = document.getElementById('hidden-reg-state-id')?.value;
+        const districtId = document.getElementById('hidden-reg-district-id')?.value;
+        const cityName = document.getElementById('hidden-reg-city-name')?.value;
+
+        if (country === 'India' && stateId) {
+          // If a state was chosen, ensure valid district and city
+          if (!districtId) {
+            e.preventDefault();
+            alert('Please select your District.');
+            return;
+          }
+          if (!cityName) {
+            e.preventDefault();
+            alert('Please select your City, Town, or Locality.');
+            return;
+          }
+        }
+      });
+    }
 
     // Theme toggle
     const themeToggle = document.getElementById('auth-theme-toggle');

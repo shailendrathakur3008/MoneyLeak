@@ -9,11 +9,14 @@ import secrets
 import hmac
 import hashlib
 import time
+import urllib.request
+import urllib.error
+import tempfile
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import (
     Blueprint, render_template, request, redirect, url_for,
-    flash, session, jsonify, g, current_app
+    flash, session, jsonify, g, current_app, send_from_directory
 )
 from werkzeug.utils import secure_filename
 
@@ -33,6 +36,7 @@ from app.services.location_service import (
     get_all_states,
     get_supported_countries,
     validate_indian_pincode,
+    validate_location_combination,
     STATE_BY_ID
 )
 
@@ -55,6 +59,7 @@ def _login_user_session(user: User):
     session['auth_provider'] = user.auth_provider or 'supabase'
     session['provider_user_id'] = user.provider_user_id or ''
     session['theme_preference'] = user.theme_preference or 'system'
+    session['profile_picture_url'] = user.profile_picture_url or ''
     session.permanent = True
 
 
@@ -65,7 +70,7 @@ def login_required(f):
         user_email = session.get('user_email')
         if not user_id:
             if request.is_json or request.path.startswith('/api/'):
-                return jsonify({'error': 'Unauthorized', 'message': 'Authentication required'}), 401
+                return jsonify({'success': False, 'error': 'Authentication required. Please log in.'}), 401
             flash('Please log in to access this page.', 'warning')
             return redirect(url_for('auth.login', next=request.path))
 
@@ -88,6 +93,7 @@ def login_required(f):
                     auth_provider=session.get('auth_provider', 'supabase'),
                     provider_user_id=session.get('provider_user_id') or None,
                     theme_preference=session.get('theme_preference', 'system'),
+                    profile_picture_url=session.get('profile_picture_url') or None,
                     email_verified=True
                 )
                 user.set_password(secrets.token_urlsafe(32))
@@ -110,6 +116,8 @@ def login_required(f):
 
         if not user:
             session.clear()
+            if request.is_json or request.path.startswith('/api/'):
+                return jsonify({'success': False, 'error': 'Session expired. Please log in again.'}), 401
             flash('Session expired. Please log in again.', 'warning')
             return redirect(url_for('auth.login'))
 
@@ -127,9 +135,10 @@ def register():
     if session.get('user_id'):
         return redirect(url_for('dashboard.view_dashboard'))
 
-    # If accessed via GET, redirect directly to the single unified auth portal
+    all_countries = get_supported_countries()
+
     if request.method == 'GET':
-        return redirect(url_for('auth.login'))
+        return render_template('register.html', all_countries=all_countries)
 
     if request.method == 'POST':
         data = request.get_json() if request.is_json else request.form
@@ -145,28 +154,54 @@ def register():
             if request.is_json:
                 return jsonify({'success': False, 'error': msg}), 400
             flash(msg, 'danger')
-            return render_template('register.html')
+            return render_template('register.html', all_countries=all_countries)
 
         if len(password) < 8:
             msg = 'Password must be at least 8 characters long.'
             if request.is_json:
                 return jsonify({'success': False, 'error': msg}), 400
             flash(msg, 'danger')
-            return render_template('register.html')
+            return render_template('register.html', all_countries=all_countries)
 
         if password != confirm_password:
             msg = 'Passwords do not match.'
             if request.is_json:
                 return jsonify({'success': False, 'error': msg}), 400
             flash(msg, 'danger')
-            return render_template('register.html')
+            return render_template('register.html', all_countries=all_countries)
 
         if User.query.filter_by(email=email).first():
             msg = 'An account with this email already exists.'
             if request.is_json:
                 return jsonify({'success': False, 'error': msg}), 400
             flash(msg, 'danger')
-            return render_template('register.html')
+            return render_template('register.html', all_countries=all_countries)
+
+        # Optional Location validation if provided during signup
+        country = (data.get('country') or 'India').strip()
+        state_id = data.get('state_id')
+        district_id = data.get('district_id')
+        city_id = data.get('city_id')
+        city_name = data.get('city_name')
+        is_custom_city = bool(data.get('is_custom_city', False))
+        pincode = (data.get('pincode') or '').strip() or None
+
+        val_res = {}
+        if state_id:
+            val_res = validate_location_combination(
+                state_id=state_id,
+                district_id=district_id,
+                city_id=city_id,
+                is_custom_city=is_custom_city,
+                city_name=city_name,
+                country=country
+            )
+            if not val_res.get('valid'):
+                msg = val_res.get('error', 'Invalid location selection.')
+                if request.is_json:
+                    return jsonify({'success': False, 'error': msg}), 400
+                flash(msg, 'danger')
+                return render_template('register.html', all_countries=all_countries)
 
         # Create user
         new_user = User(
@@ -175,10 +210,19 @@ def register():
             currency=currency if currency in CURRENCY_CONFIG else 'INR',
             auth_provider='local',
             email_verified=False,
-            country='India',
-            monthly_income_minor_units=4000000,
+            country=country,
+            state_id=state_id or None,
+            state_name=val_res.get('state_name') if state_id else None,
+            district_id=district_id or None,
+            district_name=val_res.get('district_name') if state_id else None,
+            city_id=city_id or None,
+            city_name=val_res.get('city_name') if state_id else None,
+            is_custom_city=is_custom_city,
+            location_tier=val_res.get('location_tier', 'UNCLASSIFIED') if state_id else 'UNCLASSIFIED',
+            pincode=pincode,
+            monthly_income_minor_units=0,
             onboarding_completed=False,
-            onboarding_step=1
+            onboarding_step=2 if state_id else 1
         )
         new_user.set_password(password)
         db.session.add(new_user)
@@ -208,7 +252,7 @@ def register():
         flash('Registration successful! Welcome to MoneyLeak.', 'success')
         return redirect(url_for('auth.onboarding'))
 
-    return render_template('register.html')
+    return render_template('register.html', all_countries=all_countries)
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -243,10 +287,12 @@ def login():
         _login_user_session(user)
 
         next_page = request.args.get('next')
-        dest = next_page if next_page and next_page.startswith('/') else url_for('dashboard.view_dashboard')
-
-        if not user.onboarding_completed:
+        if next_page and next_page.startswith('/') and not next_page.startswith('//'):
+            dest = next_page
+        elif not user.onboarding_completed and not user.budgets:
             dest = url_for('auth.onboarding')
+        else:
+            dest = url_for('dashboard.view_dashboard')
 
         if request.is_json:
             return jsonify({'success': True, 'redirect': dest})
@@ -515,10 +561,12 @@ def verify_otp():
     _login_user_session(user)
 
     next_page = request.args.get('next') or (data.get('next') if isinstance(data, dict) else None)
-    if user.onboarding_completed:
-        dest = next_page if (next_page and next_page.startswith('/') and not next_page.startswith('//')) else url_for('dashboard.view_dashboard')
-    else:
+    if next_page and next_page.startswith('/') and not next_page.startswith('//'):
+        dest = next_page
+    elif is_new_user and not user.onboarding_completed:
         dest = url_for('auth.onboarding')
+    else:
+        dest = url_for('dashboard.view_dashboard')
 
     return jsonify({
         'success': True,
@@ -700,7 +748,13 @@ def google_auth():
 
     _login_user_session(user)
 
-    dest = url_for('dashboard.view_dashboard') if user.onboarding_completed else url_for('auth.onboarding')
+    next_page = request.args.get('next') or (data.get('next') if isinstance(data, dict) else None)
+    if next_page and next_page.startswith('/') and not next_page.startswith('//'):
+        dest = next_page
+    elif is_new_user and not user.onboarding_completed:
+        dest = url_for('auth.onboarding')
+    else:
+        dest = url_for('dashboard.view_dashboard')
 
     return jsonify({
         'success': True,
@@ -714,41 +768,119 @@ def google_auth():
 # 4. PROFILE PHOTO MANAGEMENT API
 # -----------------------------------------------------------------------------
 
+def _upload_avatar_to_supabase(filename: str, file_bytes: bytes, content_type: str):
+    """Uploads avatar directly to Supabase public storage bucket."""
+    supabase_url = (current_app.config.get('SUPABASE_URL') or os.environ.get('SUPABASE_URL') or '').rstrip('/')
+    service_key = current_app.config.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or current_app.config.get('SUPABASE_ANON_KEY')
+    if not supabase_url or not service_key:
+        return None
+
+    url = f"{supabase_url}/storage/v1/object/avatars/{filename}"
+    headers = {
+        'apikey': service_key,
+        'Authorization': f'Bearer {service_key}',
+        'Content-Type': content_type,
+        'x-upsert': 'true'
+    }
+
+    try:
+        req = urllib.request.Request(url, data=file_bytes, headers=headers, method='POST')
+        with urllib.request.urlopen(req, timeout=10) as res:
+            if res.status in (200, 201):
+                return f"{supabase_url}/storage/v1/object/public/avatars/{filename}"
+    except urllib.error.HTTPError as he:
+        # If bucket not found or permissions require bucket creation, try auto-creating public avatars bucket
+        if he.code in (400, 404):
+            try:
+                b_url = f"{supabase_url}/storage/v1/bucket"
+                b_data = json.dumps({'id': 'avatars', 'name': 'avatars', 'public': True}).encode('utf-8')
+                b_req = urllib.request.Request(b_url, data=b_data, headers={
+                    'apikey': service_key,
+                    'Authorization': f'Bearer {service_key}',
+                    'Content-Type': 'application/json'
+                }, method='POST')
+                with urllib.request.urlopen(b_req, timeout=10):
+                    pass
+                req2 = urllib.request.Request(url, data=file_bytes, headers=headers, method='POST')
+                with urllib.request.urlopen(req2, timeout=10) as retry_res:
+                    if retry_res.status in (200, 201):
+                        return f"{supabase_url}/storage/v1/object/public/avatars/{filename}"
+            except Exception:
+                pass
+    except Exception as exc:
+        current_app.logger.warning(f"[Upload] Supabase storage upload attempt: {exc}")
+    return None
+
+
 @auth_bp.route('/api/profile/upload-photo', methods=['POST'])
 @login_required
 @csrf.exempt
 def upload_photo():
-    """Uploads, validates, and stores a profile avatar image."""
+    """Uploads, validates, and stores a profile avatar image with multi-tier storage."""
     user = g.current_user
 
     if 'photo' not in request.files:
         return jsonify({'success': False, 'error': 'No image file provided.'}), 400
 
     file = request.files['photo']
-    if file.filename == '':
+    if not file or file.filename == '':
         return jsonify({'success': False, 'error': 'No selected file.'}), 400
 
     ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
     if ext not in ALLOWED_IMAGE_EXTENSIONS:
         return jsonify({'success': False, 'error': 'Invalid file format. Please upload PNG, JPG, JPEG, or WEBP.'}), 400
 
+    content_type = {
+        'png': 'image/png',
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'webp': 'image/webp'
+    }.get(ext, 'image/png')
+
     # Read and check size
     file_bytes = file.read()
     if len(file_bytes) > MAX_PHOTO_SIZE_BYTES:
         return jsonify({'success': False, 'error': 'File exceeds maximum size of 5MB.'}), 400
 
-    # Save to disk
-    avatar_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'avatars')
-    os.makedirs(avatar_dir, exist_ok=True)
+    timestamp = int(datetime.utcnow().timestamp())
+    filename = f"avatar_{user.id}_{timestamp}.{ext}"
+    photo_url = None
 
-    filename = f"avatar_{user.id}_{int(datetime.utcnow().timestamp())}.{ext}"
-    filepath = os.path.join(avatar_dir, filename)
+    # Tier 1: Supabase Storage (Persistent, global CDN, resilient on serverless Vercel)
+    try:
+        photo_url = _upload_avatar_to_supabase(filename, file_bytes, content_type)
+    except Exception as e:
+        current_app.logger.warning(f"Supabase avatar upload failed: {e}")
 
-    with open(filepath, 'wb') as f:
-        f.write(file_bytes)
+    # Tier 2: Static directory (For local development and long-running servers)
+    if not photo_url:
+        try:
+            avatar_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'avatars')
+            os.makedirs(avatar_dir, exist_ok=True)
+            filepath = os.path.join(avatar_dir, filename)
+            with open(filepath, 'wb') as f:
+                f.write(file_bytes)
+            photo_url = url_for('static', filename=f'uploads/avatars/{filename}')
+        except (OSError, IOError) as fs_err:
+            current_app.logger.info(f"Local static directory read-only, falling back to tempdir: {fs_err}")
 
-    photo_url = url_for('static', filename=f'uploads/avatars/{filename}')
+    # Tier 3: Temporary filesystem fallback + dedicated avatar serving route
+    if not photo_url:
+        try:
+            tmp_dir = os.path.join(tempfile.gettempdir(), 'moneyleak_avatars')
+            os.makedirs(tmp_dir, exist_ok=True)
+            tmp_path = os.path.join(tmp_dir, filename)
+            with open(tmp_path, 'wb') as f:
+                f.write(file_bytes)
+            photo_url = url_for('auth.serve_avatar', filename=filename)
+        except Exception as e:
+            current_app.logger.error(f"Temp directory upload failed: {e}")
+
+    if not photo_url:
+        return jsonify({'success': False, 'error': 'Failed to save avatar image. Please try again.'}), 500
+
     user.profile_picture_url = photo_url
+    session['profile_picture_url'] = photo_url
     db.session.commit()
 
     return jsonify({
@@ -765,6 +897,7 @@ def remove_photo():
     """Removes custom profile photo and restores default avatar."""
     user = g.current_user
     user.profile_picture_url = None
+    session.pop('profile_picture_url', None)
     db.session.commit()
 
     return jsonify({
@@ -772,6 +905,23 @@ def remove_photo():
         'message': 'Profile photo removed.',
         'avatar_url': user.get_avatar_url()
     })
+
+
+@auth_bp.route('/api/profile/avatar/<filename>')
+def serve_avatar(filename):
+    """Safely serves uploaded avatars from static or temp directory."""
+    safe_name = secure_filename(filename)
+    # Check static folder first
+    static_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'avatars')
+    if os.path.exists(os.path.join(static_dir, safe_name)):
+        return send_from_directory(static_dir, safe_name)
+    # Check tmp folder
+    tmp_dir = os.path.join(tempfile.gettempdir(), 'moneyleak_avatars')
+    if os.path.exists(os.path.join(tmp_dir, safe_name)):
+        return send_from_directory(tmp_dir, safe_name)
+    # Fallback to default avatar
+    seed = safe_name.split('_')[1] if '_' in safe_name else 'User'
+    return redirect(f"https://api.dicebear.com/7.x/initials/svg?seed={seed}&backgroundColor=161917&textColor=cbf432")
 
 
 # -----------------------------------------------------------------------------
@@ -850,14 +1000,35 @@ def onboarding():
 
                 user.country = country
                 if country == 'India':
-                    user.state_id = state_id or None
-                    user.state_name = state_name or (STATE_BY_ID.get(state_id, {}).get('name') if state_id else None)
-                    user.district_id = district_id or None
-                    user.district_name = district_name or None
-                    user.city_id = city_id or ('OTHER' if is_custom_city else None)
-                    user.city_name = city_name or None
-                    user.is_custom_city = is_custom_city
-                    user.location_tier = location_tier or 'UNCLASSIFIED'
+                    if state_id:
+                        val_res = validate_location_combination(
+                            state_id=state_id,
+                            district_id=district_id,
+                            city_id=city_id,
+                            is_custom_city=is_custom_city,
+                            city_name=city_name,
+                            country=country
+                        )
+                        if not val_res.get('valid'):
+                            return jsonify({'success': False, 'error': val_res.get('error')}), 400
+
+                        user.state_id = state_id
+                        user.state_name = val_res.get('state_name')
+                        user.district_id = district_id or None
+                        user.district_name = val_res.get('district_name')
+                        user.city_id = city_id or ('OTHER' if is_custom_city else None)
+                        user.city_name = val_res.get('city_name')
+                        user.is_custom_city = is_custom_city
+                        user.location_tier = val_res.get('location_tier', 'UNCLASSIFIED')
+                    else:
+                        user.state_id = None
+                        user.state_name = None
+                        user.district_id = None
+                        user.district_name = None
+                        user.city_id = None
+                        user.city_name = city_name or None
+                        user.location_tier = 'UNCLASSIFIED'
+
                     if pincode:
                         pin_res = validate_indian_pincode(pincode, user.state_id)
                         if pin_res.get('valid'):
@@ -986,6 +1157,24 @@ def onboarding():
             savings_target_val = data.get('monthly_savings_target')
             preset_choice = data.get('budget_preset')
             exp = (data.get('investment_experience') or '').strip()
+            income_val = data.get('monthly_income')
+            opening_bal_val = data.get('opening_balance')
+            user_type = (data.get('user_type') or '').strip().lower()
+
+            if user_type in ('student', 'salaried'):
+                user.user_type = user_type
+
+            if income_val not in (None, ''):
+                try:
+                    user.monthly_income_minor_units = to_minor_units(income_val, user.currency)
+                except Exception:
+                    pass
+
+            if opening_bal_val not in (None, ''):
+                try:
+                    user.opening_balance_minor_units = to_minor_units(opening_bal_val, user.currency)
+                except Exception:
+                    pass
 
             if goal:
                 user.primary_financial_goal = goal
@@ -1041,6 +1230,36 @@ def restart_onboarding():
         'success': True,
         'redirect': url_for('auth.onboarding')
     })
+
+
+@auth_bp.route('/onboarding/skip', methods=['GET', 'POST'])
+@login_required
+def skip_onboarding():
+    """Allows user to skip the wizard and jump straight into their personalized dashboard."""
+    user = g.current_user
+    user.onboarding_completed = True
+    if not user.categories:
+        seed_categories_for_user_type(user, user.user_type or 'student')
+    if not user.budgets:
+        default_budget = Budget(
+            user_id=user.id,
+            needs_percentage=50.0,
+            wants_percentage=30.0,
+            savings_percentage=20.0
+        )
+        db.session.add(default_budget)
+    db.session.commit()
+    _login_user_session(user)
+
+    if request.is_json:
+        return jsonify({
+            'success': True,
+            'redirect': url_for('dashboard.view_dashboard'),
+            'message': 'Welcome to your MoneyLeak dashboard!'
+        })
+
+    flash(f'Welcome, {user.full_name}! Your dashboard is ready.', 'success')
+    return redirect(url_for('dashboard.view_dashboard'))
 
 
 # -----------------------------------------------------------------------------

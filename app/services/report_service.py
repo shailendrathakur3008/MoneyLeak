@@ -131,12 +131,13 @@ def generate_monthly_pdf_report(user_id: int, year: int, month: int) -> io.Bytes
     # Executive KPI Summary Table
     story.append(Paragraph("1. Executive Summary & Cashflow", section_title))
     kpi_data = [
-        [Paragraph("Metric", cell_bold), Paragraph("Amount", cell_bold), Paragraph("Percentage of Income", cell_bold)],
-        [Paragraph("Recognized Monthly Income", cell_style), Paragraph(summary['income']['formatted'], cell_style), Paragraph("100%", cell_style)],
-        [Paragraph("Total Outflows (Consumption + Savings)", cell_style), Paragraph(summary['total_outflow']['formatted'], cell_style), Paragraph(f"{(summary['total_outflow']['minor']/summary['income']['minor']*100):.1f}%" if summary['income']['minor']>0 else "0%", cell_style)],
-        [Paragraph("Consumption Expenses", cell_style), Paragraph(summary['expenses']['formatted'], cell_style), Paragraph(f"{(summary['expenses']['minor']/summary['income']['minor']*100):.1f}%" if summary['income']['minor']>0 else "0%", cell_style)],
-        [Paragraph("Actual Savings Contributed", cell_style), Paragraph(summary['actual_savings']['formatted'], cell_style), Paragraph(f"{summary['savings_rate']}%", cell_style)],
-        [Paragraph("Net Monthly Surplus", cell_bold), Paragraph(summary['surplus']['formatted'], cell_bold), Paragraph(f"{(summary['surplus']['minor']/summary['income']['minor']*100):.1f}%" if summary['income']['minor']>0 else "0%", cell_bold)],
+        [Paragraph("Metric", cell_bold), Paragraph("Amount", cell_bold), Paragraph("Percentage / Status", cell_bold)],
+        [Paragraph("Recognized Monthly Inflow", cell_style), Paragraph(summary['income']['formatted'], cell_style), Paragraph("100%", cell_style)],
+        [Paragraph("Persistent Monthly Budget", cell_style), Paragraph(summary['budget']['formatted'], cell_style), Paragraph(f"{(summary['total_outflow']['minor']/summary['budget']['minor']*100):.1f}% Outflow" if summary['budget']['minor']>0 else "Active", cell_style)],
+        [Paragraph("Total Outflows (Consumption + Savings)", cell_style), Paragraph(summary['total_outflow']['formatted'], cell_style), Paragraph(f"{(summary['total_outflow']['minor']/summary['income']['minor']*100):.1f}% of Income" if summary['income']['minor']>0 else "0%", cell_style)],
+        [Paragraph("Consumption Expenses", cell_style), Paragraph(summary['expenses']['formatted'], cell_style), Paragraph(f"{(summary['expenses']['minor']/summary['income']['minor']*100):.1f}% of Income" if summary['income']['minor']>0 else "0%", cell_style)],
+        [Paragraph("Actual Savings Contributed", cell_style), Paragraph(summary['actual_savings']['formatted'], cell_style), Paragraph(f"{summary['savings_rate']}% Rate", cell_style)],
+        [Paragraph("Net Monthly Surplus", cell_bold), Paragraph(summary['surplus']['formatted'], cell_bold), Paragraph(f"{(summary['surplus']['minor']/summary['income']['minor']*100):.1f}% of Income" if summary['income']['minor']>0 else "0%", cell_bold)],
     ]
     t_kpi = Table(kpi_data, colWidths=[240, 150, 150])
     t_kpi.setStyle(TableStyle([

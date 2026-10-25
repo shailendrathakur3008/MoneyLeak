@@ -23,11 +23,17 @@ from app.services.location_service import (
 @login_required
 def view_settings():
     user = g.current_user
+    from datetime import date
+    from app.services.persistent_budget_service import get_or_create_monthly_budget
+    today = date.today()
+    mb = get_or_create_monthly_budget(user.id, today.year, today.month)
+    active_budget_minor = mb.budget_amount_minor_units if (mb and mb.budget_amount_minor_units > 0) else (user.monthly_budget_minor_units or 0)
     categories = Category.query.filter_by(user_id=user.id).all()
     system_categories = Category.query.filter(Category.user_id.is_(None)).all()
     return render_template(
         'settings.html',
         user=user,
+        active_budget_minor=active_budget_minor,
         categories=categories,
         system_categories=system_categories,
         currency_config=CURRENCY_CONFIG,
@@ -174,6 +180,28 @@ def update_profile():
     if savings_target_raw not in (None, ''):
         try:
             user.monthly_savings_target_minor_units = to_minor_units(savings_target_raw, user.currency)
+        except Exception:
+            pass
+
+    budget_raw = data.get('monthly_budget')
+    if budget_raw not in (None, ''):
+        try:
+            from datetime import date
+            from app.services.persistent_budget_service import set_monthly_budget
+            today = date.today()
+            b_minor = to_minor_units(budget_raw, user.currency)
+            if b_minor >= 0:
+                set_monthly_budget(user.id, today.year, today.month, b_minor, update_future=True)
+        except Exception:
+            pass
+    elif income_raw not in (None, '') and (not user.monthly_budget_minor_units or user.monthly_budget_minor_units == 0):
+        try:
+            from datetime import date
+            from app.services.persistent_budget_service import set_monthly_budget
+            today = date.today()
+            b_minor = to_minor_units(income_raw, user.currency)
+            if b_minor >= 0:
+                set_monthly_budget(user.id, today.year, today.month, b_minor, update_future=True)
         except Exception:
             pass
 

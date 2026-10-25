@@ -16,6 +16,9 @@ class SavingsGoal(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     # Relationships
     contributions = db.relationship('GoalContribution', backref='goal', lazy='dynamic', cascade='all, delete-orphan')
 
@@ -53,6 +56,9 @@ class GoalContribution(db.Model):
     contribution_date = db.Column(db.Date, nullable=False, default=date.today)
     notes = db.Column(db.String(255), default='')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def to_dict(self):
         return {

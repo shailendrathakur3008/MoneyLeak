@@ -15,6 +15,8 @@ class FinancialConnection(db.Model):
     institution_name = db.Column(db.String(120), nullable=False)
     institution_code = db.Column(db.String(50), nullable=False, default='GENERIC')
     account_mask = db.Column(db.String(30), default='•••• ****')
+    account_reference = db.Column(db.String(100), nullable=True)  # Provider account ID or unique reference
+    account_name = db.Column(db.String(120), nullable=True)       # e.g., 'Primary Savings' or 'Salary Account'
     account_type = db.Column(db.String(40), default='SAVINGS')  # SAVINGS, CURRENT, CREDIT_CARD, UPI_WALLET
     provider = db.Column(db.String(50), default='ACCOUNT_AGGREGATOR')  # ACCOUNT_AGGREGATOR, BANK_FEED, STATEMENT_IMPORT
     consent_id = db.Column(db.String(150), nullable=True, index=True)
@@ -23,6 +25,7 @@ class FinancialConnection(db.Model):
     last_sync_at = db.Column(db.DateTime, nullable=True)
     sync_cursor = db.Column(db.String(255), nullable=True)
     status = db.Column(db.String(30), default='CONNECTED')  # CONNECTED, SYNCING, DISCONNECTED, ERROR, CONFIG_REQUIRED
+    is_demo = db.Column(db.Boolean, default=False, nullable=False)  # Distinguish demo simulation from verified production
     error_message = db.Column(db.Text, default='')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -31,8 +34,22 @@ class FinancialConnection(db.Model):
     synced_transactions = db.relationship('SyncedTransaction', backref='connection', lazy='dynamic', cascade='all, delete-orphan')
     audit_logs = db.relationship('SyncAuditLog', backref='connection', lazy='dynamic', cascade='all, delete-orphan')
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def is_active(self):
         return self.status == 'CONNECTED' and self.consent_status == 'ACTIVE'
+
+    @property
+    def is_simulated(self) -> bool:
+        """Return True if this connection is a demo simulation rather than verified live AA."""
+        if self.is_demo:
+            return True
+        if self.consent_id and (self.consent_id.startswith('aa-consent-') or self.consent_id.startswith('sim-')):
+            return True
+        if self.account_reference and self.account_reference.startswith('ACC_'):
+            return True
+        return False
 
     def to_dict(self):
         return {
@@ -41,6 +58,8 @@ class FinancialConnection(db.Model):
             'institution_name': self.institution_name,
             'institution_code': self.institution_code,
             'account_mask': self.account_mask,
+            'account_reference': self.account_reference,
+            'account_name': self.account_name or f"{self.institution_name} ({self.account_type.capitalize()})",
             'account_type': self.account_type,
             'provider': self.provider,
             'consent_id': self.consent_id,
@@ -48,6 +67,8 @@ class FinancialConnection(db.Model):
             'consent_expires_at': self.consent_expires_at.isoformat() if self.consent_expires_at else None,
             'last_sync_at': self.last_sync_at.isoformat() if self.last_sync_at else None,
             'status': self.status,
+            'is_demo': self.is_demo,
+            'is_simulated': self.is_simulated,
             'error_message': self.error_message,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'total_synced': self.synced_transactions.count()
@@ -63,6 +84,7 @@ class SyncedTransaction(db.Model):
     transaction_id = db.Column(db.Integer, db.ForeignKey('transactions.id', ondelete='SET NULL'), nullable=True, index=True)
     income_id = db.Column(db.Integer, db.ForeignKey('income_records.id', ondelete='SET NULL'), nullable=True, index=True)
     external_id = db.Column(db.String(150), nullable=True, index=True)
+    source_fingerprint = db.Column(db.String(64), nullable=True, index=True)
     raw_narration = db.Column(db.Text, nullable=False)
     normalized_merchant = db.Column(db.String(120), default='Unknown Merchant')
     amount_minor_units = db.Column(db.BigInteger, nullable=False)
@@ -71,6 +93,9 @@ class SyncedTransaction(db.Model):
     transaction_type = db.Column(db.String(30), default='EXPENSE', nullable=False)
     # EXPENSE, INCOME, REFUND, TRANSFER, SAVINGS_CONTRIBUTION, DEBT_REPAYMENT
     payment_method = db.Column(db.String(30), default='UPI')  # UPI, CARD, NET_BANKING, NEFT_RTGS, OTHER
+    is_transfer = db.Column(db.Boolean, default=False, nullable=False)
+    is_refund = db.Column(db.Boolean, default=False, nullable=False)
+    is_reversal = db.Column(db.Boolean, default=False, nullable=False)
     raw_date = db.Column(db.Date, nullable=False, default=date.today, index=True)
     raw_time = db.Column(db.String(20), nullable=True)
     suggested_category_id = db.Column(db.Integer, db.ForeignKey('categories.id', ondelete='SET NULL'), nullable=True)
@@ -88,6 +113,15 @@ class SyncedTransaction(db.Model):
     imported_transaction = db.relationship('Transaction', foreign_keys=[transaction_id])
     duplicate_transaction = db.relationship('Transaction', foreign_keys=[duplicate_of_id])
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    @property
+    def is_simulated(self) -> bool:
+        if self.connection and self.connection.is_simulated:
+            return True
+        return False
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -96,6 +130,7 @@ class SyncedTransaction(db.Model):
             'institution_name': self.connection.institution_name if self.connection else 'Statement Import',
             'transaction_id': self.transaction_id,
             'external_id': self.external_id,
+            'source_fingerprint': self.source_fingerprint,
             'raw_narration': self.raw_narration,
             'normalized_merchant': self.normalized_merchant,
             'amount_minor_units': self.amount_minor_units,
@@ -103,6 +138,10 @@ class SyncedTransaction(db.Model):
             'direction': self.direction,
             'transaction_type': self.transaction_type,
             'payment_method': self.payment_method,
+            'is_transfer': self.is_transfer,
+            'is_refund': self.is_refund,
+            'is_reversal': self.is_reversal,
+            'is_simulated': self.is_simulated,
             'raw_date': self.raw_date.isoformat() if self.raw_date else None,
             'raw_time': self.raw_time,
             'suggested_category_id': self.suggested_category_id,
@@ -135,6 +174,9 @@ class MerchantCategoryPreference(db.Model):
 
     category = db.relationship('Category', foreign_keys=[category_id])
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -161,6 +203,9 @@ class SyncAuditLog(db.Model):
     records_review_required = db.Column(db.Integer, default=0)
     error_details = db.Column(db.Text, default='')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def to_dict(self):
         return {
@@ -193,6 +238,9 @@ class ReceiptRecord(db.Model):
     items_json = db.Column(db.Text, default='[]')
     matched_synced_id = db.Column(db.Integer, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def to_dict(self):
         return {
