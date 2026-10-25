@@ -48,49 +48,49 @@
 <!-- SIMULATOR KPI SUMMARY ROW -->
 <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;margin-bottom:20px;">
   <!-- Total Reduction -->
-  <div class="quick-stat-card card-pastel-peach" style="min-height:96px;padding:14px 16px;">
+  <div class="quick-stat-card card-pastel-peach" style="min-height:104px;padding:16px 18px;border-radius:14px;">
     <div>
-      <div class="stat-card-top" style="color:var(--pastel-peach-accent);display:inline-flex;align-items:center;gap:6px;font-size:11px;">
+      <div class="stat-card-top" style="color:var(--pastel-peach-accent);display:inline-flex;align-items:center;gap:6px;font-size:11.5px;">
         <i data-lucide="scissors" style="width:15px;height:15px;"></i>
         <span>Proposed Reduction</span>
       </div>
-      <div id="sim-total-reduction" class="stat-card-value" style="color:var(--pastel-peach-accent);font-size:20px;">0.00</div>
+      <div id="sim-total-reduction" class="stat-card-value" style="color:var(--pastel-peach-accent);font-size:22px;">0.00</div>
       <div class="stat-card-sub" style="font-size:11px;">Monthly expense trims</div>
     </div>
   </div>
 
   <!-- Revised Outflow -->
-  <div class="quick-stat-card" style="background:var(--bg-surface);border:1px solid var(--border-subtle);min-height:96px;padding:14px 16px;">
+  <div class="quick-stat-card" style="min-height:104px;padding:16px 18px;border-radius:14px;">
     <div>
-      <div class="stat-card-top" style="color:var(--text-primary);display:inline-flex;align-items:center;gap:6px;font-size:11px;">
+      <div class="stat-card-top" style="color:var(--text-primary);display:inline-flex;align-items:center;gap:6px;font-size:11.5px;">
         <i data-lucide="arrow-left-right" style="width:15px;height:15px;"></i>
         <span>Revised Outflow</span>
       </div>
-      <div id="sim-revised-expenses" class="stat-card-value" style="font-size:20px;color:var(--text-primary);">{{ baseline.expenses.formatted }}</div>
+      <div id="sim-revised-expenses" class="stat-card-value" style="font-size:22px;color:var(--text-primary);">{{ baseline.expenses.formatted }}</div>
       <div class="stat-card-sub" style="font-size:11px;">Baseline: {{ baseline.expenses.formatted }}</div>
     </div>
   </div>
 
   <!-- Revised Monthly Surplus -->
-  <div class="quick-stat-card card-pastel-mint" style="min-height:96px;padding:14px 16px;">
+  <div class="quick-stat-card card-pastel-mint" style="min-height:104px;padding:16px 18px;border-radius:14px;">
     <div>
-      <div class="stat-card-top" style="color:var(--pastel-mint-accent);display:inline-flex;align-items:center;gap:6px;font-size:11px;">
+      <div class="stat-card-top" style="color:var(--pastel-mint-accent);display:inline-flex;align-items:center;gap:6px;font-size:11.5px;">
         <i data-lucide="wallet" style="width:15px;height:15px;"></i>
         <span>Revised Surplus</span>
       </div>
-      <div id="sim-revised-surplus" class="stat-card-value" style="color:var(--pastel-mint-accent);font-size:20px;">{{ baseline.surplus.formatted }}</div>
+      <div id="sim-revised-surplus" class="stat-card-value" style="color:var(--pastel-mint-accent);font-size:22px;">{{ baseline.surplus.formatted }}</div>
       <div class="stat-card-sub" style="font-size:11px;">Baseline: {{ baseline.surplus.formatted }}</div>
     </div>
   </div>
 
   <!-- Projected Annual Savings -->
-  <div class="quick-stat-card card-pastel-lavender" style="min-height:96px;padding:14px 16px;">
+  <div class="quick-stat-card card-pastel-lavender" style="min-height:104px;padding:16px 18px;border-radius:14px;">
     <div>
-      <div class="stat-card-top" style="color:var(--pastel-lavender-accent);display:inline-flex;align-items:center;gap:6px;font-size:11px;">
+      <div class="stat-card-top" style="color:var(--pastel-lavender-accent);display:inline-flex;align-items:center;gap:6px;font-size:11.5px;">
         <i data-lucide="trending-up" style="width:15px;height:15px;"></i>
         <span>Projected Annual Savings</span>
       </div>
-      <div id="sim-annualized-savings" class="stat-card-value" style="color:var(--pastel-lavender-accent);font-size:20px;">0.00</div>
+      <div id="sim-annualized-savings" class="stat-card-value" style="color:var(--pastel-lavender-accent);font-size:22px;">0.00</div>
       <div class="stat-card-sub" style="font-size:11px;">12-month projection • Not guaranteed</div>
     </div>
   </div>

@@ -6,8 +6,11 @@
 <!-- TOPBAR -->
 <div class="topbar">
   <div class="topbar-greeting">
-    <div class="greeting-sup">
-      <span>Good day, {{ user.full_name }}</span>
+    <div class="greeting-sup" style="flex-wrap:wrap;gap:8px;">
+      <span style="font-size:14px;font-weight:800;color:var(--text-primary);">Good day, {{ user.full_name }}</span>
+      <span class="badge-pill badge-lime" style="display:inline-flex;align-items:center;gap:5px;font-size:9.5px;padding:2px 8px;">
+        <span class="neon-live-pulse-dot" style="width:6px;height:6px;"></span> Real-Time Analytics
+      </span>
       {% if user.user_type == 'student' %}
         <span class="badge-pill badge-blue" style="display:inline-flex;align-items:center;gap:4px;">
           <i data-lucide="graduation-cap" style="width:13px;height:13px;"></i> Student
@@ -27,7 +30,7 @@
         </span>
       {% endif %}
     </div>
-    <div class="greeting-sub">
+    <div class="greeting-sub" style="margin-top:2px;">
       {% if user.user_type == 'student' %}
         Education fees, study supplies, allowance & savings overview.
       {% elif user.user_type == 'salaried' %}
@@ -77,56 +80,56 @@
   <div class="dashboard-col">
     {% if user.opening_balance_minor_units or user.monthly_savings_target_minor_units or user.primary_financial_goal %}
     <!-- PERSONALIZED PREFERENCES & TARGETS BAR -->
-    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);margin-bottom:14px;gap:12px;">
-      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;margin-bottom:14px;gap:12px;box-shadow:var(--shadow-xs);">
+      <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
         {% if user.opening_balance_minor_units %}
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:26px;height:26px;border-radius:50%;background:rgba(56,189,248,0.15);color:#0284c7;display:flex;align-items:center;justify-content:center;">
-              <i data-lucide="wallet" style="width:13px;height:13px;"></i>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:28px;height:28px;border-radius:8px;background:rgba(56,189,248,0.15);color:#0284c7;display:flex;align-items:center;justify-content:center;">
+              <i data-lucide="wallet" style="width:14px;height:14px;"></i>
             </div>
             <div>
-              <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);font-weight:700;letter-spacing:0.4px;">Opening Balance</div>
-              <div style="font-size:12px;font-weight:800;color:var(--text-primary);font-variant-numeric:tabular-nums;">{{ user.opening_balance_minor_units|format_money(user.currency) }}</div>
+              <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);font-weight:800;letter-spacing:0.5px;">Opening Balance</div>
+              <div style="font-size:13px;font-weight:800;color:var(--text-primary);font-variant-numeric:tabular-nums;">{{ user.opening_balance_minor_units|format_money(user.currency) }}</div>
             </div>
           </div>
         {% endif %}
 
         {% if user.monthly_savings_target_minor_units %}
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:26px;height:26px;border-radius:50%;background:rgba(203,244,50,0.18);color:#65a30d;display:flex;align-items:center;justify-content:center;">
-              <i data-lucide="target" style="width:13px;height:13px;"></i>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:28px;height:28px;border-radius:8px;background:rgba(203,244,50,0.18);color:#65a30d;display:flex;align-items:center;justify-content:center;">
+              <i data-lucide="target" style="width:14px;height:14px;"></i>
             </div>
             <div>
-              <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);font-weight:700;letter-spacing:0.4px;">Savings Target</div>
-              <div style="font-size:12px;font-weight:800;color:var(--text-primary);font-variant-numeric:tabular-nums;">{{ user.monthly_savings_target_minor_units|format_money(user.currency) }}/mo</div>
+              <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);font-weight:800;letter-spacing:0.5px;">Savings Target</div>
+              <div style="font-size:13px;font-weight:800;color:var(--text-primary);font-variant-numeric:tabular-nums;">{{ user.monthly_savings_target_minor_units|format_money(user.currency) }}/mo</div>
             </div>
           </div>
         {% endif %}
 
         {% if user.primary_financial_goal %}
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:26px;height:26px;border-radius:50%;background:rgba(167,139,250,0.15);color:#7c3aed;display:flex;align-items:center;justify-content:center;">
-              <i data-lucide="flag" style="width:13px;height:13px;"></i>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:28px;height:28px;border-radius:8px;background:rgba(167,139,250,0.15);color:#7c3aed;display:flex;align-items:center;justify-content:center;">
+              <i data-lucide="flag" style="width:14px;height:14px;"></i>
             </div>
             <div>
-              <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);font-weight:700;letter-spacing:0.4px;">Primary Goal</div>
-              <div style="font-size:12px;font-weight:800;color:var(--text-primary);">{{ user.primary_financial_goal }}</div>
+              <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);font-weight:800;letter-spacing:0.5px;">Primary Goal</div>
+              <div style="font-size:13px;font-weight:800;color:var(--text-primary);">{{ user.primary_financial_goal }}</div>
             </div>
           </div>
         {% endif %}
       </div>
 
-      <a href="{{ url_for('settings.view_settings') }}" style="font-size:11px;color:var(--brand-primary);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:2px;">
-        Settings <i data-lucide="chevron-right" style="width:12px;height:12px;"></i>
+      <a href="{{ url_for('settings.view_settings') }}" style="font-size:11.5px;color:var(--brand-primary);text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:3px;">
+        Settings <i data-lucide="chevron-right" style="width:13px;height:13px;"></i>
       </a>
     </div>
     {% endif %}
 
     <!-- MONTHLY BUDGET CONFIRMATION BANNER -->
     {% if prompt_info and prompt_info.confirmation_status in ('pending', 'postponed') %}
-    <div id="monthly-budget-banner" class="card" style="margin-bottom:14px;background:var(--bg-card);border-left:4px solid var(--brand-primary);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;box-shadow:var(--shadow-sm);">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div style="width:36px;height:36px;border-radius:10px;background:rgba(203,244,50,0.15);color:var(--brand-primary-text, #65a30d);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+    <div id="monthly-budget-banner" class="card" style="margin-bottom:14px;background:var(--bg-card);border-left:4px solid var(--brand-primary);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;box-shadow:var(--shadow-sm);border-radius:14px;">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="width:38px;height:38px;border-radius:10px;background:rgba(203,244,50,0.18);color:var(--brand-primary-text, #65a30d);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <i data-lucide="calendar" style="width:20px;height:20px;"></i>
         </div>
         <div>

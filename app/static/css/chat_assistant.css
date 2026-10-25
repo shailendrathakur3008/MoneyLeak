@@ -20,10 +20,10 @@
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: var(--brand-primary, #0284c7);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
+  background: #cbf432;
+  color: #0c0e0d;
+  border: 1px solid rgba(203, 244, 50, 0.5);
+  box-shadow: 0 0 20px rgba(203, 244, 50, 0.4), 0 4px 14px rgba(0, 0, 0, 0.35);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -34,13 +34,20 @@
 }
 
 .floating-chat-btn:hover {
-  transform: scale(1.06);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
-  background: #0369a1;
+  transform: scale(1.08);
+  box-shadow: 0 0 28px rgba(203, 244, 50, 0.65), 0 6px 18px rgba(0, 0, 0, 0.4);
+  background: #d4f940;
+}
+
+.floating-chat-btn i,
+.floating-chat-btn svg {
+  color: #0c0e0d !important;
+  stroke: #0c0e0d !important;
+  stroke-width: 2.3px !important;
 }
 
 .floating-chat-btn:focus-visible {
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.5), 0 6px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 0 0 3px rgba(203, 244, 50, 0.6), 0 6px 20px rgba(0, 0, 0, 0.35);
 }
 
 .chat-online-badge {

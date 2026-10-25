@@ -50,34 +50,34 @@
     <span class="badge-pill badge-dark" style="font-size:10px;">{{ user.currency }} Standard</span>
   </div>
 
-  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));gap:10px;">
-    <div style="background:var(--bg-subtle);padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
-      <div style="font-size:10px;color:var(--text-muted);font-weight:700;letter-spacing:0.5px;">RECOGNIZED INFLOW</div>
-      <div style="font-size:18px;font-weight:800;color:var(--text-primary);margin-top:2px;font-variant-numeric:tabular-nums;">{{ summary.income.formatted }}</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));gap:12px;">
+    <div style="background:var(--bg-card-subtle);padding:14px 16px;border-radius:10px;border:1px solid var(--border-subtle);">
+      <div style="font-size:10px;color:var(--text-muted);font-weight:800;letter-spacing:0.6px;text-transform:uppercase;">RECOGNIZED INFLOW</div>
+      <div style="font-size:20px;font-weight:800;color:var(--text-primary);margin-top:3px;font-variant-numeric:tabular-nums;letter-spacing:-0.3px;">{{ summary.income.formatted }}</div>
       <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Salary & deposits</div>
     </div>
 
-    <div style="background:var(--bg-subtle);padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
-      <div style="font-size:10px;color:var(--text-muted);font-weight:700;letter-spacing:0.5px;">TOTAL OUTFLOWS</div>
-      <div style="font-size:18px;font-weight:800;color:var(--text-primary);margin-top:2px;font-variant-numeric:tabular-nums;">{{ summary.total_outflow.formatted }}</div>
+    <div style="background:var(--bg-card-subtle);padding:14px 16px;border-radius:10px;border:1px solid var(--border-subtle);">
+      <div style="font-size:10px;color:var(--text-muted);font-weight:800;letter-spacing:0.6px;text-transform:uppercase;">TOTAL OUTFLOWS</div>
+      <div style="font-size:20px;font-weight:800;color:var(--text-primary);margin-top:3px;font-variant-numeric:tabular-nums;letter-spacing:-0.3px;">{{ summary.total_outflow.formatted }}</div>
       <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Consumption + Savings</div>
     </div>
 
-    <div style="background:var(--bg-subtle);padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
-      <div style="font-size:10px;color:var(--text-muted);font-weight:700;letter-spacing:0.5px;">CONSUMPTION</div>
-      <div style="font-size:18px;font-weight:800;color:var(--accent-danger);margin-top:2px;font-variant-numeric:tabular-nums;">{{ summary.expenses.formatted }}</div>
+    <div style="background:var(--bg-card-subtle);padding:14px 16px;border-radius:10px;border:1px solid var(--border-subtle);">
+      <div style="font-size:10px;color:var(--text-muted);font-weight:800;letter-spacing:0.6px;text-transform:uppercase;">CONSUMPTION</div>
+      <div style="font-size:20px;font-weight:800;color:var(--color-danger);margin-top:3px;font-variant-numeric:tabular-nums;letter-spacing:-0.3px;">{{ summary.expenses.formatted }}</div>
       <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Needs & Wants</div>
     </div>
 
-    <div style="background:var(--bg-subtle);padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
-      <div style="font-size:10px;color:var(--text-muted);font-weight:700;letter-spacing:0.5px;">ACTUAL SAVINGS</div>
-      <div style="font-size:18px;font-weight:800;color:#16a34a;margin-top:2px;font-variant-numeric:tabular-nums;">{{ summary.actual_savings.formatted }}</div>
+    <div style="background:var(--bg-card-subtle);padding:14px 16px;border-radius:10px;border:1px solid var(--border-subtle);">
+      <div style="font-size:10px;color:var(--text-muted);font-weight:800;letter-spacing:0.6px;text-transform:uppercase;">ACTUAL SAVINGS</div>
+      <div style="font-size:20px;font-weight:800;color:#10b981;margin-top:3px;font-variant-numeric:tabular-nums;letter-spacing:-0.3px;">{{ summary.actual_savings.formatted }}</div>
       <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Rate: {{ summary.savings_rate }}%</div>
     </div>
 
-    <div style="background:var(--bg-subtle);padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
-      <div style="font-size:10px;color:var(--text-muted);font-weight:700;letter-spacing:0.5px;">NET SURPLUS</div>
-      <div style="font-size:18px;font-weight:800;color:var(--brand-primary);margin-top:2px;font-variant-numeric:tabular-nums;">{{ summary.surplus.formatted }}</div>
+    <div style="background:var(--bg-card-subtle);padding:14px 16px;border-radius:10px;border:1px solid var(--border-subtle);">
+      <div style="font-size:10px;color:var(--text-muted);font-weight:800;letter-spacing:0.6px;text-transform:uppercase;">NET SURPLUS</div>
+      <div style="font-size:20px;font-weight:800;color:var(--brand-primary);margin-top:3px;font-variant-numeric:tabular-nums;letter-spacing:-0.3px;">{{ summary.surplus.formatted }}</div>
       <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Unallocated cash</div>
     </div>
   </div>
