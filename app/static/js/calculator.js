@@ -226,9 +226,11 @@ function switchExplorerTab(newTab) {
   explorerState.activeTab = newTab;
   explorerState.currentPage = 1;
 
-  // Highlight active tab
+  // Highlight active tab & update ARIA accessibility
   document.querySelectorAll('#scheme-explorer-tabs .explorer-tab-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.getAttribute('data-tab') === newTab);
+    const isActive = btn.getAttribute('data-tab') === newTab;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
   });
 
   applySchemeExplorerFilters();
@@ -246,7 +248,9 @@ function resetSchemeExplorerFilters() {
   explorerState.currentPage = 1;
 
   document.querySelectorAll('#scheme-explorer-tabs .explorer-tab-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.getAttribute('data-tab') === 'ALL');
+    const isActive = btn.getAttribute('data-tab') === 'ALL';
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
   });
 
   const searchInput = document.getElementById('explorer-search');

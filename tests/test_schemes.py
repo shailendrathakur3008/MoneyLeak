@@ -588,3 +588,51 @@ def test_scheme_explorer_acceptance_criteria():
     assert len(all_schemes) >= 70
     scheme_ids = [s['id'] for s in all_schemes]
     assert len(scheme_ids) == len(set(scheme_ids)), "Duplicate schemes found in All Schemes!"
+
+
+def test_scheme_explorer_tabs_markup_and_neon_container(client, test_user):
+    """
+    Verify the 5 Scheme Explorer category tabs, their neon container,
+    and accessibility attributes in calculator page markup.
+    """
+    with client.session_transaction() as sess:
+        sess['user_id'] = test_user.id
+
+    res = client.get('/calculator')
+    assert res.status_code == 200
+    html = res.data.decode('utf-8')
+
+    # 1. Neon box container exists with role="tablist"
+    assert 'class="scheme-tabs-neon-container"' in html
+    assert 'id="scheme-explorer-neon-container"' in html
+    assert 'role="tablist"' in html
+
+    # 2. All 5 tabs exist with correct IDs and data-tab attributes
+    assert 'id="tab-all-schemes"' in html
+    assert 'data-tab="ALL"' in html
+    assert 'All Schemes' in html
+
+    assert 'id="tab-stocks"' in html
+    assert 'data-tab="STOCKS"' in html
+    assert 'Stocks & Equity' in html
+
+    assert 'id="tab-mutual-funds"' in html
+    assert 'data-tab="MUTUAL_FUNDS"' in html
+    assert 'Equity Mutual Funds' in html
+
+    assert 'id="tab-sip"' in html
+    assert 'data-tab="SIP_INVESTMENTS"' in html
+    assert 'SIP Investments' in html
+
+    assert 'id="tab-gold"' in html
+    assert 'data-tab="GOLD"' in html
+    assert 'Gold' in html
+
+    # 3. Initial active state on All Schemes with aria-selected="true"
+    assert 'class="explorer-tab-btn active"' in html
+    assert 'aria-selected="true"' in html
+    assert 'aria-selected="false"' in html
+
+    # 4. Results count badge exists
+    assert 'id="explorer-results-count-badge"' in html
+

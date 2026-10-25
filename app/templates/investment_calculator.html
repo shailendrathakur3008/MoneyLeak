@@ -4,214 +4,6 @@
 
 {% block extra_head %}
 <style>
-/* ==========================================================================
-   SCHEME EXPLORER NEON BOX CONTAINER & TABS
-   Ultra-high visibility neon box styling ensuring all options are 100% visible
-   ========================================================================== */
-.scheme-explorer-neon-box {
-  background: linear-gradient(135deg, #0b110e 0%, #131a15 50%, #0c120f 100%);
-  border: 2px solid #cbf432;
-  border-radius: 18px;
-  padding: 22px 24px;
-  margin-bottom: 22px;
-  box-shadow: 0 0 28px rgba(203, 244, 50, 0.4), 
-              0 0 65px rgba(203, 244, 50, 0.16), 
-              inset 0 0 22px rgba(203, 244, 50, 0.06);
-  position: relative;
-  overflow: hidden;
-  color: #ffffff;
-}
-
-.scheme-explorer-neon-box::after {
-  content: '';
-  position: absolute;
-  top: -50px;
-  right: -50px;
-  width: 170px;
-  height: 170px;
-  background: radial-gradient(circle, rgba(203, 244, 50, 0.22) 0%, transparent 70%);
-  pointer-events: none;
-  border-radius: 50%;
-}
-
-.neon-box-top-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.neon-box-title-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.neon-live-pulse-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #cbf432;
-  box-shadow: 0 0 10px #cbf432, 0 0 20px #cbf432;
-  animation: neonDotPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes neonDotPulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-    box-shadow: 0 0 10px #cbf432, 0 0 20px #cbf432;
-  }
-  50% {
-    opacity: 0.6;
-    transform: scale(0.85);
-    box-shadow: 0 0 4px #cbf432, 0 0 10px #cbf432;
-  }
-}
-
-.neon-box-tag {
-  font-size: 11.5px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: #cbf432;
-  text-shadow: 0 0 12px rgba(203, 244, 50, 0.45);
-}
-
-.neon-count-pill {
-  font-size: 11px;
-  font-weight: 800;
-  padding: 4px 12px;
-  border-radius: 20px;
-  background: rgba(203, 244, 50, 0.16);
-  color: #cbf432;
-  border: 1px solid rgba(203, 244, 50, 0.45);
-  box-shadow: 0 0 12px rgba(203, 244, 50, 0.25);
-  letter-spacing: 0.2px;
-}
-
-.neon-box-description {
-  font-size: 13.5px;
-  line-height: 1.55;
-  color: rgba(255, 255, 255, 0.92);
-  margin: 0 0 16px 0;
-  font-weight: 500;
-  max-width: 950px;
-}
-
-.scheme-explorer-tabs {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: center;
-  border-bottom: none !important;
-  padding-bottom: 0 !important;
-  margin-bottom: 0 !important;
-}
-
-/* Tab button inside Neon Box - Inactive State */
-.explorer-tab-btn {
-  padding: 10px 18px;
-  font-size: 13px;
-  font-weight: 700;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
-  border: 1.5px solid rgba(203, 244, 50, 0.35) !important;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  line-height: 1.4;
-  text-align: center;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-  user-select: none;
-}
-
-.explorer-tab-btn i,
-.explorer-tab-btn svg,
-.explorer-tab-btn .lucide {
-  width: 16px;
-  height: 16px;
-  stroke-width: 2.2px;
-  color: #cbf432 !important;
-  stroke: #cbf432 !important;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.explorer-tab-btn span {
-  color: #ffffff !important;
-  font-weight: 700;
-}
-
-/* Tab button hover */
-.explorer-tab-btn:hover {
-  background: rgba(203, 244, 50, 0.22) !important;
-  border-color: #cbf432 !important;
-  color: #cbf432 !important;
-  box-shadow: 0 0 16px rgba(203, 244, 50, 0.65), 0 4px 12px rgba(0, 0, 0, 0.4) !important;
-  transform: translateY(-2px);
-}
-
-.explorer-tab-btn:hover span {
-  color: #cbf432 !important;
-}
-
-.explorer-tab-btn:hover i,
-.explorer-tab-btn:hover svg,
-.explorer-tab-btn:hover .lucide {
-  color: #cbf432 !important;
-  stroke: #cbf432 !important;
-}
-
-/* Tab button ACTIVE State - Radiant Neon Lime */
-.explorer-tab-btn.active {
-  background: #cbf432 !important;
-  color: #0f1411 !important;
-  border: 2px solid #bde724 !important;
-  box-shadow: 0 0 22px rgba(203, 244, 50, 0.95), 0 0 45px rgba(203, 244, 50, 0.45) !important;
-  font-weight: 900 !important;
-  transform: translateY(-1px);
-}
-
-.explorer-tab-btn.active i,
-.explorer-tab-btn.active svg,
-.explorer-tab-btn.active .lucide {
-  color: #0f1411 !important;
-  stroke: #0f1411 !important;
-  stroke-width: 2.6px !important;
-}
-
-.explorer-tab-btn.active span {
-  color: #0f1411 !important;
-  font-weight: 900 !important;
-}
-
-/* Dark theme explicitly identical for maximum neon radiance */
-[data-theme="dark"] .explorer-tab-btn {
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
-  border: 1.5px solid rgba(203, 244, 50, 0.35) !important;
-}
-
-[data-theme="dark"] .explorer-tab-btn.active {
-  background: #cbf432 !important;
-  color: #0f1411 !important;
-  border: 2px solid #cbf432 !important;
-  box-shadow: 0 0 22px rgba(203, 244, 50, 0.95), 0 0 45px rgba(203, 244, 50, 0.45) !important;
-}
-
-[data-theme="dark"] .explorer-tab-btn.active i,
-[data-theme="dark"] .explorer-tab-btn.active svg,
-[data-theme="dark"] .explorer-tab-btn.active .lucide,
-[data-theme="dark"] .explorer-tab-btn.active span {
-  color: #0f1411 !important;
-  stroke: #0f1411 !important;
-}
-
 /* Active Removable Filter Text Chips */
 .active-filter-chip {
   display: inline-flex;
@@ -288,71 +80,40 @@
     <div class="card-header-flex" style="margin-bottom:16px;">
       <div>
         <h2 class="card-title" style="font-size:18px;font-weight:800;margin:0;letter-spacing:-0.3px;display:flex;align-items:center;gap:8px;">
-          <i data-lucide="compass" style="width:18px;height:18px;color:#cbf432;"></i>
+          <i data-lucide="compass" style="width:18px;height:18px;color:var(--brand-primary);"></i>
           <span>Scheme Explorer</span>
         </h2>
+        <div class="card-subtitle" style="margin-top:4px;font-size:12.5px;color:var(--text-secondary);max-width:850px;">
+          Filter vetted Indian investments across approved asset classes. Refine by risk level, duration horizon, minimum contribution, and expense ratio.
+        </div>
+      </div>
+      <div id="explorer-results-count-badge" class="badge-pill badge-dark" style="font-size:11px;padding:6px 14px;font-weight:800;letter-spacing:0.4px;text-transform:uppercase;">
+        Showing {{ schemes|length }} investments
       </div>
     </div>
 
-    <!-- SCHEME EXPLORER NEON BOX -->
-    <div class="scheme-explorer-neon-box">
-      <!-- Neon Box Top Header -->
-      <div class="neon-box-top-bar">
-        <div class="neon-box-title-group">
-          <span class="neon-live-pulse-dot"></span>
-          <span class="neon-box-tag">⚡ Asset Class Explorer • Approved Indian Catalogue</span>
-        </div>
-        <div id="explorer-results-count-badge" class="neon-count-pill">
-          Showing {{ schemes|length }} investments
-        </div>
-      </div>
-
-      <!-- Description from user request -->
-      <p class="neon-box-description">
-        Filter vetted Indian investments across approved asset classes. Refine by risk level, duration horizon, minimum contribution, and expense ratio.
-      </p>
-
-      <!-- Main Asset Class Tabs in Neon Box -->
+    <!-- SCHEME EXPLORER NEON BOX CONTAINER (ROUNDED BOX WITH NEON LIME ACCENT) -->
+    <div class="scheme-tabs-neon-container" id="scheme-explorer-neon-container" role="tablist" aria-label="Investment Scheme Categories">
       <div class="scheme-explorer-tabs" id="scheme-explorer-tabs">
-        <button type="button" class="explorer-tab-btn active" data-tab="ALL" id="tab-all-schemes" title="View all vetted Indian investments">
+        <button type="button" class="explorer-tab-btn active" data-tab="ALL" id="tab-all-schemes" role="tab" aria-selected="true" title="View all vetted Indian investments">
           <i data-lucide="chart-no-axes-combined"></i>
-          <span>All Investments</span>
+          <span>All Schemes</span>
         </button>
-        <button type="button" class="explorer-tab-btn" data-tab="STOCKS" id="tab-stocks" title="Stocks & Direct Equity across 9 Sectors">
+        <button type="button" class="explorer-tab-btn" data-tab="STOCKS" id="tab-stocks" role="tab" aria-selected="false" title="Stocks & Direct Equity across 9 Sectors">
           <i data-lucide="chart-candlestick"></i>
           <span>Stocks & Equity</span>
         </button>
-        <button type="button" class="explorer-tab-btn" data-tab="MUTUAL_FUNDS" id="tab-mutual-funds" title="Equity Mutual Funds across 11 Categories">
+        <button type="button" class="explorer-tab-btn" data-tab="MUTUAL_FUNDS" id="tab-mutual-funds" role="tab" aria-selected="false" title="Equity Mutual Funds across 11 Categories">
           <i data-lucide="chart-pie"></i>
           <span>Equity Mutual Funds</span>
         </button>
-        <button type="button" class="explorer-tab-btn" data-tab="SIP_INVESTMENTS" id="tab-sip" title="Eligible Monthly Systematic Investment Plans (SIP)">
+        <button type="button" class="explorer-tab-btn" data-tab="SIP_INVESTMENTS" id="tab-sip" role="tab" aria-selected="false" title="Eligible Monthly Systematic Investment Plans (SIP)">
           <i data-lucide="calendar-clock"></i>
           <span>SIP Investments</span>
         </button>
-        <button type="button" class="explorer-tab-btn" data-tab="GOLD" id="tab-gold" title="Physical Gold, ETFs, Mutual Funds & Sovereign Gold Bonds">
+        <button type="button" class="explorer-tab-btn" data-tab="GOLD" id="tab-gold" role="tab" aria-selected="false" title="Physical Gold, ETFs, Mutual Funds & Sovereign Gold Bonds">
           <i data-lucide="coins"></i>
           <span>Gold</span>
-        </button>
-        <button type="button" class="explorer-tab-btn" data-tab="ETFS" id="tab-etfs" title="Exchange Traded Funds">
-          <i data-lucide="layers"></i>
-          <span>ETFs</span>
-        </button>
-        <button type="button" class="explorer-tab-btn" data-tab="FIXED_DEPOSITS" id="tab-fd" title="Bank & Post Office Term Deposits">
-          <i data-lucide="landmark"></i>
-          <span>Fixed Deposits</span>
-        </button>
-        <button type="button" class="explorer-tab-btn" data-tab="GOVT_SECURITIES" id="tab-gsec" title="Government Dated Bonds & Treasury Bills">
-          <i data-lucide="shield-check"></i>
-          <span>Govt Securities</span>
-        </button>
-        <button type="button" class="explorer-tab-btn" data-tab="SMALL_SAVINGS" id="tab-small-savings" title="Small Savings Schemes (PPF, SSY, NSC, POMIS)">
-          <i data-lucide="piggy-bank"></i>
-          <span>Small Savings</span>
-        </button>
-        <button type="button" class="explorer-tab-btn" data-tab="OTHER" id="tab-other" title="Other Supported Instruments">
-          <i data-lucide="briefcase"></i>
-          <span>Other</span>
         </button>
       </div>
     </div>

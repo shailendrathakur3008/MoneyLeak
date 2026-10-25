@@ -1729,85 +1729,218 @@ textarea.form-control {
   stroke-width: 2px;
 }
 
-/* Scheme Explorer tabs (Neon Box Styling) */
-.scheme-explorer-neon-box .explorer-tab-btn,
+/* ==========================================================================
+   SCHEME EXPLORER CATEGORY TABS & NEON BOX CONTAINER
+   High-contrast, polished neon-lime branding for both Light and Dark themes.
+   Active tab: Prominent neon-lime background with high-contrast dark text (#0c0e0d).
+   Inactive tabs: Theme-appropriate, high-contrast, fully visible.
+   ========================================================================== */
+
+/* 1. The Neon Box Container */
+.scheme-tabs-neon-container {
+  display: block;
+  width: 100%;
+  border-radius: 14px;
+  padding: 8px 10px;
+  margin-bottom: 20px;
+  background: #f1f4ed;
+  border: 1.5px solid #a3e635;
+  box-shadow: 0 0 16px rgba(132, 204, 22, 0.2), 0 2px 6px rgba(0, 0, 0, 0.04), inset 0 1px 2px rgba(0, 0, 0, 0.03);
+  box-sizing: border-box;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+[data-theme="dark"] .scheme-tabs-neon-container {
+  background: #121614;
+  border: 1.5px solid rgba(203, 244, 50, 0.45);
+  box-shadow: 0 0 20px rgba(203, 244, 50, 0.18), inset 0 0 12px rgba(203, 244, 50, 0.04);
+}
+
+/* 2. Tabs Horizontal Layout & Scrolling */
+.scheme-explorer-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  padding: 2px 2px 4px 2px;
+  border-bottom: none !important;
+  margin-bottom: 0 !important;
+}
+
+.scheme-explorer-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+.scheme-explorer-tabs::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scheme-explorer-tabs::-webkit-scrollbar-thumb {
+  background: rgba(132, 204, 22, 0.4);
+  border-radius: 4px;
+}
+[data-theme="dark"] .scheme-explorer-tabs::-webkit-scrollbar-thumb {
+  background: rgba(203, 244, 50, 0.4);
+}
+
+/* 3. Common Tab Button Base */
 .explorer-tab-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 18px;
+  padding: 9px 18px;
   font-size: 13px;
   font-weight: 700;
   border-radius: 10px;
-  border: 1.5px solid rgba(203, 244, 50, 0.35);
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  line-height: 1.4;
+  white-space: nowrap;
+  flex-shrink: 0;
   user-select: none;
+  border: 1.5px solid rgba(0, 0, 0, 0.12);
+  background: #ffffff;
+  color: #1f2923;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.scheme-explorer-neon-box .explorer-tab-btn:hover,
-.explorer-tab-btn:hover {
-  background: rgba(203, 244, 50, 0.22);
+.explorer-tab-btn span {
+  color: #1f2923;
+  font-weight: 700;
+  transition: color 0.2s ease;
+}
+
+.explorer-tab-btn i,
+.explorer-tab-btn svg,
+.explorer-tab-btn .lucide {
+  width: 16px;
+  height: 16px;
+  color: #4d7c0f;
+  stroke: #4d7c0f;
+  stroke-width: 2.2px;
+  vertical-align: -0.15em;
+  transition: all 0.2s ease;
+}
+
+/* 4. Inactive Tab Hover - Light Theme */
+.explorer-tab-btn:not(.active):hover {
+  background: rgba(203, 244, 50, 0.28);
+  border-color: #84cc16;
+  color: #0c0e0d;
+  box-shadow: 0 2px 8px rgba(132, 204, 22, 0.25);
+  transform: translateY(-1px);
+}
+.explorer-tab-btn:not(.active):hover span {
+  color: #0c0e0d;
+}
+.explorer-tab-btn:not(.active):hover i,
+.explorer-tab-btn:not(.active):hover svg,
+.explorer-tab-btn:not(.active):hover .lucide {
+  color: #15803d;
+  stroke: #15803d;
+}
+
+/* 5. Inactive Tab - Dark Theme */
+[data-theme="dark"] .explorer-tab-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  color: #e5eae3;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .explorer-tab-btn span {
+  color: #e5eae3;
+}
+
+[data-theme="dark"] .explorer-tab-btn i,
+[data-theme="dark"] .explorer-tab-btn svg,
+[data-theme="dark"] .explorer-tab-btn .lucide {
   color: #cbf432;
-  border-color: #cbf432;
-  box-shadow: 0 0 16px rgba(203, 244, 50, 0.65), 0 4px 12px rgba(0, 0, 0, 0.4);
-  transform: translateY(-2px);
+  stroke: #cbf432;
 }
 
-.scheme-explorer-neon-box .explorer-tab-btn.active,
-.explorer-tab-btn.active {
+/* Inactive Tab Hover - Dark Theme */
+[data-theme="dark"] .explorer-tab-btn:not(.active):hover {
+  background: rgba(203, 244, 50, 0.16);
+  border-color: rgba(203, 244, 50, 0.6);
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(203, 244, 50, 0.35);
+  transform: translateY(-1px);
+}
+[data-theme="dark"] .explorer-tab-btn:not(.active):hover span {
+  color: #ffffff;
+}
+[data-theme="dark"] .explorer-tab-btn:not(.active):hover i,
+[data-theme="dark"] .explorer-tab-btn:not(.active):hover svg,
+[data-theme="dark"] .explorer-tab-btn:not(.active):hover .lucide {
+  color: #cbf432;
+  stroke: #cbf432;
+}
+
+/* 6. ACTIVE TAB - PROMINENT NEON LIME IN BOTH LIGHT & DARK THEMES */
+.explorer-tab-btn.active,
+[data-theme="light"] .explorer-tab-btn.active,
+[data-theme="dark"] .explorer-tab-btn.active {
   background: #cbf432 !important;
-  color: #0f1411 !important;
-  border: 2px solid #bde724 !important;
-  box-shadow: 0 0 22px rgba(203, 244, 50, 0.95), 0 0 45px rgba(203, 244, 50, 0.45) !important;
-  font-weight: 900 !important;
+  color: #0c0e0d !important;
+  border: 1.5px solid #a3e635 !important;
+  font-weight: 800 !important;
   transform: translateY(-1px);
 }
 
-.scheme-explorer-neon-box .explorer-tab-btn svg,
-.scheme-explorer-neon-box .explorer-tab-btn .lucide,
-.scheme-explorer-neon-box .explorer-tab-btn i,
-.explorer-tab-btn svg,
-.explorer-tab-btn .lucide,
-.explorer-tab-btn i {
-  width: 16px;
-  height: 16px;
-  stroke-width: 2.2px;
-  color: #cbf432;
-  stroke: #cbf432;
-  vertical-align: -0.15em;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+/* Active Tab Glow - Light Theme */
+.explorer-tab-btn.active,
+[data-theme="light"] .explorer-tab-btn.active {
+  box-shadow: 0 0 16px rgba(132, 204, 22, 0.55), 0 2px 6px rgba(0, 0, 0, 0.12) !important;
 }
 
-.scheme-explorer-neon-box .explorer-tab-btn span,
-.explorer-tab-btn span {
-  color: #ffffff;
-  font-weight: 700;
+/* Active Tab Glow - Dark Theme */
+[data-theme="dark"] .explorer-tab-btn.active {
+  border-color: #d4f74d !important;
+  box-shadow: 0 0 18px rgba(203, 244, 50, 0.75), 0 2px 8px rgba(0, 0, 0, 0.4) !important;
 }
 
-.scheme-explorer-neon-box .explorer-tab-btn:hover span,
-.explorer-tab-btn:hover span {
-  color: #cbf432;
+/* Active Tab Text in Both Themes */
+.explorer-tab-btn.active span,
+[data-theme="light"] .explorer-tab-btn.active span,
+[data-theme="dark"] .explorer-tab-btn.active span {
+  color: #0c0e0d !important;
+  font-weight: 800 !important;
 }
 
-.scheme-explorer-neon-box .explorer-tab-btn.active svg,
-.scheme-explorer-neon-box .explorer-tab-btn.active .lucide,
-.scheme-explorer-neon-box .explorer-tab-btn.active i,
+/* Active Tab Icons in Both Themes */
+.explorer-tab-btn.active i,
 .explorer-tab-btn.active svg,
 .explorer-tab-btn.active .lucide,
-.explorer-tab-btn.active i {
-  color: #0f1411 !important;
-  stroke: #0f1411 !important;
-  stroke-width: 2.6px !important;
+[data-theme="light"] .explorer-tab-btn.active i,
+[data-theme="light"] .explorer-tab-btn.active svg,
+[data-theme="light"] .explorer-tab-btn.active .lucide,
+[data-theme="dark"] .explorer-tab-btn.active i,
+[data-theme="dark"] .explorer-tab-btn.active svg,
+[data-theme="dark"] .explorer-tab-btn.active .lucide {
+  color: #0c0e0d !important;
+  stroke: #0c0e0d !important;
+  fill: none !important;
+  stroke-width: 2.5px !important;
 }
 
-.scheme-explorer-neon-box .explorer-tab-btn.active span,
-.explorer-tab-btn.active span {
-  color: #0f1411 !important;
-  font-weight: 900 !important;
+/* 7. Focus & Accessibility */
+.explorer-tab-btn:focus-visible {
+  outline: 2px solid #84cc16;
+  outline-offset: 2px;
+}
+[data-theme="dark"] .explorer-tab-btn:focus-visible {
+  outline: 2px solid #cbf432;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scheme-tabs-neon-container,
+  .explorer-tab-btn {
+    transition: none !important;
+    transform: none !important;
+  }
 }
 
 .calc-tab-btn svg,
