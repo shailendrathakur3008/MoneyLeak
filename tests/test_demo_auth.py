@@ -7,13 +7,13 @@ from app.services.seed_demo import seed_demo_user
 
 
 def test_login_page_renders_demo_options(client):
-    """Verify that login page includes the 1-Click Guest Login buttons and Auto-fill Demo pill."""
+    """Verify that login page includes the 1-Click Guest Login button at the bottom and Auto-fill Demo pill."""
     response = client.get('/login')
     assert response.status_code == 200
     html = response.get_data(as_text=True)
-    assert 'id="btn-guest-login"' in html
-    assert 'Continue as Guest' in html
     assert 'id="btn-guest-login-bottom"' in html
+    assert 'Guest Login (Instant Access)' in html
+    assert 'id="btn-guest-login"' not in html
     assert 'id="btn-fill-demo"' in html
     assert 'Auto-fill Demo' in html
 
