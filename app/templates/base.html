@@ -289,6 +289,28 @@
       {% endwith %}
     </div>
 
+    {% if session.get('is_demo') or (g.current_user and g.current_user.email == 'demo@moneyleak.app') %}
+    <!-- Demo Workspace Status Banner -->
+    <div class="demo-workspace-ribbon" id="demo-ribbon">
+      <div class="demo-ribbon-content">
+        <span class="demo-ribbon-badge">
+          <i data-lucide="sparkles" style="width:13px;height:13px;"></i> DEMO WORKSPACE
+        </span>
+        <span class="demo-ribbon-msg">
+          Exploring sample financial profile for <b>Tanu Sharma</b> (₹40,000/mo salary). Add transactions, edit budgets, or reset back to baseline.
+        </span>
+      </div>
+      <div class="demo-ribbon-actions">
+        <a href="{{ url_for('auth.demo_reset') }}" class="btn-ribbon-reset" title="Reset sample transactions, budget, and goals back to starting state">
+          <i data-lucide="rotate-ccw" style="width:12px;height:12px;"></i> Reset Sample Data
+        </a>
+        <a href="{{ url_for('auth.logout') }}" class="btn-ribbon-exit" title="Sign out of demo account">
+          <i data-lucide="log-out" style="width:12px;height:12px;"></i> Exit Demo
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
     {% block content %}{% endblock %}
   </main>
 </div>

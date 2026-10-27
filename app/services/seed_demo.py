@@ -12,7 +12,7 @@ Seeds a realistic student/young professional profile:
 from datetime import date, timedelta
 from app.extensions import db
 from app.models.user import User
-from app.models.budget import Budget
+from app.models.budget import Budget, MonthlyBudget
 from app.models.category import Category
 from app.models.income import IncomeRecord
 from app.models.transaction import Transaction
@@ -23,9 +23,12 @@ from app.services.leak_detection import run_leak_detection
 from app.services.money import to_minor_units
 
 
-def seed_demo_user():
+def seed_demo_user(force_reseed: bool = False):
     demo_email = 'demo@moneyleak.app'
     user = User.query.filter_by(email=demo_email).first()
+    if user and not force_reseed and user.transactions.count() > 0:
+        return user
+
     if user:
         # Delete old demo user to re-seed cleanly
         db.session.delete(user)
@@ -37,8 +40,21 @@ def seed_demo_user():
         email=demo_email,
         currency='INR',
         monthly_income_minor_units=4000000,  # ₹40,000.00
+        monthly_budget_minor_units=4000000,
         income_frequency='MONTHLY',
-        onboarding_completed=True
+        user_type='salaried',
+        country='India',
+        state_id='KA',
+        state_name='Karnataka',
+        city_name='Bengaluru',
+        location_tier='METRO',
+        budget_preset='metro',
+        theme_preference='light',
+        profile_picture_url='https://api.dicebear.com/7.x/initials/svg?seed=Tanu%20Sharma&backgroundColor=059669&textColor=ffffff',
+        auth_provider='local',
+        email_verified=True,
+        onboarding_completed=True,
+        onboarding_step=5
     )
     user.set_password('demo1234')
     db.session.add(user)
@@ -112,6 +128,61 @@ def seed_demo_user():
         (cats.get('Mutual Funds & Stocks'), 400000, 'SAVINGS_CONTRIBUTION', date(curr_y, curr_m, 5), 'Nifty 50 Index SIP', 'Zerodha Coin'),
         (cats.get('Emergency Fund'), 250000, 'SAVINGS_CONTRIBUTION', date(curr_y, curr_m, 5), 'Liquid Fund Emergency Buffer', 'Groww'),
     ]
+
+    # Monthly Budgets
+    mb_curr = MonthlyBudget(
+        user_id=user.id,
+        year=curr_y,
+        month=curr_m,
+        budget_amount_minor_units=4000000,
+        is_manually_set=True
+    )
+    db.session.add(mb_curr)
+
+    # Previous Month Benchmark Context
+    last_m_anchor = date(curr_y, curr_m, 1) - timedelta(days=15)
+    prev_y, prev_m = last_m_anchor.year, last_m_anchor.month
+
+    mb_prev = MonthlyBudget(
+        user_id=user.id,
+        year=prev_y,
+        month=prev_m,
+        budget_amount_minor_units=4000000,
+        is_manually_set=True
+    )
+    db.session.add(mb_prev)
+
+    inc_prev = IncomeRecord(
+        user_id=user.id,
+        amount_minor_units=4000000,
+        income_source='Infosys Salary Credit',
+        received_date=date(prev_y, prev_m, 1),
+        notes='Previous month net salary'
+    )
+    db.session.add(inc_prev)
+
+    # Previous Month Transactions
+    prev_sample_txns = [
+        (cats.get('Housing & Rent'), 1200000, 'EXPENSE', date(prev_y, prev_m, 2), 'Rent Payment', 'Landlord Sh. Rao'),
+        (cats.get('Essential Groceries'), 285000, 'EXPENSE', date(prev_y, prev_m, 6), 'Zepto & Nature Basket Staples', 'Zepto'),
+        (cats.get('Utilities (Power, Water, Gas)'), 135000, 'EXPENSE', date(prev_y, prev_m, 8), 'BESCOM Electricity Bill', 'BESCOM'),
+        (cats.get('Essential Commute & Fuel'), 95000, 'EXPENSE', date(prev_y, prev_m, 11), 'Namma Metro Card Recharge', 'BMRCL'),
+        (cats.get('Dining Out & Cafes'), 380000, 'EXPENSE', date(prev_y, prev_m, 14), 'Team Lunch', 'Toit Indiranagar'),
+        (cats.get('Food Delivery Apps'), 240000, 'EXPENSE', date(prev_y, prev_m, 18), 'Swiggy Dinner Orders', 'Swiggy'),
+        (cats.get('Mutual Funds & Stocks'), 800000, 'SAVINGS_CONTRIBUTION', date(prev_y, prev_m, 5), 'Nifty 50 Index SIP', 'Zerodha Coin'),
+    ]
+    for cat, amt, t_type, t_date, desc, merchant in prev_sample_txns:
+        if cat:
+            t = Transaction(
+                user_id=user.id,
+                category_id=cat.id,
+                amount_minor_units=amt,
+                transaction_type=t_type,
+                transaction_date=t_date,
+                description=desc,
+                merchant=merchant
+            )
+            db.session.add(t)
 
     for cat, amt, t_type, t_date, desc, merchant in sample_txns:
         if cat:

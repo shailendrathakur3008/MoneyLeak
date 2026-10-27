@@ -79,6 +79,14 @@ def login_required(f):
             user = User.query.filter_by(email=user_email).first()
 
         # Resilient self-healing for serverless ephemeral environments (Vercel /tmp)
+        if not user and user_email == 'demo@moneyleak.app':
+            try:
+                from app.services.seed_demo import seed_demo_user
+                user = seed_demo_user(force_reseed=True)
+            except Exception:
+                db.session.rollback()
+                user = User.query.filter_by(email=user_email).first()
+
         if not user and user_email:
             try:
                 user = User(
@@ -275,6 +283,10 @@ def login():
             return render_template('login.html')
 
         user = User.query.filter_by(email=email).first()
+        if not user and email == 'demo@moneyleak.app':
+            from app.services.seed_demo import seed_demo_user
+            user = seed_demo_user(force_reseed=False)
+
         if not user or not user.check_password(password):
             session[fail_key] = fail_count + 1
             msg = 'Invalid email or password.'
@@ -285,6 +297,8 @@ def login():
 
         session.pop(fail_key, None)
         _login_user_session(user)
+        if email == 'demo@moneyleak.app':
+            session['is_demo'] = True
 
         next_page = request.args.get('next')
         if next_page and next_page.startswith('/') and not next_page.startswith('//'):
@@ -301,6 +315,60 @@ def login():
         return redirect(dest)
 
     return render_template('login.html')
+
+
+@auth_bp.route('/auth/demo-login', methods=['GET', 'POST'])
+@auth_bp.route('/auth/guest-login', methods=['GET', 'POST'])
+@auth_bp.route('/demo', methods=['GET'])
+@auth_bp.route('/guest', methods=['GET'])
+@csrf.exempt
+def demo_login():
+    """
+    1-Click Instant Demo / Guest Workspace Login.
+    Ensures pre-configured demo user 'demo@moneyleak.app' exists with sample data
+    and creates an active authenticated session without requiring passwords or OTP.
+    """
+    from app.services.seed_demo import seed_demo_user
+    user = User.query.filter_by(email='demo@moneyleak.app').first()
+    if not user or user.transactions.count() == 0:
+        user = seed_demo_user(force_reseed=True)
+
+    _login_user_session(user)
+    session['is_demo'] = True
+    session.permanent = True
+
+    flash('Welcome to the MoneyLeak Demo Workspace! You are exploring as Tanu Sharma (₹40,000/mo salary).', 'success')
+
+    next_page = request.args.get('next')
+    if next_page and next_page.startswith('/') and not next_page.startswith('//'):
+        dest = next_page
+    else:
+        dest = url_for('dashboard.view_dashboard')
+
+    if request.is_json:
+        return jsonify({
+            'success': True,
+            'redirect': dest,
+            'message': 'Welcome to the MoneyLeak Demo Workspace!'
+        })
+
+    return redirect(dest)
+
+
+@auth_bp.route('/auth/demo-reset', methods=['GET', 'POST'])
+@csrf.exempt
+def demo_reset():
+    """Resets the demo account back to the pristine baseline sample data."""
+    from app.services.seed_demo import seed_demo_user
+    user = seed_demo_user(force_reseed=True)
+    _login_user_session(user)
+    session['is_demo'] = True
+    session.permanent = True
+
+    flash('Demo workspace has been reset to baseline transactions, budgets, and goals.', 'info')
+    if request.is_json:
+        return jsonify({'success': True, 'redirect': url_for('dashboard.view_dashboard')})
+    return redirect(url_for('dashboard.view_dashboard'))
 
 
 @auth_bp.route('/logout')
@@ -324,6 +392,9 @@ def check_email():
         return jsonify({'success': False, 'error': 'A valid email address is required.'}), 400
 
     user = User.query.filter_by(email=email).first()
+    if not user and email == 'demo@moneyleak.app':
+        from app.services.seed_demo import seed_demo_user
+        user = seed_demo_user(force_reseed=False)
     if user:
         first_name = user.full_name.split()[0] if user.full_name else 'User'
         return jsonify({

@@ -707,3 +707,118 @@
   to { transform: rotate(360deg); }
 }
 
+/* ==========================================================================
+   DEMO WORKSPACE TOP RIBBON
+   ========================================================================== */
+.demo-workspace-ribbon {
+  background: linear-gradient(90deg, rgba(203, 244, 50, 0.16) 0%, rgba(203, 244, 50, 0.05) 100%);
+  border: 1px solid rgba(203, 244, 50, 0.6);
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  animation: fadeIn 0.3s ease-out;
+  box-shadow: 0 4px 14px -2px rgba(203, 244, 50, 0.12);
+}
+
+[data-theme="dark"] .demo-workspace-ribbon {
+  background: linear-gradient(90deg, rgba(203, 244, 50, 0.12) 0%, rgba(18, 22, 19, 0.6) 100%);
+  border-color: rgba(203, 244, 50, 0.35);
+}
+
+.demo-ribbon-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 260px;
+}
+
+.demo-ribbon-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #111512;
+  color: var(--brand-lime, #cbf432);
+  padding: 4px 9px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .demo-ribbon-badge {
+  background: #cbf432;
+  color: #111512;
+}
+
+.demo-ribbon-msg {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.demo-ribbon-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-ribbon-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.btn-ribbon-reset:hover {
+  background: rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+[data-theme="dark"] .btn-ribbon-reset {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #f5f7f2;
+}
+
+[data-theme="dark"] .btn-ribbon-reset:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.btn-ribbon-exit {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 13px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #111512;
+  background: var(--brand-lime, #cbf432);
+  text-decoration: none;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(203, 244, 50, 0.3);
+}
+
+.btn-ribbon-exit:hover {
+  background: #bde724;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(203, 244, 50, 0.45);
+}
+
+

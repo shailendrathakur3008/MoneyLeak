@@ -69,6 +69,29 @@ class MonthlyBudget(db.Model):
         db.UniqueConstraint('user_id', 'year', 'month', name='uq_user_monthly_budget'),
     )
 
+    def __init__(
+        self,
+        user_id: int | None = None,
+        year: int | None = None,
+        month: int | None = None,
+        budget_amount_minor_units: int = 0,
+        source_month: str | None = None,
+        is_manually_set: bool = False,
+        confirmation_status: str = 'pending',
+        **kwargs
+    ):
+        super().__init__(**kwargs)
+        if user_id is not None:
+            self.user_id = user_id
+        if year is not None:
+            self.year = year
+        if month is not None:
+            self.month = month
+        self.budget_amount_minor_units = budget_amount_minor_units
+        self.source_month = source_month
+        self.is_manually_set = is_manually_set
+        self.confirmation_status = confirmation_status
+
     def to_dict(self):
         return {
             'id': self.id,

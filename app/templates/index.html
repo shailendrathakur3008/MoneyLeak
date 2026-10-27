@@ -187,6 +187,10 @@
           <span>Go to Dashboard</span>
         </a>
       {% else %}
+        <a href="{{ url_for('auth.demo_login') }}" class="btn btn-outline btn-sm" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;padding:7px 14px;border:1.5px solid rgba(203,244,50,0.8);background:rgba(203,244,50,0.15);color:var(--text-primary);border-radius:10px;">
+          <i data-lucide="sparkles" style="width:13px;height:13px;color:var(--brand-lime, #cbf432);"></i>
+          <span>Live Demo</span>
+        </a>
         <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;padding:8px 16px;">
           <i data-lucide="log-in" style="width:14px;height:14px;"></i>
           <span>Enter Workspace</span>
@@ -211,11 +215,15 @@
     </p>
 
     <div class="hero-cta-btns">
-      <a href="{{ url_for('auth.login') }}" class="btn btn-primary" style="padding:13px 26px;font-size:15px;font-weight:700;display:inline-flex;align-items:center;gap:8px;border-radius:12px;box-shadow:0 6px 20px rgba(79,70,229,0.35);">
-        <span>Enter Your Workspace</span>
-        <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
+      <a href="{{ url_for('auth.demo_login') }}" class="btn" style="padding:13px 24px;font-size:15px;font-weight:800;display:inline-flex;align-items:center;gap:8px;border-radius:12px;background:#cbf432;color:#111512;box-shadow:0 6px 20px rgba(203,244,50,0.4);border:none;">
+        <i data-lucide="sparkles" style="width:16px;height:16px;"></i>
+        <span>Try Live Demo (Guest)</span>
       </a>
-      <a href="#features-preview" class="btn btn-dark" style="padding:13px 22px;font-size:14px;font-weight:700;border-radius:12px;">
+      <a href="{{ url_for('auth.login') }}" class="btn btn-dark" style="padding:13px 22px;font-size:14px;font-weight:700;border-radius:12px;display:inline-flex;align-items:center;gap:6px;">
+        <span>Sign In</span>
+        <i data-lucide="arrow-right" style="width:14px;height:14px;"></i>
+      </a>
+      <a href="#features-preview" class="btn btn-dark" style="padding:13px 20px;font-size:14px;font-weight:700;border-radius:12px;">
         Explore 50/30/20 Engine
       </a>
     </div>

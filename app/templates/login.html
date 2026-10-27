@@ -420,6 +420,223 @@
       border: none;
     }
 
+    /* 1-Click Instant Demo / Guest Workspace CTA */
+    .btn-demo-auth,
+    .btn-guest-auth {
+      width: 100%;
+      min-height: 52px;
+      background: linear-gradient(135deg, rgba(203, 244, 50, 0.22) 0%, rgba(203, 244, 50, 0.08) 100%);
+      color: var(--ml-text-primary);
+      border: 1.5px solid #a3cc18;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 16px;
+      cursor: pointer;
+      margin-top: 10px;
+      margin-bottom: 2px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 3px 10px rgba(203, 244, 50, 0.2);
+      text-align: left;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+    .btn-demo-auth:hover,
+    .btn-guest-auth:hover {
+      background: linear-gradient(135deg, rgba(203, 244, 50, 0.35) 0%, rgba(203, 244, 50, 0.16) 100%);
+      border-color: #8da618;
+      transform: translateY(-1.5px);
+      box-shadow: 0 8px 22px -4px rgba(203, 244, 50, 0.4);
+    }
+    .btn-demo-auth:active,
+    .btn-guest-auth:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 6px rgba(203, 244, 50, 0.2);
+    }
+    [data-theme="dark"] .btn-demo-auth,
+    [data-theme="dark"] .btn-guest-auth {
+      background: linear-gradient(135deg, rgba(203, 244, 50, 0.18) 0%, rgba(26, 32, 28, 0.85) 100%);
+      border-color: rgba(203, 244, 50, 0.55);
+      color: #f5f7f2;
+    }
+    [data-theme="dark"] .btn-demo-auth:hover,
+    [data-theme="dark"] .btn-guest-auth:hover {
+      background: linear-gradient(135deg, rgba(203, 244, 50, 0.28) 0%, rgba(35, 43, 38, 0.95) 100%);
+      border-color: var(--ml-primary-lime);
+      box-shadow: 0 8px 24px -4px rgba(203, 244, 50, 0.3);
+    }
+    .btn-demo-left,
+    .guest-btn-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .btn-demo-icon,
+    .guest-btn-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      background: #111512;
+      color: var(--ml-primary-lime);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+    }
+    .btn-demo-auth:hover .btn-demo-icon,
+    .btn-guest-auth:hover .guest-btn-icon {
+      transform: scale(1.08) rotate(6deg);
+    }
+    [data-theme="dark"] .btn-demo-icon,
+    [data-theme="dark"] .guest-btn-icon {
+      background: var(--ml-primary-lime);
+      color: #111512;
+    }
+    .btn-demo-text,
+    .guest-btn-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.25;
+      min-width: 0;
+    }
+    .btn-demo-title,
+    .guest-btn-title {
+      font-size: 13.5px;
+      font-weight: 800;
+      letter-spacing: -0.2px;
+      color: var(--ml-text-primary);
+    }
+    .demo-subtext,
+    .guest-btn-sub {
+      font-size: 11px;
+      color: var(--ml-text-secondary);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .btn-demo-badge,
+    .guest-btn-pill {
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      background: #111512;
+      color: var(--ml-primary-lime);
+      text-transform: uppercase;
+      flex-shrink: 0;
+      margin-left: 8px;
+    }
+    [data-theme="dark"] .btn-demo-badge,
+    [data-theme="dark"] .guest-btn-pill {
+      background: var(--ml-primary-lime);
+      color: #111512;
+    }
+
+    /* Secondary Guest button below primary action */
+    .btn-guest-action {
+      width: 100%;
+      height: 48px;
+      background: rgba(203, 244, 50, 0.08);
+      color: var(--ml-text-primary);
+      border: 1.5px dashed rgba(203, 244, 50, 0.85);
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 10px;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+    .btn-guest-action:hover {
+      background: rgba(203, 244, 50, 0.2);
+      border-style: solid;
+      border-color: #a3cc18;
+      transform: translateY(-1px);
+    }
+    [data-theme="dark"] .btn-guest-action {
+      background: rgba(203, 244, 50, 0.08);
+      border-color: rgba(203, 244, 50, 0.55);
+      color: #f5f7f2;
+    }
+    [data-theme="dark"] .btn-guest-action:hover {
+      background: rgba(203, 244, 50, 0.18);
+      border-color: var(--ml-primary-lime);
+    }
+    .auth-sub-divider {
+      display: flex;
+      align-items: center;
+      margin: 18px 0 10px 0;
+      text-align: center;
+    }
+    .auth-sub-divider::before,
+    .auth-sub-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(0, 0, 0, 0.08);
+    }
+    [data-theme="dark"] .auth-sub-divider::before,
+    [data-theme="dark"] .auth-sub-divider::after {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .auth-sub-divider span {
+      padding: 0 10px;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      color: var(--ml-text-muted);
+      text-transform: uppercase;
+    }
+
+    /* Demo Fill Pill in form group */
+    .btn-demo-fill-pill {
+      background: rgba(203, 244, 50, 0.12);
+      border: 1px dashed rgba(203, 244, 50, 0.9);
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--ml-text-primary);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .btn-demo-fill-pill:hover {
+      background: var(--ml-primary-lime);
+      color: #111512;
+      border-style: solid;
+      transform: translateY(-0.5px);
+    }
+    [data-theme="dark"] .btn-demo-fill-pill {
+      background: rgba(203, 244, 50, 0.12);
+      border-color: rgba(203, 244, 50, 0.5);
+      color: #e2e8f0;
+    }
+    [data-theme="dark"] .btn-demo-fill-pill:hover {
+      background: var(--ml-primary-lime);
+      color: #111512;
+    }
+
+    @keyframes spinKeyframe {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .spin-animation {
+      animation: spinKeyframe 0.8s linear infinite;
+    }
+
     /* Divider */
     .auth-divider {
       display: flex;
@@ -1036,6 +1253,20 @@
           <span>Continue with Google</span>
         </button>
 
+        <!-- 1-Click Instant Guest Login -->
+        <button type="button" class="btn-guest-auth" id="btn-guest-login" title="Explore live workspace instantly as guest — no email or password needed">
+          <div class="guest-btn-left">
+            <span class="guest-btn-icon">
+              <i data-lucide="user-check" style="width:17px;height:17px;"></i>
+            </span>
+            <div class="guest-btn-text">
+              <span class="guest-btn-title">Continue as Guest (Demo Account)</span>
+              <span class="guest-btn-sub">1-Click instant access • Pre-loaded transactions & budget</span>
+            </div>
+          </div>
+          <span class="guest-btn-pill">Guest</span>
+        </button>
+
         <!-- Divider -->
         <div class="auth-divider">
           <span>OR VERIFY WITH EMAIL</span>
@@ -1054,10 +1285,15 @@
           
           <!-- Field 1: Email Address -->
           <div class="form-group" id="group-email">
-            <label class="form-label" for="auth-email-input">
-              <span>Work / Personal Email</span>
-              <span id="detection-mini-badge" style="font-size:11px;font-weight:700;"></span>
-            </label>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <label class="form-label" for="auth-email-input" style="margin-bottom:0;">
+                <span>Work / Personal Email</span>
+                <span id="detection-mini-badge" style="font-size:11px;font-weight:700;"></span>
+              </label>
+              <button type="button" class="btn-demo-fill-pill" id="btn-fill-demo" title="Auto-fill demo email">
+                <i data-lucide="zap" style="width:11px;height:11px;"></i> Auto-fill Demo
+              </button>
+            </div>
             <input 
               type="email" 
               id="auth-email-input" 
@@ -1136,6 +1372,17 @@
           <button type="button" id="btn-primary-action" class="btn-primary-action">
             Send 6-Digit OTP Code
           </button>
+
+          <!-- Alternative 1-Click Guest Access Option -->
+          <div class="guest-bottom-wrap">
+            <div class="auth-sub-divider">
+              <span>OR EXPLORE INSTANTLY</span>
+            </div>
+            <button type="button" class="btn-guest-action" id="btn-guest-login-bottom" title="1-Click Guest Access without email">
+              <i data-lucide="user-check" style="width:16px;height:16px;"></i>
+              <span>Guest Login (Instant Access)</span>
+            </button>
+          </div>
 
           <!-- Sub Actions (Resend code / Change email) -->
           <div id="otp-sub-actions" style="display:none; text-align:center; margin-top:14px;">
@@ -1876,6 +2123,63 @@
       googleBtn.addEventListener('click', () => {
         backToAccountChooser();
         openModal('google-modal');
+      });
+    }
+
+    // Guest Login / Demo Workspace Trigger (1-Click Instant Login)
+    async function handleGuestLoginClick(btnElement) {
+      if (btnElement) {
+        btnElement.disabled = true;
+        btnElement.innerHTML = `
+          <div class="guest-btn-left" style="justify-content:center;width:100%;">
+            <i data-lucide="loader-2" class="spin-animation" style="width:16px;height:16px;"></i>
+            <span style="font-size:13px;font-weight:700;margin-left:8px;">Entering Guest Workspace...</span>
+          </div>
+        `;
+        if (window.lucide) window.lucide.createIcons();
+      }
+
+      try {
+        const res = await fetch('/auth/guest-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF_TOKEN
+          }
+        });
+        const data = await res.json();
+        if (data && data.success) {
+          window.location.href = data.redirect || '/dashboard';
+        } else {
+          window.location.href = '/guest';
+        }
+      } catch (err) {
+        window.location.href = '/guest';
+      }
+    }
+
+    const guestBtnTop = document.getElementById('btn-guest-login');
+    if (guestBtnTop) {
+      guestBtnTop.addEventListener('click', () => handleGuestLoginClick(guestBtnTop));
+    }
+
+    const guestBtnBottom = document.getElementById('btn-guest-login-bottom');
+    if (guestBtnBottom) {
+      guestBtnBottom.addEventListener('click', () => handleGuestLoginClick(guestBtnBottom));
+    }
+
+    const demoBtnLegacy = document.getElementById('btn-demo-login');
+    if (demoBtnLegacy) {
+      demoBtnLegacy.addEventListener('click', () => handleGuestLoginClick(demoBtnLegacy));
+    }
+
+    // Auto-fill Demo Credentials Pill
+    const btnFillDemo = document.getElementById('btn-fill-demo');
+    if (btnFillDemo) {
+      btnFillDemo.addEventListener('click', () => {
+        emailInput.value = 'demo@moneyleak.app';
+        checkEmailExistence('demo@moneyleak.app');
+        showStatus('<b>Demo Account Auto-Filled!</b> Click Continue to receive dev OTP code or switch to password (<code>demo1234</code>).', 'info');
       });
     }
 
